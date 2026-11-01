@@ -104,6 +104,32 @@
                 android:resource="@xml/next_workout_widget" />
         </receiver>
 
+        <!-- Home screen widget: calories, protein and water today. -->
+        <receiver
+            android:name=".widget.NutritionWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_nutrition_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/nutrition_widget" />
+        </receiver>
+
+        <!-- Home screen widget: week streak, freezes and readiness. -->
+        <receiver
+            android:name=".widget.StreakWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_streak_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/streak_widget" />
+        </receiver>
+
         <!-- Hands the share pictures in cache/share to the app picked in the share sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"

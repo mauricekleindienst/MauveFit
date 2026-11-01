@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Refreshed by the app whenever its data changes; the period only catches the new week. -->
+<!-- Refreshed by the app whenever its data changes; the period only catches the new week.
+     Responsive: 2x1 one line, 3x2 card with start button, 4x3 and up adds week strip and challenge. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:previewLayout="@layout/widget_preview"
     android:minWidth="180dp"
     android:minHeight="110dp"
-    android:minResizeWidth="140dp"
-    android:minResizeHeight="100dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeWidth="530dp"
+    android:maxResizeHeight="450dp"
     android:targetCellWidth="3"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"

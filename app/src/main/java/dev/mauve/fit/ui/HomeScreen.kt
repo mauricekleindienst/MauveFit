@@ -70,7 +70,6 @@ fun HomeScreen(data: AppData, nav: NavController) {
     }
 
     Box(Modifier.fillMaxSize()) {
-    HeroGrid(Modifier.fillMaxWidth().height(320.dp))
     LazyColumn(
         Modifier.statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 132.dp),
@@ -171,31 +170,39 @@ private fun WeekStrip(trained: Set<LocalDate>) {
 @Composable
 private fun NextWorkoutCard(r: Routine, onShort: () -> Unit, onStart: () -> Unit) {
     val hero = App.repo[r.exercises.firstOrNull()?.exerciseId.orEmpty()]
-    Card(padding = PaddingValues(0.dp)) {
+    Card(padding = PaddingValues(0.dp), shape = Hero) {
         Box {
-            ExerciseMedia(hero, Modifier.fillMaxWidth().aspectRatio(1.6f), corner = 0.dp)
+            ExerciseMedia(hero, Modifier.fillMaxWidth().height(mediaStageHeight()), corner = 0.dp)
             Box(
-                Modifier.padding(14.dp).clip(RoundedCornerShape(18.dp)).background(Ink.bg).padding(horizontal = 10.dp, vertical = 6.dp)
-            ) { Text(L("NÄCHSTES TRAINING", "NEXT WORKOUT"), style = MaterialTheme.typography.labelSmall, color = Ink.accent) }
+                Modifier.padding(16.dp).clip(Pill).background(Ink.accent).padding(horizontal = 12.dp, vertical = 6.dp)
+            ) { Text(L("Als Nächstes", "Up next"), style = MaterialTheme.typography.labelLarge, color = Ink.bg) }
         }
-        Column(Modifier.padding(18.dp)) {
-            Text(r.name, style = MaterialTheme.typography.headlineMedium)
-            Text(
-                listOfNotNull(r.note.ifBlank { null }, L("${r.exercises.size} Übungen", "${r.exercises.size} exercises"), "${estMinutes(r)} min").joinToString(" · "),
-                color = Ink.muted,
-            )
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                r.exercises.drop(1).take(5).forEach { Thumb(App.repo[it.exerciseId], 46.dp) }
+        Column(Modifier.padding(22.dp)) {
+            Text(r.name, style = MaterialTheme.typography.displaySmall)
+            if (r.note.isNotBlank()) Text(r.note, color = Ink.muted, style = MaterialTheme.typography.bodyLarge)
+            Spacer(Modifier.height(18.dp))
+            // The session at a glance, scoreboard-style.
+            Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                Figure("${r.exercises.size}", L("Übungen", "exercises"))
+                Figure("${r.exercises.sumOf { it.sets }}", L("Sätze", "sets"))
+                Figure("${estMinutes(r)}", L("Minuten", "minutes"))
             }
-            Spacer(Modifier.height(16.dp))
-            PrimaryButton(L("Training starten", "Start workout"), Modifier.fillMaxWidth(), Icons.AutoMirrored.Rounded.ArrowForward, onStart)
+            Spacer(Modifier.height(20.dp))
+            PrimaryButton(L("Training starten", "Start workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow, onStart)
             Spacer(Modifier.height(8.dp))
             // For days with little time: the coach trims the plan.
             val short = Coach.shortVersion(r)
-            GhostButton(L("Wenig Zeit? Kurzversion · ${estMinutes(short)}\u00A0min", "Short on time? Quick version · ${estMinutes(short)}\u00A0min"),
+            GhostButton(L("Kurzversion, ${estMinutes(short)} min", "Quick version, ${estMinutes(short)} min"),
                 Modifier.fillMaxWidth(), onClick = onShort)
         }
+    }
+}
+
+@Composable
+private fun Figure(value: String, label: String) {
+    Column {
+        Text(value, style = MaterialTheme.typography.headlineLarge, color = Ink.text)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted)
     }
 }
 

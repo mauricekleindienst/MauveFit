@@ -1,5 +1,11 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.composed
 import coil3.compose.AsyncImage
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.aspectRatio
@@ -147,43 +153,49 @@ fun mediaStageHeight(): Dp = with(LocalDensity.current) { MEDIA_PX.toDp() } + 24
 @Composable
 fun Thumb(exercise: Exercise?, size: Dp = 56.dp) = ExerciseMedia(exercise, Modifier.size(size), animated = false, corner = 16.dp)
 
-/** Flat raised card. */
+/**
+ * Tonal panel: set apart by surface colour alone, no outline. Tappable panels give a little under
+ * the finger, so a press is felt before the screen changes.
+ */
 @Composable
 fun Card(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     color: Color = Ink.surface,
-    padding: PaddingValues = PaddingValues(18.dp),
+    padding: PaddingValues = PaddingValues(20.dp),
+    shape: Shape = Panel,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.clip(Panel).background(color).border(1.dp, Ink.line, Panel)
-            .then(if (onClick != null) Modifier.clickable { Haptics.click(); onClick() } else Modifier)
+        modifier.then(if (onClick != null) Modifier.pressable { Haptics.click(); onClick() } else Modifier)
+            .clip(shape).background(color)
             .padding(padding),
         content = content,
     )
 }
 
+/** Click with a springy press-in; used for every large tappable surface. */
+fun Modifier.pressable(onClick: () -> Unit): Modifier = composed {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.55f, stiffness = 600f), label = "press")
+    graphicsLayer { scaleX = scale; scaleY = scale }
+        .clickable(interactionSource = source, indication = null, onClick = onClick)
+}
+
 @Composable
 fun Eyebrow(text: String, modifier: Modifier = Modifier, color: Color = Ink.muted) =
-    Text(text.uppercase(), modifier, style = MaterialTheme.typography.labelSmall, color = color)
+    Text(text, modifier, style = MaterialTheme.typography.titleSmall, color = color)
 
-/** The site's boxed label: mono caps in a hairline frame. */
-@Composable
-fun BoxedLabel(text: String, modifier: Modifier = Modifier, color: Color = Ink.muted) =
-    Text(
-        text.uppercase(),
-        modifier.border(1.dp, Ink.lineStrong, Pill).padding(horizontal = 10.dp, vertical = 3.dp),
-        style = MaterialTheme.typography.labelSmall, color = color,
-    )
-
-/** Screen title block: small label above a large heading. */
+/** Screen title: the wide heading first, one plain line of context under it. */
 @Composable
 fun ScreenTitle(eyebrow: String, title: String, modifier: Modifier = Modifier) {
     Column(modifier) {
-        BoxedLabel(eyebrow)
-        Spacer(Modifier.height(10.dp))
         Text(title, style = MaterialTheme.typography.displaySmall)
+        if (eyebrow.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(eyebrow, style = MaterialTheme.typography.bodyLarge, color = Ink.muted)
+        }
     }
 }
 
@@ -217,12 +229,12 @@ fun Tag(text: String, color: Color = Ink.muted, modifier: Modifier = Modifier) {
     }
 }
 
-/** Primary action: lime, full-strength. */
+/** Primary action: the accent at full strength. */
 @Composable
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(16.dp)).background(Ink.accent).clickable { Haptics.click(); onClick() }
-            .padding(horizontal = 22.dp, vertical = 17.dp),
+        modifier.pressable { Haptics.click(); onClick() }.clip(Pill).background(Ink.accent)
+            .padding(horizontal = 24.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -231,12 +243,12 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector
     }
 }
 
-/** Secondary action: outlined. */
+/** Secondary action: a quiet tonal fill, same shape as the primary one. */
 @Composable
 fun GhostButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(16.dp)).border(1.5.dp, Ink.line, RoundedCornerShape(16.dp)).clickable { Haptics.click(); onClick() }
-            .padding(horizontal = 20.dp, vertical = 15.dp),
+        modifier.pressable { Haptics.click(); onClick() }.clip(Pill).background(Ink.raised)
+            .padding(horizontal = 22.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -248,7 +260,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? 
 @Composable
 fun RoundButton(icon: ImageVector, contentDescription: String?, modifier: Modifier = Modifier, size: Dp = 40.dp, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
-        modifier.size(size).clip(Pill).background(Ink.raised).clickable(enabled = enabled) { Haptics.click(); onClick() },
+        modifier.size(size).then(if (enabled) Modifier.pressable { Haptics.click(); onClick() } else Modifier).clip(Pill).background(Ink.raised),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, contentDescription, tint = if (enabled) Ink.text else Ink.faint, modifier = Modifier.size(size * 0.5f)) }
 }
@@ -261,7 +273,7 @@ fun Stepper(label: String, value: String, modifier: Modifier = Modifier, onMinus
         modifier.clip(RoundedCornerShape(20.dp)).background(Ink.raised).padding(top = 10.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
         Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.padding(vertical = 4.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             StepButton(Icons.Rounded.Remove, L("Weniger", "Less"), Modifier.weight(1f), onMinus)
@@ -323,31 +335,6 @@ fun Meter(fraction: Float, modifier: Modifier = Modifier, color: Color = Ink.acc
 
 fun Modifier.screenPadding() = padding(horizontal = 20.dp)
 
-/**
- * The site's hero grid: hairlines on a regular raster, fading out downwards. Drawn behind the top
- * of a screen.
- */
-@Composable
-fun HeroGrid(modifier: Modifier = Modifier, cell: Dp = 28.dp) {
-    val line = Ink.text.copy(alpha = if (Ink.dark) 0.07f else 0.08f)
-    androidx.compose.foundation.Canvas(modifier) {
-        val step = cell.toPx()
-        var x = 0f
-        while (x <= size.width) {
-            drawLine(
-                androidx.compose.ui.graphics.Brush.verticalGradient(listOf(line, Color.Transparent), 0f, size.height),
-                Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f,
-            )
-            x += step
-        }
-        var y = 0f
-        while (y <= size.height) {
-            val a = 1f - y / size.height
-            drawLine(line.copy(alpha = line.alpha * a), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
-            y += step
-        }
-    }
-}
 
 /** Square-ish shortcut: icon in an accent disc, title and one line below. */
 @Composable

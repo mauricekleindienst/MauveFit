@@ -177,7 +177,7 @@ fun QuickWorkoutScreen(data: AppData, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         stickyHeader {
-            Row(Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
             }
         }

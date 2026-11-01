@@ -283,9 +283,9 @@ private fun ExercisePage(
             CoachLine(tip)
             Spacer(Modifier.height(16.dp))
             Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(L("SATZ", "SET"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
-                if (!bodyweight) Text("KG", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
-                Text(L("WDH.", "REPS"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
+                Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
+                if (!bodyweight) Text("kg", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
+                Text(L("Wdh.", "Reps"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
                 Spacer(Modifier.width(48.dp))
             }
             Spacer(Modifier.height(6.dp))
@@ -440,7 +440,7 @@ private fun SwapDialog(exerciseId: String, data: AppData, onPick: (String) -> Un
 private fun PlateView(total: Double, bar: Double) {
     val plates = Coach.plates(total, bar)
     Column(Modifier.padding(top = 16.dp)) {
-        Text(L("PRO SEITE", "PER SIDE"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+        Text(L("Pro Seite", "Per side"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
         Spacer(Modifier.height(8.dp))
         when {
             plates == null -> Text(L("Weniger als die Stange (${Stats.fmtKg(bar)} kg)", "Less than the bar (${Stats.fmtKg(bar)} kg)"), color = Ink.muted)

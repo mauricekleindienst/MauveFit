@@ -66,7 +66,6 @@ import dev.mauve.fit.ui.FitTheme
 import dev.mauve.fit.ui.HistoryScreen
 import dev.mauve.fit.ui.HomeScreen
 import dev.mauve.fit.ui.Accent
-import dev.mauve.fit.ui.Grain
 import dev.mauve.fit.ui.Ink
 import dev.mauve.fit.ui.Pill
 import dev.mauve.fit.ui.LibraryScreen
@@ -131,7 +130,7 @@ private fun AppRoot() {
         if (data.profile.onboarded && Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    Box(Modifier.fillMaxSize().background(Grain)) {
+    Box(Modifier.fillMaxSize()) {
         NavHost(nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize()) {
             composable(Tab.Home.route) { HomeScreen(data, nav) }
             composable("library") { LibraryScreen(data, nav, pickFor = null) }

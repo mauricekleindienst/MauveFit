@@ -159,7 +159,7 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     ) {
         stickyHeader {
             Row(
-                Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp),
+                Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }

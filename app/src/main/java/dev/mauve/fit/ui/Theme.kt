@@ -24,8 +24,8 @@ import androidx.compose.ui.unit.sp
 import dev.mauve.fit.R
 
 /**
- * Colours after the Kalzit design language: a warm, almost monochrome palette, "ink" (light on a
- * warm near-black) and "paper" (dark on warm stone), with one accent the user can pick.
+ * Colours of a strength gym: cool graphite like iron and rubber flooring ("iron"), or chalk-white
+ * ("chalk"), with one accent the user picks. Plate colours appear only where they encode data.
  */
 data class Palette(
     val dark: Boolean,
@@ -38,18 +38,18 @@ data class Palette(
 
 private val InkPalette = Palette(
     dark = true,
-    bg = Color(0xFF0B0A09), surface = Color(0xFF161312), raised = Color(0xFF1F1C1A), line = Color(0xFF2B2826), lineStrong = Color(0xFF5C5754),
-    text = Color(0xFFF0ECE7), muted = Color(0xFFB8B3AD), faint = Color(0xFF99948F),
+    bg = Color(0xFF111315), surface = Color(0xFF1A1D21), raised = Color(0xFF23272C), line = Color(0xFF2E3338), lineStrong = Color(0xFF4A5058),
+    text = Color(0xFFEDEFF2), muted = Color(0xFFA6ACB4), faint = Color(0xFF858C95),
     stage = Color(0xFF000000),
-    coral = Color(0xFFE8A27E), red = Color(0xFFF0857A),
+    coral = Color(0xFFEE8F6A), red = Color(0xFFF0736A),
 )
 
 private val PaperPalette = Palette(
     dark = false,
-    bg = Color(0xFFF8F6F3), surface = Color(0xFFFEFDFB), raised = Color(0xFFF0EDE8), line = Color(0xFFD9D5D0), lineStrong = Color(0xFFA39D98),
-    text = Color(0xFF191512), muted = Color(0xFF514C48), faint = Color(0xFF615B57),
+    bg = Color(0xFFF2F3F5), surface = Color(0xFFFFFFFF), raised = Color(0xFFE8EAED), line = Color(0xFFD5D9DE), lineStrong = Color(0xFF9AA1AA),
+    text = Color(0xFF121417), muted = Color(0xFF4E555E), faint = Color(0xFF636A73),
     stage = Color(0xFFFFFFFF),
-    coral = Color(0xFFB0562C), red = Color(0xFFB3382C),
+    coral = Color(0xFFB4532D), red = Color(0xFFB3362C),
 )
 
 /** Accent choices; each has a tone for ink and one for paper so it keeps contrast in both. */
@@ -102,42 +102,40 @@ object Ink {
     val mauve get() = if (palette.dark) Color(0xFFC5A9E6) else Color(0xFF7955A0)
 }
 
-private fun newsreader(weight: Int) = Font(
-    R.font.newsreader, FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.Setting("opsz", 48f)),
+private fun archivo(weight: Int, width: Float) = Font(
+    R.font.archivo, FontWeight(weight),
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight), FontVariation.width(width)),
 )
 
-private fun instrument(weight: Int) = Font(
-    R.font.instrument_sans, FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
-)
-
-private fun mono(weight: Int) = Font(
-    R.font.jetbrains_mono, FontWeight(weight),
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
-)
-
-/** Newsreader for headlines, Instrument Sans for text, JetBrains Mono for labels: as on kalzit. */
-val Display = FontFamily(newsreader(340), newsreader(400), newsreader(500))
-val Sans = FontFamily(instrument(400), instrument(500), instrument(600), instrument(700))
-val Mono = FontFamily(mono(400), mono(500), mono(600))
+/**
+ * One family, Archivo, set at different widths: extra-wide and heavy like a scoreboard for titles
+ * and numbers, normal width for reading. The old names stay so call sites keep their roles.
+ */
+val Display = FontFamily(archivo(700, 125f), archivo(800, 125f))
+val Heading = FontFamily(archivo(650, 114f), archivo(700, 114f))
+val Sans = FontFamily(archivo(400, 100f), archivo(500, 100f), archivo(600, 100f), archivo(700, 100f))
+/** Figures in tables and counters: semi-wide, so digits read at a glance mid-set. */
+val Mono = FontFamily(archivo(600, 112f), archivo(700, 112f))
 
 /** Fully rounded controls and soft panels. */
 val Pill = RoundedCornerShape(percent = 50)
+/** Radii by rank: heroes curve most, panels less, rows least. */
+val Hero = RoundedCornerShape(32.dp)
 val Panel = RoundedCornerShape(24.dp)
+val RowShape = RoundedCornerShape(18.dp)
 
 @Composable
 fun FitTheme(content: @Composable () -> Unit) {
     val base = Typography()
     val sans = { s: androidx.compose.ui.text.TextStyle -> s.copy(fontFamily = Sans) }
     val typography = Typography(
-        displayLarge = base.displayLarge.copy(fontFamily = Display, fontWeight = FontWeight(340), letterSpacing = (-1.6).sp),
-        displayMedium = base.displayMedium.copy(fontFamily = Display, fontWeight = FontWeight(340), letterSpacing = (-1.3).sp),
-        displaySmall = base.displaySmall.copy(fontFamily = Display, fontWeight = FontWeight(400), letterSpacing = (-1).sp),
-        headlineLarge = base.headlineLarge.copy(fontFamily = Display, fontWeight = FontWeight(400), letterSpacing = (-0.8).sp),
-        headlineMedium = base.headlineMedium.copy(fontFamily = Display, fontWeight = FontWeight(400), letterSpacing = (-0.5).sp),
-        headlineSmall = base.headlineSmall.copy(fontFamily = Display, fontWeight = FontWeight(500), letterSpacing = (-0.3).sp),
-        titleLarge = base.titleLarge.copy(fontFamily = Sans, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.3).sp),
+        displayLarge = base.displayLarge.copy(fontFamily = Display, fontWeight = FontWeight(800), letterSpacing = (-1.5).sp),
+        displayMedium = base.displayMedium.copy(fontFamily = Display, fontWeight = FontWeight(800), letterSpacing = (-1.2).sp),
+        displaySmall = base.displaySmall.copy(fontFamily = Display, fontWeight = FontWeight(800), fontSize = 32.sp, lineHeight = 38.sp, letterSpacing = (-0.8).sp),
+        headlineLarge = base.headlineLarge.copy(fontFamily = Display, fontWeight = FontWeight(700), letterSpacing = (-0.6).sp),
+        headlineMedium = base.headlineMedium.copy(fontFamily = Display, fontWeight = FontWeight(700), fontSize = 26.sp, letterSpacing = (-0.5).sp),
+        headlineSmall = base.headlineSmall.copy(fontFamily = Heading, fontWeight = FontWeight(700), fontSize = 21.sp, letterSpacing = (-0.3).sp),
+        titleLarge = base.titleLarge.copy(fontFamily = Heading, fontWeight = FontWeight(650), fontSize = 19.sp, letterSpacing = (-0.2).sp),
         titleMedium = sans(base.titleMedium).copy(fontWeight = FontWeight.SemiBold),
         titleSmall = sans(base.titleSmall).copy(fontWeight = FontWeight.SemiBold),
         bodyLarge = sans(base.bodyLarge),
@@ -145,7 +143,7 @@ fun FitTheme(content: @Composable () -> Unit) {
         bodySmall = sans(base.bodySmall),
         labelLarge = sans(base.labelLarge).copy(fontWeight = FontWeight.SemiBold),
         labelMedium = sans(base.labelMedium).copy(fontWeight = FontWeight.Medium),
-        labelSmall = base.labelSmall.copy(fontFamily = Mono, fontWeight = FontWeight.Medium, letterSpacing = 1.5.sp),
+        labelSmall = base.labelSmall.copy(fontFamily = Sans, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 0.1.sp),
     )
     val p = Ink.palette
     val colors = if (p.dark) darkColorScheme(
@@ -160,21 +158,4 @@ fun FitTheme(content: @Composable () -> Unit) {
         outline = p.line, outlineVariant = p.line, error = p.red, onError = p.bg,
     )
     MaterialTheme(colorScheme = colors, typography = typography, content = content)
-}
-
-/** Fine film grain as on kalzit's hero, generated once and tiled. */
-val Grain: androidx.compose.ui.graphics.ShaderBrush by lazy {
-    val size = 160
-    val rnd = java.util.Random(7)
-    val px = IntArray(size * size) {
-        val v = rnd.nextInt(256)
-        android.graphics.Color.argb(rnd.nextInt(18), v, v, v)
-    }
-    val bmp = android.graphics.Bitmap.createBitmap(px, size, size, android.graphics.Bitmap.Config.ARGB_8888)
-    androidx.compose.ui.graphics.ShaderBrush(
-        androidx.compose.ui.graphics.ImageShader(
-            bmp.asImageBitmap(),
-            androidx.compose.ui.graphics.TileMode.Repeated, androidx.compose.ui.graphics.TileMode.Repeated,
-        ),
-    )
 }

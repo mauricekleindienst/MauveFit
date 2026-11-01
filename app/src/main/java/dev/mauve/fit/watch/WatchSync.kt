@@ -9,6 +9,7 @@ import dev.mauve.fit.App
 import dev.mauve.fit.data.AppData
 import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Stats
+import dev.mauve.fit.data.Supersets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -56,7 +57,7 @@ object WatchSync {
     /** The watch follows the first exercise that still has unticked sets. */
     fun state(d: AppData): WatchState {
         val w = d.active ?: return WatchState(suggestion = Stats.nextRoutine(d.routines, d.history, App.repo)?.name.orEmpty())
-        val idx = w.entries.indexOfFirst { e -> e.sets.any { !it.done } }.takeIf { it >= 0 } ?: (w.entries.size - 1)
+        val idx = Supersets.current(w.entries)
         val entry = w.entries.getOrNull(idx)
         val setIdx = entry?.sets?.indexOfFirst { !it.done }?.takeIf { it >= 0 } ?: 0
         val set = entry?.sets?.getOrNull(setIdx)
@@ -106,8 +107,8 @@ object WatchSync {
             "skip" -> store.updateActive { it.copy(restEndsAt = null) }
             "plus15" -> store.updateActive { it.copy(restEndsAt = (it.restEndsAt ?: System.currentTimeMillis()) + 15_000, restTotalSec = it.restTotalSec + 15) }
             "done", "w+", "w-", "r+", "r-" -> store.updateActive { w ->
-                val i = w.entries.indexOfFirst { e -> e.sets.any { !it.done } }
-                if (i < 0) return@updateActive w
+                val i = Supersets.current(w.entries)
+                if (i < 0 || w.entries[i].sets.all { it.done }) return@updateActive w
                 val entry = w.entries[i]
                 val j = entry.sets.indexOfFirst { !it.done }
                 val step = store.data.value.settings.weightStep
@@ -122,6 +123,9 @@ object WatchSync {
                 }
                 val updated = w.copy(entries = w.entries.toMutableList().also { it[i] = entry.copy(sets = sets) })
                 if (cmd == "done") {
+                    // Inside a superset the partner follows straight away; the rest comes after the round.
+                    val next = if (s.warmup) null else Supersets.afterSet(updated.entries, i)
+                    if (next != null && !next.rest) return@updateActive updated.copy(restEndsAt = null)
                     val rest = if (s.warmup) 45 else entry.restSec
                     updated.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)
                 } else updated

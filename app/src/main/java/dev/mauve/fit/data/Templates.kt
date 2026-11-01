@@ -179,5 +179,67 @@ object Templates {
                 ),
             )
         },
+        Pack("strength", L("Kraft-Basis A/B", "Strength base A/B"), L("3× pro Woche · Langhantel · im Wechsel", "3× a week · Barbell · alternating")) {
+            listOf(
+                Routine(
+                    name = L("Kraft A", "Strength A"), note = L("Kniebeuge · Bankdrücken · Kreuzheben", "Squat · Bench · Deadlift"),
+                    exercises = listOf(
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0025", 3, 5, 180),  // barbell bench press
+                        plan("0032", 1, 5, 180),  // barbell deadlift
+                        plan("1326", 3, 8, 120),  // chin-up
+                    ),
+                ),
+                Routine(
+                    name = L("Kraft B", "Strength B"), note = L("Kniebeuge · Schulterdrücken · Rudern", "Squat · Press · Row"),
+                    exercises = listOf(
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0091", 3, 5, 180),  // barbell seated overhead press
+                        plan("0027", 3, 5, 150),  // barbell bent over row
+                        plan("0472", 3, 10, 60),  // hanging leg raise
+                    ),
+                ),
+            )
+        },
+        Pack("four-lifts", L("Vier Grundübungen", "Four main lifts"), L("4× pro Woche · ein Hauptlift pro Tag", "4× a week · one main lift a day")) {
+            listOf(
+                Routine(
+                    name = L("Schulterdrücken", "Press day"), note = L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises = listOf(
+                        plan("0091", 3, 5, 180),  // barbell seated overhead press
+                        plan("0251", 4, 10, 90),  // chest dip
+                        plan("1326", 4, 10, 90),  // chin-up
+                        plan("0334", 3, 15, 60),  // dumbbell lateral raise
+                    ),
+                ),
+                Routine(
+                    name = L("Kreuzheben", "Deadlift day"), note = L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises = listOf(
+                        plan("0032", 3, 5, 180),  // barbell deadlift
+                        plan("0044", 3, 10, 120), // barbell good morning
+                        plan("0472", 3, 12, 60),  // hanging leg raise
+                        plan("0586", 3, 12, 60),  // lever lying leg curl
+                    ),
+                ),
+                Routine(
+                    name = L("Bankdrücken", "Bench day"), note = L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises = listOf(
+                        plan("0025", 3, 5, 180),  // barbell bench press
+                        plan("0314", 4, 10, 90),  // dumbbell incline bench press
+                        plan("0861", 4, 10, 90),  // cable seated row
+                        plan("0201", 3, 12, 60),  // cable pushdown
+                    ),
+                ),
+                Routine(
+                    name = L("Kniebeuge", "Squat day"), note = L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises = listOf(
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0085", 3, 8, 120),  // barbell romanian deadlift
+                        plan("0336", 3, 10, 90),  // dumbbell lunge
+                        plan("0585", 3, 12, 60),  // lever leg extension
+                    ),
+                ),
+            )
+        },
     )
 }

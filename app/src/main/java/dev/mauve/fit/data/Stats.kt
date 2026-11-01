@@ -147,4 +147,12 @@ object Stats {
         if (m < 1) return "< 1 min"
         return if (m >= 60) "${m / 60} h ${m % 60} min" else "$m min"
     }
+
+    /** One set as text for lists: "60×8", "8 reps", plus "D" / "V" and "@8" when set. */
+    fun setLabel(s: SetEntry, bodyweight: Boolean): String {
+        val base = if (bodyweight) L("${s.reps} Wdh.", "${s.reps} reps") else "${fmtKg(s.weight)}×${s.reps}"
+        val type = when (s.type) { SetType.Drop -> " D"; SetType.Failure -> L(" V", " F"); else -> "" }
+        val rpe = if (s.rpe > 0) " @${s.rpe}" else ""
+        return base + type + rpe
+    }
 }

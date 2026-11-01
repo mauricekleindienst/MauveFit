@@ -209,7 +209,9 @@ fun ScreenTitle(eyebrow: String, title: String, modifier: Modifier = Modifier) {
 @Composable
 fun Stat(value: String, label: String, modifier: Modifier = Modifier, accent: Color = Ink.text) {
     Card(modifier, padding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)) {
-        Text(value, style = MaterialTheme.typography.headlineMedium, color = accent, maxLines = 1)
+        // The wide face runs out of room fast in a third of the screen; long values step down a size.
+        val style = if (value.length > 5) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium
+        Text(value, style = style, color = accent, maxLines = 1, softWrap = false)
         Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
     }
 }

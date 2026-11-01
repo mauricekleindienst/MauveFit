@@ -60,6 +60,8 @@ enum class Accent(val key: String, private val de: String, private val en: Strin
     Blue("blue", "Blau", "Blue", Color(0xFF8FB3D2), Color(0xFF3D6180)),
     Mauve("mauve", "Mauve", "Mauve", Color(0xFFC5A9E6), Color(0xFF7955A0)),
     Lime("lime", "Lime", "Lime", Color(0xFFD5F64E), Color(0xFF668800)),
+    /** Taken from the wallpaper (Android 12+); the colours here are only the swatch fallback. */
+    Wallpaper("wallpaper", "Hintergrund", "Wallpaper", Color(0xFFA6ACB4), Color(0xFF4E555E)),
     ;
 
     val label get() = dev.mauve.fit.data.L(de, en)
@@ -79,9 +81,13 @@ object Ink {
     var accentChoice: Accent = Accent.Copper
         private set
 
-    fun apply(dark: Boolean, accent: Accent) {
+    /** The wallpaper's accent tone for the current palette, when [Accent.Wallpaper] is chosen. */
+    private var wallpaper: Color? = null
+
+    fun apply(dark: Boolean, accent: Accent, wallpaperTone: Color? = null) {
         palette = if (dark) InkPalette else PaperPalette
         accentChoice = accent
+        wallpaper = wallpaperTone.takeIf { accent == Accent.Wallpaper }
     }
 
     val dark get() = palette.dark
@@ -97,7 +103,7 @@ object Ink {
     val coral get() = palette.coral
     val red get() = palette.red
     /** The accent; text on an accent fill uses [bg], which contrasts in both palettes. */
-    val accent get() = if (palette.dark) accentChoice.onInk else accentChoice.onPaper
+    val accent get() = wallpaper ?: if (palette.dark) accentChoice.onInk else accentChoice.onPaper
     /** Secondary signal colour (rest, recovery). */
     val mauve get() = if (palette.dark) Color(0xFFC5A9E6) else Color(0xFF7955A0)
 }

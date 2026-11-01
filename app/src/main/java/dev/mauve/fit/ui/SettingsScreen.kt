@@ -187,7 +187,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Eyebrow(L("Akzentfarbe", "Accent colour"))
                 Spacer(Modifier.height(8.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Accent.entries.forEach { a ->
+                    Accent.entries.filter { it != Accent.Wallpaper || android.os.Build.VERSION.SDK_INT >= 31 }.forEach { a ->
                         val on = Ink.accentChoice == a
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(

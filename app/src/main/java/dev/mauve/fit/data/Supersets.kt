@@ -59,6 +59,17 @@ object Supersets {
      * After a set at [index]: the next exercise of the group that still has sets, without rest;
      * once the round is through, rest and start over at the first one with sets left, or move on.
      */
+    /**
+     * The exercise to train now when there is no screen to look at (the watch): the first one with
+     * open sets, and inside a superset the member that is behind, so A and B alternate.
+     */
+    fun current(entries: List<ExerciseEntry>): Int {
+        val first = entries.indexOfFirst { e -> e.sets.any { !it.done } }
+        if (first < 0) return entries.lastIndex
+        val run = members(entries.map { it.superset }, first) ?: return first
+        return run.filter { j -> entries[j].sets.any { !it.done } }.minBy { j -> entries[j].sets.count { it.done } }
+    }
+
     fun afterSet(entries: List<ExerciseEntry>, index: Int): Step? {
         val run = members(entries.map { it.superset }, index) ?: return null
         fun open(j: Int) = entries[j].sets.any { !it.done }

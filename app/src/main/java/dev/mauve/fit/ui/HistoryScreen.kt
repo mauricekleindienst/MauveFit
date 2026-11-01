@@ -202,7 +202,7 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
                             Column(Modifier.weight(1f)) {
                                 Text(ex?.title ?: e.exerciseId, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(
-                                    e.sets.filter { !it.warmup }.joinToString("  ") { if (ex?.bodyweight == true) L("${it.reps} Wdh.", "${it.reps} reps") else "${Stats.fmtKg(it.weight)}×${it.reps}" },
+                                    e.sets.filter { !it.warmup }.joinToString("   ") { Stats.setLabel(it, ex?.bodyweight == true) },
                                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,
                                 )
                             }
@@ -287,6 +287,7 @@ private fun LazyListScope.body(data: AppData, open: String?, onOpen: (String?) -
             onDelete = App.store::deleteBodyWeight,
         )
     }
+    item(key = "photos") { ProgressPhotos() }
     item { Eyebrow(L("Umfänge", "Measurements"), Modifier.padding(top = 8.dp)) }
     Progress.measures.forEach { (kind, label) ->
         item(key = "m-$kind") {

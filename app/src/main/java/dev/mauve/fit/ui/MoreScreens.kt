@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -70,6 +72,27 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
     val muscles = w.entries.groupBy { App.repo[it.exerciseId]?.target ?: "" }
         .mapValues { (_, es) -> es.sumOf { e -> e.sets.count { !it.warmup } } }.entries.sortedByDescending { it.value }
     LaunchedEffect(id) { if (records.isNotEmpty()) { kotlinx.coroutines.delay(350); Haptics.record() } }
+    val context = LocalContext.current
+    fun share() {
+        val lines = buildList {
+            add("${w.name} · ${Stats.day(w.startedAt).format(java.time.format.DateTimeFormatter.ofPattern(if (dev.mauve.fit.data.I18n.german) "d. MMMM" else "MMMM d"))}")
+            add(L("${Stats.fmtDuration(w.durationMs)} · ${Stats.sets(w.doneSets.size)} · ${Stats.fmtVolume(w.volume)} bewegt",
+                "${Stats.fmtDuration(w.durationMs)} · ${Stats.sets(w.doneSets.size)} · ${Stats.fmtVolume(w.volume)} lifted"))
+            add("")
+            w.entries.filter { e -> e.sets.any { it.done } }.forEach { e ->
+                val ex = App.repo[e.exerciseId]
+                add("${ex?.title ?: e.exerciseId}: " + e.sets.filter { it.done && !it.warmup }.joinToString("  ") { Stats.setLabel(it, ex?.bodyweight == true) })
+            }
+            if (records.isNotEmpty()) {
+                add("")
+                add(L("Neue Rekorde: ", "New records: ") + records.joinToString(", ") { (exId, _) -> App.repo[exId]?.title ?: exId })
+            }
+            add("")
+            add(L("Mit Mauve Fit trainiert", "Trained with Mauve Fit"))
+        }
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain").putExtra(android.content.Intent.EXTRA_TEXT, lines.joinToString("\n"))
+        context.startActivity(android.content.Intent.createChooser(send, L("Training teilen", "Share workout")))
+    }
     val headline = when {
         records.isNotEmpty() -> L("Rekordtag.", "Record day.")
         w.doneSets.size >= 20 -> L("Stark durchgezogen.", "Strong session.")
@@ -98,6 +121,9 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                 Stat("${w.doneSets.size}", if (w.doneSets.size == 1) L("Satz", "Set") else L("Sätze", "Sets"), Modifier.weight(1f))
                 Stat(Stats.fmtVolume(w.volume), L("Volumen", "Volume"), Modifier.weight(1f), Ink.accent)
             }
+        }
+        item {
+            GhostButton(L("Training teilen", "Share workout"), Modifier.fillMaxWidth(), Icons.Rounded.Share) { Haptics.click(); share() }
         }
         if (records.isNotEmpty()) item {
             Card(color = Ink.accent) {

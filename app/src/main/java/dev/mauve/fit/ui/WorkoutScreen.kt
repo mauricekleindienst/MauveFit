@@ -1,5 +1,9 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.animation.animateContentSize
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.foundation.layout.fillMaxHeight
 import android.content.Context
 import android.os.VibrationEffect
@@ -302,7 +306,7 @@ private fun ExercisePage(
             )
             Text(e?.title ?: entry.exerciseId, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             if (last.isNotEmpty()) Text(
-                L("Letztes Mal: ", "Last time: ") + last.joinToString("  ") { if (bodyweight) "${it.reps}" else "${Stats.fmtKg(it.weight)}×${it.reps}" },
+                L("Letztes Mal: ", "Last time: ") + last.joinToString("   ") { Stats.setLabel(it, bodyweight) },
                 color = Ink.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp),
             )
             // The personal setup note sits right under the name, so it is read before the first set.
@@ -315,6 +319,7 @@ private fun ExercisePage(
             }
             Spacer(Modifier.height(12.dp))
             CoachLine(tip)
+            e?.steps?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
             Spacer(Modifier.height(16.dp))
             Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
@@ -733,4 +738,27 @@ private fun clock(ms: Long): String {
 private fun vibrate(context: Context, pattern: LongArray) {
     val vm = context.getSystemService(VibratorManager::class.java) ?: return
     vm.defaultVibrator.vibrate(VibrationEffect.createWaveform(pattern, -1))
+}
+
+/** The execution steps, folded away until asked for, so the sets stay in view. */
+@Composable
+private fun HowTo(steps: List<String>) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.padding(top = 8.dp).fillMaxWidth().clip(RowShape).background(Ink.surface).animateContentSize()) {
+        Row(
+            Modifier.fillMaxWidth().clickable { Haptics.tick(); open = !open }.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(L("So geht's", "How to"), Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Icon(if (open) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, null, tint = Ink.muted)
+        }
+        if (open) Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 12.dp)) {
+            steps.forEachIndexed { i, step ->
+                Row(Modifier.padding(vertical = 4.dp)) {
+                    Text("${i + 1}", Modifier.width(22.dp), color = Ink.accent, style = MaterialTheme.typography.titleSmall)
+                    Text(step, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
 }

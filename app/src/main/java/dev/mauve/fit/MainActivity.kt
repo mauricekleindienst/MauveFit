@@ -107,7 +107,12 @@ class MainActivity : ComponentActivity() {
         val settings = App.store.data.value.settings
         val systemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         val dark = when (settings.theme) { "dark" -> true; "light" -> false; else -> systemDark }
-        Ink.apply(dark, Accent.of(settings.accent))
+        val accent = Accent.of(settings.accent)
+        // Android 12+ derives tones from the wallpaper; the primary of its scheme is the accent.
+        val wallpaperTone = if (accent == Accent.Wallpaper && Build.VERSION.SDK_INT >= 31) {
+            if (dark) androidx.compose.material3.dynamicDarkColorScheme(this).primary else androidx.compose.material3.dynamicLightColorScheme(this).primary
+        } else null
+        Ink.apply(dark, accent, wallpaperTone)
         val bars = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)

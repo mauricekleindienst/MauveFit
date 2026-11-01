@@ -29,6 +29,8 @@ class App : Application(), SingletonImageLoader.Factory {
         // Parse the exercise list now so the first screen that needs it doesn't stall.
         createChannels(this)
         Haptics.init(this)
+        // A workout forgotten while the app was closed ends here, before anything shows it.
+        if (store.closeIdleWorkout()) WorkoutService.closedNotice(this)
         WorkoutService.follow(this)
         Reminders.follow(this)
         NextWidget.follow(this)

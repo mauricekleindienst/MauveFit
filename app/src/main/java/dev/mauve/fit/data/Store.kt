@@ -89,10 +89,25 @@ class Store(context: Context) {
     fun startBlock(weeks: Int) = updateSettings { it.copy(blockStart = System.currentTimeMillis(), blockWeeks = weeks, deloadUntil = 0) }
     fun endBlock() = updateSettings { it.copy(blockStart = 0) }
 
-    fun updateActive(block: (Workout) -> Workout) = update { d -> d.active?.let { d.copy(active = block(it)) } ?: d }
+    fun updateActive(block: (Workout) -> Workout) = update { d ->
+        d.active?.let { d.copy(active = block(it).copy(lastActivityAt = System.currentTimeMillis())) } ?: d
+    }
+
+    /**
+     * Ends a workout nobody has touched for [Coach.IDLE_LIMIT_MS]: done sets are saved with the
+     * last activity as the end, an empty one is dropped. Returns true when it did something, so
+     * the caller can tell the user.
+     */
+    fun closeIdleWorkout(now: Long = System.currentTimeMillis()): Boolean {
+        val w = data.value.active ?: return false
+        if (now - w.lastActive < Coach.IDLE_LIMIT_MS) return false
+        finishWorkout(w.lastActive + 5 * 60_000L)
+        return true
+    }
 
     /** Saves the active workout; returns its id, or null if nothing was ticked off (then it is just closed). */
-    fun finishWorkout(): String? {
+    /** Saves the active workout; [endAt] overrides the end time, e.g. for one left open for hours. */
+    fun finishWorkout(endAt: Long? = null): String? {
         var saved: String? = null
         update { d ->
             val w = d.active ?: return@update d
@@ -101,7 +116,7 @@ class Store(context: Context) {
             if (entries.isEmpty()) d.copy(active = null)
             else {
                 saved = w.id
-                d.copy(active = null, history = listOf(w.copy(entries = entries, finishedAt = System.currentTimeMillis(), restEndsAt = null)) + d.history)
+                d.copy(active = null, history = listOf(w.copy(entries = entries, finishedAt = endAt ?: System.currentTimeMillis(), restEndsAt = null)) + d.history)
             }
         }
         return saved

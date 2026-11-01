@@ -13,3 +13,9 @@
 -keep class com.google.mlkit.** { *; }
 -keep class com.google.android.gms.internal.mlkit_code_scanner.** { *; }
 -keep class com.google.android.gms.internal.mlkit_vision_** { *; }
+
+# WorkManager creates its input mergers and workers by reflection, and the Glance widget renders
+# inside such a worker. Without these the widget hangs on its loading spinner in release builds.
+-keep class * extends androidx.work.InputMerger { <init>(); }
+-keep class * extends androidx.work.ListenableWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
+-keep class androidx.glance.** { *; }

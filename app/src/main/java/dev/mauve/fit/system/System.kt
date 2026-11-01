@@ -1,5 +1,6 @@
 package dev.mauve.fit.system
 
+import android.os.PowerManager
 import android.app.AlarmManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
@@ -37,7 +38,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-private const val CH_WORKOUT = "workout"
+/** v2: shown in the normal section, not folded away under "Silent" like the first channel was. */
+private const val CH_WORKOUT = "workout_live"
+private const val CH_WORKOUT_OLD = "workout"
 private const val CH_REST = "rest"
 private const val CH_REST_VIBRATE = "rest_vibrate"
 private const val CH_REST_QUIET = "rest_quiet"
@@ -54,8 +57,13 @@ object Foreground {
 
 fun createChannels(context: Context) {
     val nm = context.getSystemService(NotificationManager::class.java)
-    nm.createNotificationChannel(NotificationChannel(CH_WORKOUT, L("Laufendes Training", "Running workout"), NotificationManager.IMPORTANCE_LOW).apply {
+    nm.deleteNotificationChannel(CH_WORKOUT_OLD)
+    // Default importance so it sits with the other notifications and shows its buttons; it stays
+    // silent, the rest alert below is the one that makes noise.
+    nm.createNotificationChannel(NotificationChannel(CH_WORKOUT, L("Laufendes Training", "Running workout"), NotificationManager.IMPORTANCE_DEFAULT).apply {
         description = L("Zeigt Satz und Pausentimer, solange ein Training läuft", "Shows the set and rest timer while a workout runs")
+        setSound(null, null)
+        enableVibration(false)
         setShowBadge(false)
     })
     nm.createNotificationChannel(NotificationChannel(CH_REST, L("Pause vorbei", "Rest over"), NotificationManager.IMPORTANCE_HIGH).apply {
@@ -102,6 +110,14 @@ class WorkoutService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var restJob: Job? = null
 
+    /**
+     * Held for the length of a rest. With the screen off the phone dozes and a plain delay can end
+     * minutes late; a partial wake lock keeps the countdown on time. It never outlives the rest.
+     */
+    private val wake by lazy {
+        getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MauveFit:rest").apply { setReferenceCounted(false) }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -112,15 +128,25 @@ class WorkoutService : Service() {
                 if (d.active == null) { stopSelf(); return@onEach }
                 getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
             }.launchIn(scope)
+            // Forgotten workouts end on their own, so phone and watch stop showing them.
+            scope.launch {
+                while (true) {
+                    if (App.store.closeIdleWorkout()) closedNotice(this@WorkoutService)
+                    delay(5 * 60_000L)
+                }
+            }
             restJob = App.store.data.map { it.active?.restEndsAt }.distinctUntilChanged().onEach { end ->
-                if (end == null) return@onEach
+                if (end == null) { if (wake.isHeld) wake.release(); return@onEach }
+                val left = (end - System.currentTimeMillis()).coerceAtLeast(0)
+                wake.acquire(left + 10_000)
                 scope.launch {
-                    delay((end - System.currentTimeMillis()).coerceAtLeast(0))
+                    delay(left)
                     val d = App.store.data.value
                     if (d.active?.restEndsAt != end) return@launch
                     // Swap the finished countdown for the next set, so the chronometer never runs below zero.
                     getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
                     if (!Foreground.visible) restOver(d)
+                    if (wake.isHeld) wake.release()
                 }
             }.launchIn(scope)
         }
@@ -143,6 +169,8 @@ class WorkoutService : Service() {
             .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_WORKOUT)
             .setColor(0xFFDB9062.toInt())
+        // Android 16: a live update, shown like a timer on the lock screen and in the status bar.
+        if (Build.VERSION.SDK_INT >= 36) b.setRequestPromotedOngoing(true)
         if (w == null) return b.setContentTitle("Mauve Fit").build()
         return if (resting) b.setContentTitle(L("Pause · ${w.name}", "Rest · ${w.name}"))
             .setContentText(L("Als Nächstes: ${s.exercise}", "Up next: ${s.exercise}"))
@@ -173,12 +201,15 @@ class WorkoutService : Service() {
             .setContentIntent(openWorkout(this))
             .setAutoCancel(true)
             .setTimeoutAfter(60_000)
+            // A timer: Android treats it like one (do-not-disturb rules, lock screen, the watch).
+            .setCategory(Notification.CATEGORY_ALARM)
             .setColor(0xFFDB9062.toInt())
             .build()
         getSystemService(NotificationManager::class.java).notify(ID_REST, n)
     }
 
     override fun onDestroy() {
+        if (wake.isHeld) wake.release()
         scope.cancel()
         super.onDestroy()
     }
@@ -211,6 +242,19 @@ class WorkoutService : Service() {
             } catch (_: SecurityException) {
                 postStarted(context, d)
             }
+        }
+
+        /** Tells the user a forgotten workout was closed, and where the sets went. */
+        fun closedNotice(context: Context) {
+            val n = Notification.Builder(context, CH_REMIND)
+                .setSmallIcon(R.drawable.ic_stat_fit)
+                .setContentTitle(L("Training automatisch beendet", "Workout ended automatically"))
+                .setContentText(L("Seit 3 Stunden nichts mehr eingetragen. Erledigte Sätze sind im Verlauf.", "Nothing logged for 3 hours. Done sets are in your history."))
+                .setContentIntent(openApp(context))
+                .setAutoCancel(true)
+                .setColor(0xFFDB9062.toInt())
+                .build()
+            runCatching { context.getSystemService(NotificationManager::class.java).notify(ID_REMIND, n) }
         }
 
         private fun postStarted(context: Context, d: AppData) {

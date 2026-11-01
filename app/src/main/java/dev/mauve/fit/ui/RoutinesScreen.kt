@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.ContentCopy
@@ -212,6 +213,7 @@ fun restLabel(sec: Int): String = if (sec < 60) "$sec s" else "%d:%02d".format(s
 @Composable
 fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     var replacing by remember { mutableStateOf<Int?>(null) }
+    var noting by remember { mutableStateOf<String?>(null) }
     if (id == "new") {
         LaunchedEffect(Unit) {
             val r = Routine(name = L("Neuer Plan", "New plan"))
@@ -221,6 +223,7 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
         return
     }
     val r = data.routines.firstOrNull { it.id == id } ?: return
+    noting?.let { id -> NoteDialog(id, data.exerciseNotes[id].orEmpty()) { noting = null } }
     replacing?.let { i ->
         r.exercises.getOrNull(i)?.let { p ->
             SwapDialog(p.exerciseId, data, L("Übung ersetzen", "Replace exercise"), onPick = { App.store.replaceInRoutine(r.id, i, it); replacing = null }) { replacing = null }
@@ -240,7 +243,7 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     ) {
         stickyHeader {
             Row(
-                Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp),
+                Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
@@ -276,10 +279,18 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Thumb(e, 54.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text(
-                        e?.title ?: p.exerciseId, Modifier.weight(1f).clickable { nav.navigate("exercise/${p.exerciseId}") },
-                        style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
+                    // The exercise's own note (seat height, grip...) sits right under its name.
+                    val note = data.exerciseNotes[p.exerciseId].orEmpty()
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            e?.title ?: p.exerciseId, Modifier.clickable { nav.navigate("exercise/${p.exerciseId}") },
+                            style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        )
+                        if (note.isNotBlank()) Text(
+                            note, Modifier.padding(top = 2.dp).clickable { noting = p.exerciseId },
+                            color = Ink.accent, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     // Reorder and remove live in one menu so the name keeps its room.
                     var menu by remember { mutableStateOf(false) }
                     Box {
@@ -294,6 +305,8 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                                 { menu = false; Haptics.click(); save { it.copy(exercises = it.exercises.toggleSupersetWithNext(i)) } },
                                 leadingIcon = { Icon(if (linked) Icons.Rounded.LinkOff else Icons.Rounded.Link, null) },
                             )
+                            DropdownMenuItem({ Text(L("Notiz", "Note")) }, { menu = false; noting = p.exerciseId },
+                                leadingIcon = { Icon(Icons.Rounded.EditNote, null) })
                             DropdownMenuItem({ Text(L("Ersetzen", "Replace")) }, { menu = false; replacing = i },
                                 leadingIcon = { Icon(Icons.Rounded.SwapHoriz, null) })
                             DropdownMenuItem({ Text(L("Entfernen", "Remove"), color = Ink.red) }, {

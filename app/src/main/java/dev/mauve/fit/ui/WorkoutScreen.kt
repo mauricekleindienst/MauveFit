@@ -483,7 +483,7 @@ private fun NoteLine(note: String, onEdit: () -> Unit) {
 
 /** Edits the exercise's setup note; it stays with the exercise for every later workout. */
 @Composable
-private fun NoteDialog(exerciseId: String, initial: String, onDismiss: () -> Unit) {
+fun NoteDialog(exerciseId: String, initial: String, onDismiss: () -> Unit) {
     var text by remember { mutableStateOf(initial) }
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }

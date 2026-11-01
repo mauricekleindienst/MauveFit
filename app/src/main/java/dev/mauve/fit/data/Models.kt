@@ -66,7 +66,12 @@ data class Workout(
     /** How it felt (0 = not rated, 1 easy, 2 good, 3 hard) and a free note, set on the summary. */
     val feel: Int = 0,
     val note: String = "",
+    /** Last time anything changed in the running workout; 0 for workouts saved before it existed. */
+    val lastActivityAt: Long = 0,
 ) {
+    /** When the workout was last touched, falling back to its start. */
+    val lastActive: Long get() = lastActivityAt.takeIf { it > 0 } ?: startedAt
+
     /** Completed working sets (warm-ups excluded). */
     val doneSets: List<Pair<String, SetEntry>>
         get() = entries.flatMap { e -> e.sets.filter { it.done && !it.warmup }.map { e.exerciseId to it } }

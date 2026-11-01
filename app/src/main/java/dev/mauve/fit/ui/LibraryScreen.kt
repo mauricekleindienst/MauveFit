@@ -91,7 +91,7 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
         }
         // Back, search and filters stay pinned while the results scroll underneath.
         stickyHeader {
-            Column(Modifier.fillMaxWidth().background(Ink.bg).padding(top = 8.dp, bottom = 6.dp)) {
+            Column(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 14.dp)) {
                 Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.weight(1f)) { SearchField(query) { query = it } }
                 }

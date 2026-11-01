@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -381,4 +382,17 @@ fun KitPicker(setup: dev.mauve.fit.data.Setup, kit: Set<String>, onChange: (Set<
             }
         }
     }
+}
+
+/**
+ * Backdrop of a pinned header: the page colour, fading out at the bottom so content slides under
+ * it softly. Drawn wider than the header itself, so the list's side padding never shows a hard
+ * edge; the list's own bounds clip it at the screen edges.
+ */
+fun Modifier.stickyScrim(): Modifier = drawBehind {
+    val out = 24.dp.toPx()
+    drawRect(
+        Brush.verticalGradient(0f to Ink.bg, 0.72f to Ink.bg, 1f to Ink.bg.copy(alpha = 0f)),
+        topLeft = Offset(-out, 0f), size = Size(size.width + 2 * out, size.height),
+    )
 }

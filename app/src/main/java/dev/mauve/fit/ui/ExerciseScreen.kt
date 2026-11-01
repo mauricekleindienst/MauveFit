@@ -72,7 +72,7 @@ fun ExerciseScreen(id: String, data: AppData, nav: NavController) {
 
     LazyColumn(Modifier.statusBarsPadding(), contentPadding = PaddingValues(bottom = 40.dp)) {
         stickyHeader {
-            Row(Modifier.fillMaxWidth().background(Ink.bg).padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().stickyScrim().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back")) { nav.popBackStack() }
                 Spacer(Modifier.weight(1f))
                 val fav = id in data.favorites

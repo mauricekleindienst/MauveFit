@@ -97,7 +97,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             ScreenTitle(L("${data.history.size} Trainings", "${data.history.size} workouts"), L("Fortschritt", "Progress"))
         }
         stickyHeader {
-            Box(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Box(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp)) {
             Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
                 listOf(L("Überblick", "Overview"), L("Rekorde", "Records"), L("Erfolge", "Badges"), L("Körper", "Body")).forEachIndexed { i, t ->
                     Box(

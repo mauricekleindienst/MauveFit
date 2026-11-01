@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.system.Haptics
+
 import androidx.compose.runtime.getValue
 
 import androidx.compose.runtime.collectAsState
@@ -91,6 +93,27 @@ fun HomeScreen(data: AppData, nav: NavController) {
 
         // A running workout always comes first.
         data.active?.let { w ->
+            // Open for hours: most likely forgotten, so offer to save or drop it right here.
+            if (System.currentTimeMillis() - w.startedAt > 4 * 60 * 60_000L) item {
+                Card(Modifier.fillMaxWidth()) {
+                    Eyebrow(L("Training noch offen", "Workout still open"), color = Ink.coral)
+                    Text(
+                        L("„${w.name}“ läuft seit ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Speichern, was erledigt ist, oder verwerfen?",
+                            "\"${w.name}\" has been running for ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Save what is done, or discard it?"),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PrimaryButton(L("Speichern", "Save"), Modifier.weight(1f)) {
+                            Haptics.success()
+                            // The real end is unknown; about three minutes per set done keeps the stats honest.
+                            val minutes = (w.doneSets.size * 3).coerceIn(10, 120)
+                            App.store.finishWorkout(w.startedAt + minutes * 60_000L)?.let { nav.navigate("summary/$it") }
+                        }
+                        GhostButton(L("Verwerfen", "Discard"), Modifier.weight(1f)) { Haptics.warn(); App.store.discardWorkout() }
+                    }
+                }
+            }
             item {
                 Card(onClick = { nav.navigate("workout") }, color = Ink.accent) {
                     Row(verticalAlignment = Alignment.CenterVertically) {

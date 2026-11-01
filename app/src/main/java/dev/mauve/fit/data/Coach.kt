@@ -620,4 +620,7 @@ object Coach {
         val reps = (p.reps + phase.extraReps).coerceAtLeast(3)
         return p.copy(sets = sets.coerceIn(1, 10), reps = reps)
     }
+
+    /** A running workout untouched this long is treated as forgotten and closed. */
+    const val IDLE_LIMIT_MS = 3 * 60 * 60_000L
 }

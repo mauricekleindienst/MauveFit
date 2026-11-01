@@ -135,7 +135,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     ) {
         item { ScreenTitle(goal.label, L("Ernährung", "Nutrition")) }
         stickyHeader {
-            Column(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Column(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp)) {
                 Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
                     listOf(L("Heute", "Today"), L("Rezepte", "Recipes"), L("Einkauf", "Shopping")).forEachIndexed { i, t ->
                         Box(

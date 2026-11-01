@@ -9,6 +9,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Keeps the rest countdown on time while the screen is off. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Android 16 live update for the running workout. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- Recovery from watch data: sleep, resting heart rate and HRV, read from Health Connect. -->
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
@@ -25,7 +29,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MauveFit">
+        android:theme="@style/Theme.MauveFit"
+        android:enableOnBackInvokedCallback="false">
 
         <!-- Lets Play services fetch the barcode scanner module at install, not on the first scan. -->
         <meta-data

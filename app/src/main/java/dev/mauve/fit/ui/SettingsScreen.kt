@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.rounded.Favorite
@@ -93,9 +95,16 @@ fun SettingsScreen(data: AppData, nav: NavController) {
     LaunchedEffect(Unit) {
         watch = runCatching { Wearable.getNodeClient(context).connectedNodes.await().firstOrNull()?.displayName }.getOrNull()
     }
-    val notificationsAllowed = Build.VERSION.SDK_INT < 33 ||
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    // Re-checked on every return to the screen, e.g. after allowing them in the system settings.
+    // areNotificationsEnabled also covers notifications switched off for the app as a whole.
+    var notificationsAllowed by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
+    LifecycleResumeEffect(Unit) {
+        notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+        onPauseOrDispose {}
+    }
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
 
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri ?: return@rememberLauncherForActivityResult
@@ -116,7 +125,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         stickyHeader {
-            Row(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp)) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
             }
         }
@@ -254,9 +263,9 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                         color = Ink.coral,
                     )
                     Spacer(Modifier.height(8.dp))
-                    GhostButton(L("Erlauben", "Allow"), Modifier.fillMaxWidth()) {
-                        if (Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        else context.startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName))
+                    GhostButton(L("In den Einstellungen erlauben", "Allow in settings"), Modifier.fillMaxWidth()) {
+                        // After two refusals Android no longer shows the prompt; its settings page always works.
+                        context.startActivity(Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName))
                     }
                     Spacer(Modifier.height(8.dp))
                 }

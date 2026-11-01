@@ -30,8 +30,9 @@
         android:textColor="#FFA6ACB4"
         android:textSize="13sp" />
 
-    <View
-        android:layout_width="0dp"
+    <!-- Spacer: widgets only allow a fixed set of views, and a plain View is not one of them. -->
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 

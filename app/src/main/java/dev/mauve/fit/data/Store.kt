@@ -218,4 +218,33 @@ class Store(context: Context) {
         }
         d.copy(routines = d.routines + copies)
     }
+
+    // Nutrition extras -------------------------------------------------------------
+
+    /** Oldest diary day kept; anything before it is dropped on the next write. */
+    private fun keepFrom() = java.time.LocalDate.now().minusDays(60).toString()
+
+    fun addFood(entry: FoodEntry) = update { d ->
+        val from = keepFrom()
+        d.copy(food = (d.food + entry).filter { it.date >= from })
+    }
+
+    fun deleteFood(id: String) = update { d -> d.copy(food = d.food.filterNot { it.id == id }) }
+
+    /** Adds (or with a negative [ml] removes) water for [date]. */
+    fun addWater(date: String, ml: Int) = update { d ->
+        val from = keepFrom()
+        val total = ((d.water[date] ?: 0) + ml).coerceIn(0, 10_000)
+        d.copy(water = (d.water + (date to total)).filter { (day, v) -> day >= from && v > 0 })
+    }
+
+    fun saveOwnRecipe(r: Nutrition.Recipe) = update { d ->
+        val exists = d.ownRecipes.any { it.id == r.id }
+        d.copy(ownRecipes = if (exists) d.ownRecipes.map { if (it.id == r.id) r else it } else listOf(r) + d.ownRecipes)
+    }
+
+    /** Also takes the recipe out of the meal plan, so the shopping list forgets it. */
+    fun deleteOwnRecipe(id: String) = update { d ->
+        d.copy(ownRecipes = d.ownRecipes.filterNot { it.id == id }, mealPlan = d.mealPlan - id)
+    }
 }

@@ -172,4 +172,22 @@ data class AppData(
     val measurements: List<Measurement> = emptyList(),
     /** Personal setup notes per exercise id (seat height, grip...). */
     val exerciseNotes: Map<String, String> = emptyMap(),
+    /** Food diary and water per day (ISO date to ml), kept for about two months. */
+    val food: List<FoodEntry> = emptyList(),
+    val water: Map<String, Int> = emptyMap(),
+    /** Recipes the user wrote; they work everywhere the built-in ones do. */
+    val ownRecipes: List<Nutrition.Recipe> = emptyList(),
+)
+
+/** One thing eaten on [date] (ISO yyyy-MM-dd); [recipeId] is set when it came from a recipe. */
+@Serializable
+data class FoodEntry(
+    val id: String = newId(),
+    val date: String,
+    val name: String,
+    val kcal: Int,
+    val protein: Int,
+    val carbs: Int = 0,
+    val fat: Int = 0,
+    val recipeId: String? = null,
 )

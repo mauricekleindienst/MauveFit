@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.Edit
+import dev.mauve.fit.data.WeightGoal
 import androidx.compose.ui.text.style.TextAlign
 import dev.mauve.fit.data.Labels
 import androidx.compose.material.icons.rounded.Image
@@ -393,6 +395,7 @@ private fun LazyListScope.body(data: AppData, open: String?, onOpen: (String?) -
             onDelete = App.store::deleteBodyWeight,
         )
     }
+    item(key = "goal") { WeightGoalCard(data) }
     item(key = "photos") { ProgressPhotos() }
     item { Eyebrow(L("Umfänge", "Measurements"), Modifier.padding(top = 8.dp)) }
     Progress.measures.forEach { (kind, label) ->
@@ -625,5 +628,68 @@ private fun Change(cur: Double, prev: Double, percent: Boolean) {
         )
         Spacer(Modifier.width(3.dp))
         Text(text, style = MaterialTheme.typography.labelMedium, color = color, maxLines = 1)
+    }
+}
+
+/** Target weight: progress from the first entry, the recent pace and when the goal is reached at it. */
+@Composable
+private fun WeightGoalCard(data: AppData) {
+    var editing by remember { mutableStateOf(false) }
+    val goal = data.settings.goalWeight
+    val o = WeightGoal.outlook(data.bodyWeights.map { it.at to it.kg }, goal)
+    Card(Modifier.fillMaxWidth(), onClick = { editing = true }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Eyebrow(L("Zielgewicht", "Goal weight"))
+                if (goal <= 0) Text(L("Kein Ziel gesetzt", "No goal set"), style = MaterialTheme.typography.bodyLarge, color = Ink.faint)
+                else Text("${Stats.fmtKg(goal)} kg", style = MaterialTheme.typography.headlineMedium)
+            }
+            RoundButton(Icons.Rounded.Edit, L("Ziel ändern", "Change goal"), size = 48.dp) { editing = true }
+        }
+        if (o != null) {
+            Spacer(Modifier.height(12.dp))
+            Meter(o.progress, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(10.dp))
+            val left = Stats.fmtKg(Stats.roundTo(kotlin.math.abs(o.remaining), 0.1))
+            Text(
+                if (o.reached) L("Ziel erreicht. Halte es oder setz ein neues.", "Goal reached. Hold it or set a new one.")
+                else L("Noch $left kg", "$left kg to go"),
+                style = MaterialTheme.typography.titleMedium, color = if (o.reached) Ink.accent else Ink.text,
+            )
+            o.perWeek?.let { p ->
+                val sign = if (p > 0) "+" else ""
+                Text(L("Tempo: $sign${Stats.fmtKg(Stats.roundTo(p, 0.1))} kg pro Woche", "Pace: $sign${Stats.fmtKg(Stats.roundTo(p, 0.1))} kg a week"), color = Ink.muted)
+            } ?: Text(L("Für ein Tempo braucht es 3 Einträge über mindestens eine Woche.", "A pace needs 3 entries over at least a week."), color = Ink.faint, style = MaterialTheme.typography.bodySmall)
+            o.eta?.let { Text(L("So erreichst du es etwa am ${it.format(dayFmt)}.", "At this pace you get there around ${it.format(dayFmt)}."), color = Ink.muted) }
+            if (!o.reached && o.perWeek != null && o.eta == null) Text(L("Das Tempo geht gerade in die andere Richtung.", "The pace is going the other way right now."), color = Ink.coral, style = MaterialTheme.typography.bodySmall)
+            if (o.tooFast) Text(
+                L("Ziemlich schnell. Etwas langsamer schont Muskeln und Kraft.", "Quite fast. A little slower protects muscle and strength."),
+                color = Ink.coral, style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+    if (editing) {
+        var kg by remember { mutableStateOf(if (goal > 0) Stats.fmtKg(goal) else "") }
+        AlertDialog(
+            onDismissRequest = { editing = false },
+            title = { Text(L("Zielgewicht", "Goal weight")) },
+            text = {
+                OutlinedTextField(kg, { kg = it }, label = { Text("kg") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    kg.replace(',', '.').toDoubleOrNull()?.takeIf { it in 30.0..300.0 }?.let { v ->
+                        Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v) }
+                    }
+                    editing = false
+                }) { Text(L("Speichern", "Save")) }
+            },
+            dismissButton = {
+                if (goal > 0) TextButton(onClick = { App.store.updateSettings { it.copy(goalWeight = 0.0) }; editing = false }) { Text(L("Ziel entfernen", "Remove goal"), color = Ink.red) }
+                else TextButton(onClick = { editing = false }) { Text(L("Abbrechen", "Cancel")) }
+            },
+            containerColor = Ink.raised,
+        )
     }
 }

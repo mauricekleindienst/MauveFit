@@ -193,6 +193,8 @@ data class Settings(
     val blockWeeks: Int = 4,
     /** Lower starting weights on days the watch reports poor recovery. */
     val autoRegulate: Boolean = true,
+    /** Target body weight in kg; 0 = none. */
+    val goalWeight: Double = 0.0,
 )
 
 @Serializable

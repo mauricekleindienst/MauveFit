@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tile picker preview: round black face, rest label, exercise, load and a copper "Set done" chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    <path android:fillColor="#FF000000" android:pathData="M96,0 A96,96 0 1,1 95.99,0 Z" />
+    <!-- heartbeat mark -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFDB9062"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M76,34 L84,34 L86,38 L90,22 L96,36 L102,22 L106,38 L108,34 L116,34" />
+    <!-- exercise line -->
+    <path android:fillColor="#FFF3F3F6" android:pathData="M52,60 h88 a5,5 0 0,1 0,10 h-88 a5,5 0 0,1 0,-10 Z" />
+    <!-- set line -->
+    <path android:fillColor="#FF8C8C9C" android:pathData="M70,80 h52 a3,3 0 0,1 0,6 h-52 a3,3 0 0,1 0,-6 Z" />
+    <!-- load line -->
+    <path android:fillColor="#FFDB9062" android:pathData="M60,98 h72 a7,7 0 0,1 0,14 h-72 a7,7 0 0,1 0,-14 Z" />
+    <!-- set done chip -->
+    <path android:fillColor="#FFDB9062" android:pathData="M64,140 h64 a14,14 0 0,1 0,28 h-64 a14,14 0 0,1 0,-28 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF0B0B0F"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M88,154 L94,160 L106,148" />
+</vector>

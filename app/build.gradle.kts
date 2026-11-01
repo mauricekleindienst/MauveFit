@@ -5,6 +5,8 @@ plugins {
 }
 
 android {
+    // Unit tests run the pure logic on the JVM; Android calls they touch return defaults.
+    testOptions { unitTests.isReturnDefaultValues = true }
     namespace = "dev.mauve.fit"
     compileSdk = 37
 
@@ -62,6 +64,7 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.gifdecoder)
     implementation(libs.health.connect)
+    testImplementation(libs.junit)
 
     // Galaxy Watch sync over the Wear OS data layer.
     implementation(libs.wearable)

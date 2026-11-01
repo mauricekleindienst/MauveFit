@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.data.CsvExport
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.launch
@@ -111,6 +112,12 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         message = runCatching {
             context.contentResolver.openOutputStream(uri)!!.use { it.write(App.store.export().toByteArray()) }
         }.fold({ L("Backup gespeichert", "Backup saved") }, { L("Backup fehlgeschlagen", "Backup failed") })
+    }
+    val csv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        message = runCatching {
+            context.contentResolver.openOutputStream(uri)!!.use { it.write(CsvExport.sets(App.store.data.value, App.repo::get).toByteArray()) }
+        }.fold({ L("CSV gespeichert", "CSV saved") }, { L("CSV-Export fehlgeschlagen", "CSV export failed") })
     }
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
@@ -375,6 +382,13 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                         exporter.launch("mauvefit-${LocalDate.now().format(DateTimeFormatter.ISO_DATE)}.json")
                     }
                     GhostButton(L("Laden", "Restore"), Modifier.weight(1f), Icons.Rounded.Upload) { importer.launch(arrayOf("application/json", "*/*")) }
+                }
+                if (data.history.isNotEmpty()) {
+                    Spacer(Modifier.height(8.dp))
+                    // One row per set, for Excel, Sheets or another app; the backup above stays the way to restore.
+                    GhostButton(L("Verlauf als CSV exportieren", "Export history as CSV"), Modifier.fillMaxWidth(), Icons.Rounded.Download) {
+                        csv.launch("mauvefit-${LocalDate.now().format(DateTimeFormatter.ISO_DATE)}.csv")
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(

@@ -2,6 +2,12 @@ package dev.mauve.fit.ui
 
 import androidx.compose.ui.text.style.TextAlign
 import dev.mauve.fit.data.Labels
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import dev.mauve.fit.data.Motivation
+import dev.mauve.fit.system.ShareImage
+import kotlinx.coroutines.launch
 import java.time.temporal.IsoFields
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.animateContentSize
@@ -225,6 +231,25 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
             Text(L("Nach dem ersten Training steht hier dein bester Satz für jede Übung.", "After your first workout, your best set for every exercise shows up here."), color = Ink.muted)
         }
     }
+    if (records.isNotEmpty()) item(key = "share") {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        GhostButton(L("Als Bild teilen", "Share as image"), Modifier.fillMaxWidth().padding(bottom = 4.dp), Icons.Rounded.Image) {
+            // The four most recent records, with the totals that led there.
+            val card = ShareImage.Card(
+                title = L("Meine Rekorde", "My records"),
+                date = java.time.LocalDate.now().format(DateTimeFormatter.ofPattern(L("EEEE, d. MMMM yyyy", "EEEE, MMMM d, yyyy"), I18n.locale)),
+                stats = listOf(
+                    "${data.history.size}" to L("Trainings", "Workouts"),
+                    "${records.size}" to L("Rekorde", "Records"),
+                    Stats.fmtVolume(data.history.sumOf { it.volume }) to L("Volumen", "Volume"),
+                ),
+                heading = L("Neueste Rekorde", "Latest records"),
+                rows = records.take(4).map { (App.repo[it.exerciseId]?.title ?: it.exerciseId) to ShareImage.setText(it.best) },
+            )
+            scope.launch { runCatching { ShareImage.share(context, card) } }
+        }
+    }
     items(records, key = { "r" + it.exerciseId }) { r ->
         val ex = App.repo[r.exerciseId]
         Card(Modifier.fillMaxWidth(), onClick = { nav.navigate("exercise/${r.exerciseId}") }, padding = PaddingValues(14.dp)) {
@@ -250,6 +275,25 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
 
 private fun LazyListScope.achievements(data: AppData) {
     val list = Progress.achievements(data)
+    item(key = "challenges") {
+        val c = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+                Eyebrow(L("Wochen-Challenges", "Weekly challenges"))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("${data.challengesDone.size}", style = MaterialTheme.typography.headlineLarge, color = Ink.accent)
+                    Spacer(Modifier.width(8.dp))
+                    Text(L("geschafft", "completed"), color = Ink.muted, modifier = Modifier.padding(bottom = 4.dp))
+                }
+                Text(
+                    L("Jeden Montag gibt es eine neue, passend zu deinem Wochenziel.", "A new one every Monday, sized to your weekly goal."),
+                    style = MaterialTheme.typography.bodySmall, color = Ink.muted,
+                )
+            }
+            ChallengeCard(c, data.challengesDone.size)
+            FreezeCard(data)
+        }
+    }
     item {
         Text(L("${list.count { it.unlocked }} von ${list.size} freigeschaltet", "${list.count { it.unlocked }} of ${list.size} unlocked"), color = Ink.muted, modifier = Modifier.padding(vertical = 4.dp))
     }
@@ -275,6 +319,52 @@ private fun LazyListScope.achievements(data: AppData) {
                     }
                 }
             }
+        }
+    }
+}
+
+/** Streak freezes explained: how many are in stock, how they are earned and when the next one comes. */
+@Composable
+private fun FreezeCard(data: AppData) {
+    val streak = Stats.weekStreak(data.history, data.settings.weeklyGoal, data.frozenWeeks)
+    val toNext = Motivation.FREEZE_EVERY - data.streakRun % Motivation.FREEZE_EVERY
+    Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Eyebrow(L("Serie und Joker", "Streak and freezes"), Modifier.weight(1f))
+            Tag(Motivation.freezeLabel(data.freezes), if (data.freezes > 0) Ink.accent else Ink.muted)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            if (streak == 1) L("1 Woche in Folge", "1 week in a row") else L("$streak Wochen in Folge", "$streak weeks in a row"),
+            style = MaterialTheme.typography.titleLarge, color = Ink.coral,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            L(
+                "Alle ${Motivation.FREEZE_EVERY} Wochen in Folge mit erreichtem Wochenziel gibt es einen Joker, höchstens ${Motivation.FREEZE_MAX} auf Vorrat. Verpasst du eine Woche, springt automatisch ein Joker ein und die Serie bleibt.",
+                "Every ${Motivation.FREEZE_EVERY} weeks in a row with your weekly goal met earn a freeze, up to ${Motivation.FREEZE_MAX} in stock. Miss a week and a freeze steps in by itself, so the streak lives on.",
+            ),
+            style = MaterialTheme.typography.bodySmall, color = Ink.muted,
+        )
+        Spacer(Modifier.height(12.dp))
+        if (data.freezes >= Motivation.FREEZE_MAX) {
+            Text(L("Vorrat voll", "Stock full"), style = MaterialTheme.typography.labelLarge, color = Ink.accent)
+        } else {
+            Meter((Motivation.FREEZE_EVERY - toNext) / Motivation.FREEZE_EVERY.toFloat(), Modifier.fillMaxWidth())
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (toNext == 1) L("Noch 1 Woche bis zum nächsten Joker", "1 more week to the next freeze")
+                else L("Noch $toNext Wochen bis zum nächsten Joker", "$toNext more weeks to the next freeze"),
+                style = MaterialTheme.typography.labelMedium, color = Ink.muted,
+            )
+        }
+        if (data.frozenWeeks.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            val n = data.frozenWeeks.size
+            Text(
+                if (n == 1) L("Bisher 1 Woche gerettet", "1 week saved so far") else L("Bisher $n Wochen gerettet", "$n weeks saved so far"),
+                style = MaterialTheme.typography.labelMedium, color = Ink.faint,
+            )
         }
     }
 }

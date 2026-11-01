@@ -86,6 +86,7 @@ import dev.mauve.fit.ui.NutritionScreen
 import dev.mauve.fit.ui.RoutineEditScreen
 import dev.mauve.fit.ui.RoutinesScreen
 import dev.mauve.fit.ui.IntroScreen
+import dev.mauve.fit.ui.introAskedNotifications
 import dev.mauve.fit.ui.QuickWorkoutScreen
 import dev.mauve.fit.ui.SettingsScreen
 import dev.mauve.fit.ui.SummaryScreen
@@ -195,10 +196,10 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
         }
         onOpened()
     }
-    // Ask for notifications once the intro is done: needed for the rest timer in the background.
+    // Ask for notifications once the intro is done (unless it just asked): needed for the rest timer in the background.
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     LaunchedEffect(data.profile.onboarded) {
-        if (data.profile.onboarded && Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (data.profile.onboarded && Build.VERSION.SDK_INT >= 33 && !introAskedNotifications) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     Box(Modifier.fillMaxSize()) {
@@ -225,7 +226,7 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
             screen("quick") { QuickWorkoutScreen(data, nav) }
             screen("tools") { ToolsScreen(data, nav) }
             screen("settings") { SettingsScreen(data, nav) }
-            screen("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
+            screen("intro") { IntroScreen(data.profile, redo = true) { nav.popBackStack() } }
         }
 
         // First run: the intro covers everything until it is finished.

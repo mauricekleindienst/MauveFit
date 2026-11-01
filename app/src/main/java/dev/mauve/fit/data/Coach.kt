@@ -47,13 +47,21 @@ object Coach {
         return s
     }
 
-    private fun candidates(repo: ExerciseRepo, target: String, allow: (String) -> Boolean, level: Level, exclude: Set<String>, main: Boolean = false) =
-        repo.all.filter { it.target == target && allow(it.equipment) && it.id !in exclude }
+    private fun candidates(all: List<Exercise>, target: String, allow: (String) -> Boolean, level: Level, exclude: Set<String>, main: Boolean = false) =
+        all.filter { it.target == target && allow(it.equipment) && it.id !in exclude }
             .sortedByDescending { score(it, level, main) }
 
-    /** Picks for a target with the user's kit; if the kit has nothing for it, the setup alone decides. */
-    private fun candidates(repo: ExerciseRepo, target: String, p: Profile, exclude: Set<String>, main: Boolean = false) =
-        candidates(repo, target, p::allows, p.level, exclude, main).ifEmpty { candidates(repo, target, p.setup::allows, p.level, exclude, main) }
+    private fun candidates(repo: ExerciseRepo, target: String, allow: (String) -> Boolean, level: Level, exclude: Set<String>, main: Boolean = false) =
+        candidates(repo.all, target, allow, level, exclude, main)
+
+    /**
+     * Picks for a target with the user's kit, leaving out what strains a joint they named; if the
+     * kit has nothing for it, the setup alone decides.
+     */
+    private fun candidates(all: List<Exercise>, target: String, p: Profile, exclude: Set<String>, main: Boolean = false): List<Exercise> {
+        val pool = if (p.limits.isEmpty()) all else all.filter { spares(it, p.limits) }
+        return candidates(pool, target, p::allows, p.level, exclude, main).ifEmpty { candidates(pool, target, p.setup::allows, p.level, exclude, main) }
+    }
 
     /** Alternatives for a swap: same target muscle, sorted by how typical they are. */
     fun alternatives(repo: ExerciseRepo, exerciseId: String, allow: (String) -> Boolean, limit: Int = 12): List<Exercise> {
@@ -124,18 +132,40 @@ object Coach {
     }
 
     /** Builds the plans for a profile; each day uses distinct exercises. */
-    fun buildProgram(repo: ExerciseRepo, p: Profile, seed: Int = 0): List<Routine> {
+    fun buildProgram(repo: ExerciseRepo, p: Profile, seed: Int = 0): List<Routine> = buildProgram(repo.all, p, seed)
+
+    /**
+     * Same, from a plain exercise list (the tests use it). Focus areas get a set more and one extra
+     * exercise on days that train them; a chosen session length fits each day to the minutes.
+     */
+    fun buildProgram(all: List<Exercise>, p: Profile, seed: Int = 0): List<Routine> {
         val random = Random(seed)
+        val focused = focusTargets(p)
         return split(p).map { day ->
             val used = mutableSetOf<String>()
-            val exercises = dayTemplates.getValue(day).mapIndexedNotNull { i, target ->
-                val pick = candidates(repo, target, p, used, main = i < 2).take(if (seed == 0) 1 else 4).randomOrNull(random)
-                    ?: return@mapIndexedNotNull null
+            val template = dayTemplates.getValue(day)
+            fun slot(target: String, main: Boolean): Slot? {
+                val pick = candidates(all, target, p, used, main).take(if (seed == 0) 1 else 4).randomOrNull(random) ?: return null
                 used += pick.id
-                val rx = prescription(p.goal, p.level, main = i < 2)
-                PlanExercise(pick.id, rx.sets, if (pick.target == "abs") 15 else rx.reps, rx.rest)
+                val rx = prescription(p.goal, p.level, main)
+                val focus = pick.target in focused
+                val sets = if (focus) (rx.sets + 1).coerceAtMost(6) else rx.sets
+                return Slot(PlanExercise(pick.id, sets, if (pick.target == "abs") 15 else rx.reps, rx.rest), main, focus)
             }
-            Routine(id = "gen-" + day.lowercase().replace(' ', '-'), name = dayName(day), note = note(day), exercises = exercises)
+            val slots = template.mapIndexedNotNull { i, target -> slot(target, main = i < 2) }.toMutableList()
+            // One extra exercise per focus area this day already trains.
+            Focus.entries.filter { it.key in p.focus }.mapNotNull { f -> f.targets.firstOrNull { it in template } }
+                .forEach { target -> slot(target, main = false)?.let { slots += it } }
+            if (p.sessionMinutes > 0) {
+                // Extra exercises come from the focus areas first, then the day's own targets again.
+                val more = (template.filter { it in focused } + template.drop(2) + template.take(2)).iterator()
+                fitToMinutes(slots, p.sessionMinutes) {
+                    var next: Slot? = null
+                    while (next == null && more.hasNext()) next = slot(more.next(), main = false)
+                    next
+                }
+            }
+            Routine(id = "gen-" + day.lowercase().replace(' ', '-'), name = dayName(day), note = note(day), exercises = slots.map { it.ex })
         }
     }
 
@@ -168,7 +198,7 @@ object Coach {
         val targets = regions.getValue(region)
         val used = mutableSetOf<String>()
         val exercises = (0 until count).mapNotNull { i ->
-            val pick = candidates(repo, targets[i % targets.size], p, used).take(5).randomOrNull(random)
+            val pick = candidates(repo.all, targets[i % targets.size], p, used).take(5).randomOrNull(random)
                 ?: return@mapNotNull null
             used += pick.id
             PlanExercise(pick.id, rx.sets, rx.reps, rx.rest)
@@ -734,5 +764,51 @@ object Coach {
             ),
             Tone.Rest,
         )
+    }
+
+    // --- Intro: focus, limits and session length -------------------------------------------
+
+    /** False when [e] strains one of the joints in [limits] ([Limit] keys). */
+    fun spares(e: Exercise, limits: Set<String>): Boolean = limits.none { key -> Limit.of(key)?.hits(e) == true }
+
+    /** Target muscles of the profile's focus areas. */
+    fun focusTargets(p: Profile): Set<String> = p.focus.mapNotNull(Focus::of).flatMap { it.targets }.toSet()
+
+    /** Minutes a list of plan exercises takes, the same estimate the plan cards show. */
+    fun minutes(exercises: List<PlanExercise>): Double = exercises.sumOf { it.sets * (40 + it.restSec) } / 60.0
+
+    private class Slot(var ex: PlanExercise, val main: Boolean, val focus: Boolean)
+
+    private const val MIN_EXERCISES = 3
+    private const val MAX_EXERCISES = 9
+    private const val MAX_SETS = 5
+
+    /**
+     * Grows or shrinks a day to about [target] minutes. Longer: more exercises from [more], then a
+     * set more on the accessories. Shorter: accessories go first (focus kept longest), then sets,
+     * the main lifts last. A step is only taken when it does not overshoot the target.
+     */
+    private fun fitToMinutes(slots: MutableList<Slot>, target: Int, more: () -> Slot?) {
+        val slack = 3.0
+        fun total() = minutes(slots.map { it.ex })
+        fun cost(ex: PlanExercise) = ex.sets * (40 + ex.restSec) / 60.0
+        while (slots.size < MAX_EXERCISES && total() < target - slack) {
+            val next = more() ?: break
+            if (total() + cost(next.ex) > target + slack) break
+            slots += next
+        }
+        while (total() < target - slack) {
+            val s = slots.filter { it.ex.sets < MAX_SETS }.minWithOrNull(compareBy<Slot> { it.main }.thenBy { it.ex.sets }) ?: break
+            if (total() + cost(s.ex.copy(sets = 1)) > target + slack) break
+            s.ex = s.ex.copy(sets = s.ex.sets + 1)
+        }
+        while (total() > target + slack && slots.size > MIN_EXERCISES) {
+            val i = slots.indexOfLast { !it.main && !it.focus }.takeIf { it >= 0 } ?: slots.indexOfLast { !it.main }.takeIf { it >= 0 } ?: break
+            slots.removeAt(i)
+        }
+        while (total() > target + slack) {
+            val s = slots.filter { it.ex.sets > 2 }.maxWithOrNull(compareBy<Slot> { !it.main }.thenBy { it.ex.sets }) ?: break
+            s.ex = s.ex.copy(sets = s.ex.sets - 1)
+        }
     }
 }

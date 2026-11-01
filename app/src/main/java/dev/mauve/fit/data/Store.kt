@@ -57,8 +57,8 @@ class Store(context: Context) {
         val plan = routine?.let { if (short) Coach.shortVersion(it) else it }
         val entries = plan?.exercises.orEmpty().map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps)
-            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) })
-        }
+            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset)
+        }.withSupersetsCleaned()
         d.copy(active = Workout(name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries))
     }
 
@@ -191,4 +191,21 @@ class Store(context: Context) {
     fun deleteWorkout(id: String) = update { d -> d.copy(history = d.history.filterNot { it.id == id }) }
 
     fun updateSettings(block: (Settings) -> Settings) = update { it.copy(settings = block(it.settings)) }
+
+    // --- Training extras ---------------------------------------------------------
+
+    /** Stores the setup note for an exercise; a blank note removes it. */
+    fun setExerciseNote(exerciseId: String, note: String) = update { d ->
+        d.copy(exerciseNotes = if (note.isBlank()) d.exerciseNotes - exerciseId else d.exerciseNotes + (exerciseId to note))
+    }
+
+    /** Adds the plans of a template pack as new, independent copies. */
+    fun addTemplate(pack: Templates.Pack) = update { d ->
+        val copies = pack.routines().map { r ->
+            // Fresh superset ids too, so two copies of one pack never share a group.
+            val ids = r.exercises.mapNotNull { it.superset }.distinct().associateWith { newId() }
+            r.copy(id = newId(), exercises = r.exercises.map { it.copy(superset = it.superset?.let(ids::get)) })
+        }
+        d.copy(routines = d.routines + copies)
+    }
 }

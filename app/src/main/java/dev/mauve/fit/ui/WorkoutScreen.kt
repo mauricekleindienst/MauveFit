@@ -8,9 +8,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,10 +42,14 @@ import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.SwapHoriz
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -82,7 +88,9 @@ import dev.mauve.fit.data.ExerciseEntry
 import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Labels
 import dev.mauve.fit.data.SetEntry
+import dev.mauve.fit.data.SetType
 import dev.mauve.fit.data.Stats
+import dev.mauve.fit.data.Supersets
 import dev.mauve.fit.data.Workout
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.delay
@@ -146,10 +154,19 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
             }
             // One segment per exercise; fill shows completed sets.
             Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                val groups = w.entries.map { it.superset }
                 w.entries.forEachIndexed { i, e ->
                     val done = e.sets.count { it.done } / e.sets.size.coerceAtLeast(1).toFloat()
-                    Box(Modifier.weight(1f).height(18.dp).clickable { Haptics.tick(); scope.launch { pager.animateScrollToPage(i) } }, contentAlignment = Alignment.Center) {
+                    Column(
+                        Modifier.weight(1f).height(18.dp).clickable { Haptics.tick(); scope.launch { pager.animateScrollToPage(i) } },
+                        verticalArrangement = Arrangement.Center,
+                    ) {
                         Meter(done, Modifier.fillMaxWidth(), if (i == pager.currentPage) Ink.accent else Ink.accent.copy(alpha = 0.55f))
+                        // Superset members share a mauve rail under their segments.
+                        if (Supersets.members(groups, i) != null) {
+                            Spacer(Modifier.height(3.dp))
+                            Box(Modifier.fillMaxWidth().height(3.dp).clip(Pill).background(Ink.mauve))
+                        }
                     }
                 }
             }
@@ -161,20 +178,30 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
                     total = w.entries.size,
                     entry = w.entries[page],
                     data = data,
+                    superset = supersetInfo(w, page),
                     onChange = { block -> updateEntry(page, block) },
-                    onSetDone = { _ ->
+                    onSetDone = { warmup ->
                         // The coach sets the rest: short after warm-ups, longer after a set that fell short.
-                        val entry = App.store.data.value.active?.entries?.getOrNull(page) ?: w.entries[page]
+                        val entries = App.store.data.value.active?.entries ?: w.entries
+                        val entry = entries.getOrNull(page) ?: w.entries[page]
                         val set = entry.sets.lastOrNull { it.done } ?: entry.sets.first()
-                        val rest = Coach.restFor(entry, set)
-                        App.store.updateActive {
-                            it.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)
+                        // In a superset the partner comes next without rest; the rest follows the round.
+                        val next = if (warmup) null else Supersets.afterSet(entries, page)
+                        if (next == null || next.rest) {
+                            val rest = Coach.restFor(entry, set)
+                            App.store.updateActive {
+                                it.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)
+                            }
                         }
+                        if (next != null && next.page != page) scope.launch { delay(400); pager.animateScrollToPage(next.page) }
                     },
                     onSwap = { id -> App.store.swapExercise(page, id) },
                     onWarmup = { App.store.addWarmups(page) },
                     onAllDone = {
-                        scope.launch { delay(500); pager.animateScrollToPage(page + 1) }
+                        // Superset pages move on by themselves in onSetDone.
+                        if (Supersets.members(w.entries.map { it.superset }, page) == null) {
+                            scope.launch { delay(500); pager.animateScrollToPage(page + 1) }
+                        }
                     },
                     onOpen = { nav.navigate("exercise/${w.entries[page].exerciseId}") },
                     onRemove = {
@@ -218,6 +245,7 @@ private fun ExercisePage(
     total: Int,
     entry: ExerciseEntry,
     data: AppData,
+    superset: SupersetInfo?,
     onChange: ((ExerciseEntry) -> ExerciseEntry) -> Unit,
     onSetDone: (warmup: Boolean) -> Unit,
     onAllDone: () -> Unit,
@@ -235,6 +263,8 @@ private fun ExercisePage(
     val tip = remember(history, entry.exerciseId) { Coach.exerciseTip(history, entry.exerciseId, targetReps, bodyweight) }
     var editing by remember { mutableStateOf<Int?>(null) }
     var swapping by remember { mutableStateOf(false) }
+    var noting by remember { mutableStateOf(false) }
+    val note = data.exerciseNotes[entry.exerciseId].orEmpty()
     val current = entry.sets.indexOfFirst { !it.done }
     // Weight advice after a set that clearly over- or undershot its target; hidden once applied or dismissed.
     val advice = Coach.setAdvice(entry, step)
@@ -262,6 +292,7 @@ private fun ExercisePage(
         item {
             ExerciseMedia(e, Modifier.fillMaxWidth().height(mediaStageHeight()).clickable(onClick = onOpen), corner = 28.dp)
             Spacer(Modifier.height(16.dp))
+            superset?.let { SupersetBadge(it) }
             Eyebrow(
                 L(
                     "Übung ${index + 1} von $total · ${e?.let { Labels.muscle(it.target) } ?: ""}",
@@ -274,10 +305,13 @@ private fun ExercisePage(
                 L("Letztes Mal: ", "Last time: ") + last.joinToString("  ") { if (bodyweight) "${it.reps}" else "${Stats.fmtKg(it.weight)}×${it.reps}" },
                 color = Ink.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp),
             )
+            // The personal setup note sits right under the name, so it is read before the first set.
+            if (note.isNotBlank()) NoteLine(note) { noting = true }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ActionChip(L("Tauschen", "Swap"), Icons.Rounded.SwapHoriz) { swapping = true }
                 if (canWarmUp) ActionChip(L("Aufwärmen", "Warm-up"), Icons.Rounded.LocalFireDepartment, onWarmup)
+                if (note.isBlank()) ActionChip(L("Notiz", "Note"), Icons.Rounded.EditNote) { noting = true }
             }
             Spacer(Modifier.height(12.dp))
             CoachLine(tip)
@@ -300,11 +334,11 @@ private fun ExercisePage(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val label = if (s.warmup) "W" else "${entry.sets.take(i + 1).count { !it.warmup }}"
-                Text(label, Modifier.width(36.dp), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), color = when {
-                    s.warmup -> Ink.mauve
-                    s.done -> Ink.accent
-                    else -> Ink.muted
-                })
+                SetLabel(
+                    label, s,
+                    onType = { warmup, type -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(warmup = warmup, type = type) }) } },
+                    onRpe = { rpe -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(rpe = rpe) }) } },
+                )
                 if (!bodyweight) ValueCell(Stats.fmtKg(s.weight), Modifier.weight(1f),
                     onMinus = { edit(i, weight = (s.weight - step).coerceAtLeast(0.0)) },
                     onPlus = { edit(i, weight = s.weight + step) },
@@ -360,7 +394,7 @@ private fun ExercisePage(
         item {
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Add) {
-                    onChange { en -> en.copy(sets = en.sets + (en.sets.lastOrNull()?.copy(done = false) ?: SetEntry(reps = 10))) }
+                    onChange { en -> en.copy(sets = en.sets + (en.sets.lastOrNull()?.copy(done = false, type = SetType.Normal, rpe = 0) ?: SetEntry(reps = 10))) }
                 }
                 if (entry.sets.size > 1) GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Remove) {
                     onChange { en -> en.copy(sets = en.sets.dropLast(1)) }
@@ -370,6 +404,7 @@ private fun ExercisePage(
     }
 
     if (swapping) SwapDialog(entry.exerciseId, data, onPick = { onSwap(it); swapping = false }) { swapping = false }
+    if (noting) NoteDialog(entry.exerciseId, note) { noting = false }
 
     editing?.let { i ->
         val s = entry.sets.getOrNull(i) ?: return@let
@@ -400,6 +435,139 @@ private fun ExercisePage(
             dismissButton = { TextButton(onClick = { editing = null }) { Text(L("Abbrechen", "Cancel")) } },
             containerColor = Ink.raised,
         )
+    }
+}
+
+/** Where an exercise sits in its superset: "A1" and the names of the exercises it alternates with. */
+private data class SupersetInfo(val label: String, val partners: List<String>)
+
+private fun supersetInfo(w: Workout, index: Int): SupersetInfo? {
+    val groups = w.entries.map { it.superset }
+    val run = Supersets.members(groups, index) ?: return null
+    val label = Supersets.label(groups, index) ?: return null
+    return SupersetInfo(label, run.filter { it != index }.map { App.repo[w.entries[it].exerciseId]?.title ?: w.entries[it].exerciseId })
+}
+
+@Composable
+private fun SupersetBadge(info: SupersetInfo) {
+    Row(
+        Modifier.padding(bottom = 6.dp).clip(Pill).background(Ink.mauve.copy(alpha = 0.15f)).padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Link, null, tint = Ink.mauve, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            L("Supersatz ${info.label} · im Wechsel mit ${info.partners.joinToString()}", "Superset ${info.label} · alternate with ${info.partners.joinToString()}"),
+            style = MaterialTheme.typography.labelMedium, color = Ink.mauve, maxLines = 1, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun NoteLine(note: String, onEdit: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surface)
+            .clickable { Haptics.click(); onEdit() }.padding(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(Icons.Rounded.EditNote, L("Notiz bearbeiten", "Edit note"), tint = Ink.accent, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(note, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Edits the exercise's setup note; it stays with the exercise for every later workout. */
+@Composable
+private fun NoteDialog(exerciseId: String, initial: String, onDismiss: () -> Unit) {
+    var text by remember { mutableStateOf(initial) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L("Notiz zur Übung", "Exercise note")) },
+        text = {
+            OutlinedTextField(
+                text, { text = it }, Modifier.fillMaxWidth().focusRequester(focus),
+                placeholder = { Text(L("Sitzhöhe, Griff, Einstellungen", "Seat height, grip, settings")) },
+                minLines = 2, maxLines = 5,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { Haptics.click(); App.store.setExerciseNote(exerciseId, text.trim()); onDismiss() }) { Text(L("Speichern", "Save")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
+}
+
+/** Short marker under the set number: D for drop sets, F (German V) for sets to failure. */
+private fun typeMark(s: SetEntry): String? = when {
+    s.warmup -> null
+    s.type == SetType.Drop -> "D"
+    s.type == SetType.Failure -> L("V", "F")
+    else -> null
+}
+
+/** What each RPE means in reps left in reserve. */
+private fun rpeHint(rpe: Int): String = when (rpe) {
+    6 -> L("4 oder mehr Wiederholungen übrig", "4 or more reps left")
+    7 -> L("3 Wiederholungen übrig", "3 reps left")
+    8 -> L("2 Wiederholungen übrig", "2 reps left")
+    9 -> L("1 Wiederholung übrig", "1 rep left")
+    10 -> L("Nichts mehr übrig", "Nothing left")
+    else -> L("Wie schwer war der Satz?", "How hard was the set?")
+}
+
+/** Set number with its type and RPE markers; a tap or long-press opens the menu to change them. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SetLabel(number: String, s: SetEntry, onType: (warmup: Boolean, type: SetType) -> Unit, onRpe: (Int) -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Box(Modifier.width(36.dp)) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                .combinedClickable(onLongClick = { Haptics.heavy(); menu = true }) { Haptics.click(); menu = true }
+                .padding(vertical = 2.dp),
+        ) {
+            Text(number, style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), maxLines = 1, color = when {
+                s.warmup -> Ink.mauve
+                s.done -> Ink.accent
+                else -> Ink.muted
+            })
+            val marks = listOfNotNull(typeMark(s), s.rpe.takeIf { it > 0 }?.let { "@$it" })
+            if (marks.isNotEmpty()) Text(marks.joinToString(" "), style = MaterialTheme.typography.labelSmall, color = Ink.coral, maxLines = 1)
+        }
+        DropdownMenu(menu, { menu = false }, containerColor = Ink.raised) {
+            listOf(
+                Triple(L("Normaler Satz", "Normal set"), false, SetType.Normal),
+                Triple(L("Aufwärmsatz", "Warm-up set"), true, SetType.Normal),
+                Triple(L("Dropsatz", "Drop set"), false, SetType.Drop),
+                Triple(L("Bis zum Versagen", "To failure"), false, SetType.Failure),
+            ).forEach { (text, warmup, type) ->
+                val selected = s.warmup == warmup && (warmup || s.type == type)
+                DropdownMenuItem(
+                    { Text(text, fontWeight = if (selected) FontWeight.Bold else null) },
+                    { Haptics.tick(); onType(warmup, type); menu = false },
+                    leadingIcon = { if (selected) Icon(Icons.Rounded.Check, null, tint = Ink.accent) else Spacer(Modifier.size(24.dp)) },
+                )
+            }
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(L("Anstrengung (RPE)", "Effort (RPE)"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (listOf(0) + (6..10)).forEach { r ->
+                        val on = s.rpe == r
+                        Box(
+                            Modifier.size(34.dp).clip(Pill).background(if (on) Ink.accent else Ink.surface)
+                                .clickable { Haptics.tick(); onRpe(r); menu = false },
+                            contentAlignment = Alignment.Center,
+                        ) { Text(if (r == 0) "–" else "$r", color = if (on) Ink.bg else Ink.text, style = MaterialTheme.typography.labelLarge) }
+                    }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(rpeHint(s.rpe), style = MaterialTheme.typography.bodySmall, color = Ink.muted)
+            }
+        }
     }
 }
 

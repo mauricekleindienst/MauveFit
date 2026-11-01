@@ -202,7 +202,7 @@ object Coach {
     fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int): Double {
         val step = d.settings.weightStep
         val last = Stats.lastSets(d.history, exerciseId)
-        var w = if (last.isNotEmpty()) Stats.suggestWeight(last, reps, step) else {
+        var w = if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
             val e = repo[exerciseId]
             val similar = Stats.records(d.history).filter { r ->
                 val o = repo[r.exerciseId]
@@ -234,11 +234,14 @@ object Coach {
 
     /**
      * After a working set: clearly more reps than planned means the weight is too light, clearly
-     * fewer means too heavy. Suggests a change for the sets still to come.
+     * fewer means too heavy. A rated set (RPE) speaks for itself and comes first.
+     * Suggests a change for the sets still to come.
      */
     fun setAdvice(entry: ExerciseEntry, step: Double): SetAdvice? {
         val done = entry.sets.lastOrNull { it.done && !it.warmup } ?: return null
-        if (entry.sets.none { !it.done && !it.warmup } || done.weight <= 0 || done.target <= 0) return null
+        if (entry.sets.none { !it.done && !it.warmup } || done.weight <= 0) return null
+        rpeAdvice(done, step)?.let { return it }
+        if (done.target <= 0) return null
         val diff = done.reps - done.target
         return when {
             diff >= 3 -> {
@@ -341,6 +344,7 @@ object Coach {
             )
         }
         deloadTip(d)?.let { return it }
+        imbalanceTip(d, repo)?.let { return it }
         balanceTip(d, repo)?.let { return it }
 
         return Tip(
@@ -446,5 +450,110 @@ object Coach {
             allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft, daher ist das Gewicht heute eine Stufe höher.", "You hit every rep last time, so the weight is one step up today."), Tone.Push)
             else -> Tip(L("Festigen", "Consolidate"), L("Letztes Mal knapp. Gleiches Gewicht, Ziel sind alle Wiederholungen sauber.", "Close last time. Same weight, aim for every rep with good form."), Tone.Info)
         }
+    }
+
+    // --- Training extras ---------------------------------------------------------------------
+
+    /**
+     * Next weight from rated sets: RPE 7 or easier left reps in the tank, so go up (two steps if
+     * every rep was hit as well); RPE 10 was all-out, so hold, or step back if reps were missed.
+     * Null when the last session was not rated, then the rep rule decides.
+     */
+    private fun rpeWeight(last: List<SetEntry>, targetReps: Int, step: Double): Double? {
+        val rpe = last.filter { it.rpe > 0 }.maxOfOrNull { it.rpe } ?: return null
+        val top = last.maxOf { it.weight }
+        if (top <= 0) return null
+        val allHit = last.all { it.reps >= targetReps }
+        return when {
+            rpe <= 7 -> top + step * if (allHit) 2 else 1
+            rpe >= 10 -> if (allHit) top else (top - step).coerceAtLeast(0.0)
+            else -> null
+        }
+    }
+
+    private fun rpeAdvice(done: SetEntry, step: Double): SetAdvice? {
+        if (done.rpe <= 0) return null
+        val short = done.target > 0 && done.reps < done.target
+        return when {
+            done.rpe <= 7 && !short -> SetAdvice(
+                L("RPE ${done.rpe}: Da ist noch Luft, etwas mehr Gewicht passt.", "RPE ${done.rpe}: there is room left, a bit more weight fits."), step,
+            )
+            done.rpe >= 10 && short -> SetAdvice(
+                L("RPE 10 und Wiederholungen verpasst: etwas leichter hält die Sätze sauber.", "RPE 10 and reps missed: a little lighter keeps the sets clean."), -step,
+            )
+            else -> null
+        }
+    }
+
+    /** Rear-delt and face-pull moves target the delts but belong to the pulling side. */
+    private fun isPull(e: Exercise) = e.target in setOf("lats", "upper back", "biceps", "traps") ||
+        (e.target == "delts" && listOf("rear", "row", "face pull", "reverse fly").any { it in e.name })
+
+    private fun isPush(e: Exercise) = !isPull(e) && e.target in setOf("pectorals", "triceps", "delts", "serratus anterior")
+
+    private val legMuscles = setOf("quads", "hamstrings", "glutes", "calves", "adductors", "abductors")
+
+    /**
+     * Over the last two weeks: pushing far outweighing pulling (or the reverse), or legs far behind
+     * the upper body (or the reverse). Suggests a fitting exercise for the plan that already trains
+     * that side, so the gap closes without a new plan.
+     */
+    private fun imbalanceTip(d: AppData, repo: ExerciseRepo): Tip? {
+        val since = System.currentTimeMillis() - 14 * Stats.DAY_MS
+        val recent = d.history.filter { it.startedAt >= since }
+        if (recent.size < 3) return null
+        var push = 0
+        var pull = 0
+        var legs = 0
+        recent.forEach { w ->
+            w.entries.forEach { en ->
+                val e = repo[en.exerciseId] ?: return@forEach
+                val sets = en.sets.count { !it.warmup }
+                when {
+                    isPull(e) -> pull += sets
+                    isPush(e) -> push += sets
+                    e.target in legMuscles -> legs += sets
+                }
+            }
+        }
+        val upper = push + pull
+        // Each case: title, body, which exercises qualify, and the muscles a suggestion should hit.
+        data class Gap(val title: String, val body: String, val fits: (Exercise) -> Boolean, val muscles: Set<String>)
+        val gap = when {
+            upper >= 12 && push >= pull * 1.6 && push - pull >= 6 -> Gap(
+                L("Mehr ziehen als drücken", "Pull more than you push"),
+                L("$push Drück- gegen $pull Zugsätze in zwei Wochen. Ein Ausgleich schont die Schultern",
+                    "$push pushing against $pull pulling sets in two weeks. Balancing them protects your shoulders"),
+                ::isPull, setOf("lats", "upper back"),
+            )
+            upper >= 12 && pull >= push * 1.6 && pull - push >= 6 -> Gap(
+                L("Drücken kommt zu kurz", "Pushing is falling behind"),
+                L("$pull Zug- gegen $push Drücksätze in zwei Wochen", "$pull pulling against $push pushing sets in two weeks"),
+                ::isPush, setOf("pectorals", "delts"),
+            )
+            upper >= 16 && legs * 4 < upper -> Gap(
+                L("Beine kommen zu kurz", "Legs are falling behind"),
+                L("$legs Beinsätze gegen $upper für den Oberkörper in zwei Wochen", "$legs leg sets against $upper for the upper body in two weeks"),
+                { it.target in legMuscles }, setOf("quads", "hamstrings", "glutes"),
+            )
+            legs >= 16 && upper * 2 < legs -> Gap(
+                L("Oberkörper kommt zu kurz", "Upper body is falling behind"),
+                L("$upper Oberkörpersätze gegen $legs Beinsätze in zwei Wochen", "$upper upper-body sets against $legs leg sets in two weeks"),
+                { isPush(it) || isPull(it) }, setOf("pectorals", "lats", "upper back"),
+            )
+            else -> return null
+        }
+        // The plan that already trains this side most; otherwise the next one due.
+        val routine = d.routines.filter { it.exercises.isNotEmpty() }
+            .maxByOrNull { r -> r.exercises.count { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
+            ?.takeIf { r -> r.exercises.any { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
+            ?: Stats.nextRoutine(d.routines, d.history, repo) ?: return null
+        val pick = repo.all.filter { it.target in gap.muscles && gap.fits(it) && d.profile.setup.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
+            .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
+        return Tip(
+            gap.title,
+            gap.body + L(". Vorschlag: ${pick.title}.", ". Suggestion: ${pick.title}."),
+            Tone.Push, Action.AddExercise(routine.id, pick.id, routine.name),
+        )
     }
 }

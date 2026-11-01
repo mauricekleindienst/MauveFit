@@ -12,6 +12,8 @@ data class PlanExercise(
     val sets: Int = 3,
     val reps: Int = 10,
     val restSec: Int = 90,
+    /** Consecutive exercises sharing this id form a superset and are trained alternately. */
+    val superset: String? = null,
 )
 
 @Serializable
@@ -31,13 +33,22 @@ data class SetEntry(
     val warmup: Boolean = false,
     /** Reps the plan asked for (0 = unknown); the coach compares it with what was done. */
     val target: Int = 0,
+    /** Drop set or to failure; warm-ups keep using [warmup]. */
+    val type: SetType = SetType.Normal,
+    /** Rate of perceived exertion, 6 to 10 (0 = not rated). */
+    val rpe: Int = 0,
 )
+
+@Serializable
+enum class SetType { Normal, Drop, Failure }
 
 @Serializable
 data class ExerciseEntry(
     val exerciseId: String,
     val restSec: Int = 90,
     val sets: List<SetEntry> = listOf(SetEntry()),
+    /** Superset group taken over from the plan, see [PlanExercise.superset]. */
+    val superset: String? = null,
 )
 
 /** A workout in progress (AppData.active) or finished (AppData.history). */
@@ -153,4 +164,6 @@ data class AppData(
     /** Meal-prep week: recipe id to portions, and ticked shopping items. */
     val mealPlan: Map<String, Int> = emptyMap(),
     val shoppingDone: Set<String> = emptySet(),
+    /** Personal setup notes per exercise id (seat height, grip...). */
+    val exerciseNotes: Map<String, String> = emptyMap(),
 )

@@ -27,6 +27,9 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
+import androidx.compose.material.icons.rounded.LibraryAdd
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,9 +59,15 @@ import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Labels
 import dev.mauve.fit.data.PlanExercise
 import dev.mauve.fit.data.Routine
+import dev.mauve.fit.data.Supersets
+import dev.mauve.fit.data.Templates
+import dev.mauve.fit.data.linkedWithNext
+import dev.mauve.fit.data.toggleSupersetWithNext
+import dev.mauve.fit.data.withSupersetsCleaned
 
 @Composable
 fun RoutinesScreen(data: AppData, nav: NavController) {
+    var chooseTemplate by remember { mutableStateOf(false) }
     LazyColumn(
         Modifier.statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 132.dp),
@@ -128,7 +137,42 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
                 }
             }
         }
+        item {
+            GhostButton(L("Vorlage hinzufügen", "Add template"), Modifier.fillMaxWidth(), Icons.Rounded.LibraryAdd) { chooseTemplate = true }
+        }
     }
+
+    if (chooseTemplate) TemplateDialog(onDismiss = { chooseTemplate = false }) { pack ->
+        App.store.addTemplate(pack)
+        Haptics.success()
+        chooseTemplate = false
+    }
+}
+
+/** Ready-made splits; picking one adds its plans next to the user's own. */
+@Composable
+private fun TemplateDialog(onDismiss: () -> Unit, onPick: (Templates.Pack) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L("Vorlage hinzufügen", "Add template")) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(L("Die Pläne kommen zu deinen dazu, du kannst sie danach frei bearbeiten.", "The plans are added to yours; edit them freely afterwards."), color = Ink.muted)
+                Templates.packs.forEach { pack ->
+                    val plans = remember(pack.key) { pack.routines() }
+                    Card(Modifier.fillMaxWidth(), onClick = { onPick(pack) }, color = Ink.surface, padding = PaddingValues(16.dp)) {
+                        Text(pack.name, style = MaterialTheme.typography.titleLarge)
+                        Text(pack.blurb, color = Ink.muted, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.height(6.dp))
+                        Text(plans.joinToString(" · ") { it.name }, color = Ink.faint, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
 }
 
 /** 90 -> "1:30", 45 -> "45 s". */
@@ -148,7 +192,9 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     }
     val r = data.routines.firstOrNull { it.id == id } ?: return
     var confirmDelete by remember { mutableStateOf(false) }
-    fun save(block: (Routine) -> Routine) = App.store.saveRoutine(block(r))
+    // Moves and removals can break a superset apart; cleaning keeps only real neighbours linked.
+    fun save(block: (Routine) -> Routine) = App.store.saveRoutine(block(r).let { it.copy(exercises = it.exercises.withSupersetsCleaned()) })
+    val groups = r.exercises.map { it.superset }
     fun setAt(i: Int, p: PlanExercise) = save { it.copy(exercises = it.exercises.toMutableList().also { l -> l[i] = p }) }
     fun move(from: Int, to: Int) = save { it.copy(exercises = it.exercises.toMutableList().also { l -> l.add(to, l.removeAt(from)) }) }
 
@@ -183,7 +229,15 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
         }
         itemsIndexed(r.exercises, key = { i, p -> "$i-${p.exerciseId}" }) { i, p ->
             val e = App.repo[p.exerciseId]
+            val linked = r.exercises.linkedWithNext(i)
             Card(padding = PaddingValues(14.dp)) {
+                Supersets.label(groups, i)?.let { label ->
+                    Row(Modifier.padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Link, null, tint = Ink.mauve, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Eyebrow(L("Supersatz $label", "Superset $label"), color = Ink.mauve)
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Thumb(e, 54.dp)
                     Spacer(Modifier.width(12.dp))
@@ -200,6 +254,11 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                                 leadingIcon = { Icon(Icons.Rounded.KeyboardArrowUp, null) })
                             if (i < r.exercises.lastIndex) DropdownMenuItem({ Text(L("Nach unten", "Move down")) }, { menu = false; move(i, i + 1) },
                                 leadingIcon = { Icon(Icons.Rounded.KeyboardArrowDown, null) })
+                            if (i < r.exercises.lastIndex) DropdownMenuItem(
+                                { Text(if (linked) L("Supersatz lösen", "Unlink superset") else L("Mit nächster Übung als Supersatz", "Superset with next")) },
+                                { menu = false; Haptics.click(); save { it.copy(exercises = it.exercises.toggleSupersetWithNext(i)) } },
+                                leadingIcon = { Icon(if (linked) Icons.Rounded.LinkOff else Icons.Rounded.Link, null) },
+                            )
                             DropdownMenuItem({ Text(L("Entfernen", "Remove"), color = Ink.red) }, {
                                 menu = false
                                 save { it.copy(exercises = it.exercises.filterIndexed { j, _ -> j != i }) }
@@ -213,6 +272,10 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                     Stepper(L("Wdh.", "Reps"), "${p.reps}", Modifier.weight(1f), { setAt(i, p.copy(reps = (p.reps - 1).coerceAtLeast(1))) }) { setAt(i, p.copy(reps = p.reps + 1)) }
                     Stepper(L("Pause", "Rest"), restLabel(p.restSec), Modifier.weight(1f), { setAt(i, p.copy(restSec = (p.restSec - 15).coerceAtLeast(0))) }) { setAt(i, p.copy(restSec = p.restSec + 15)) }
                 }
+                if (linked) Text(
+                    L("Im Wechsel mit der nächsten Übung, Pause erst danach", "Alternates with the next exercise, rest comes after it"),
+                    Modifier.padding(top = 10.dp), style = MaterialTheme.typography.bodySmall, color = Ink.mauve,
+                )
             }
         }
         item {

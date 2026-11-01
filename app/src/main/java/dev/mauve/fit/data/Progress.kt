@@ -1,6 +1,7 @@
 package dev.mauve.fit.data
 
 import java.time.Instant
+import java.time.YearMonth
 import java.time.ZoneId
 
 /** Muscle recovery and achievements, both derived from the history. */
@@ -76,5 +77,86 @@ object Progress {
             prev = w
         }
         return best
+    }
+
+    // --- Body measurements, heatmap and monthly recap --------------------------------
+
+    /** Tape measurements tracked in the Body tab, key to label. */
+    val measures get() = linkedMapOf(
+        "waist" to L("Taille", "Waist"),
+        "chest" to L("Brust", "Chest"),
+        "hips" to L("Hüfte", "Hips"),
+        "arm" to L("Oberarm", "Arm"),
+        "thigh" to L("Oberschenkel", "Thigh"),
+    )
+
+    /** Muscles on the heatmap, in body order from top to bottom. */
+    val heatmapMuscles = listOf(
+        "traps", "delts", "pectorals", "lats", "upper back", "biceps", "triceps", "forearms",
+        "abs", "spine", "glutes", "quads", "hamstrings", "adductors", "calves",
+    )
+
+    /** Working sets per heatmap muscle over the last [days] days; untrained muscles count 0. */
+    fun heatmap(history: List<Workout>, repo: ExerciseRepo, days: Int = 28, now: Long = System.currentTimeMillis()): Map<String, Int> {
+        val counts = heatmapMuscles.associateWith { 0 }.toMutableMap()
+        history.takeWhile { now - it.startedAt < days * Stats.DAY_MS }.forEach { w ->
+            w.entries.forEach { e ->
+                val m = repo[e.exerciseId]?.target ?: return@forEach
+                if (m in counts) counts[m] = counts.getValue(m) + e.sets.count { !it.warmup }
+            }
+        }
+        return counts
+    }
+
+    data class MonthRecap(
+        val month: YearMonth,
+        val workouts: Int,
+        val volume: Double,
+        val timeMs: Long,
+        val records: Int,
+        /** Target muscle with the most working sets, or null without workouts. */
+        val topMuscle: String?,
+    )
+
+    /** Recaps for this month and the [count] - 1 months before it, newest first. */
+    fun monthRecaps(history: List<Workout>, repo: ExerciseRepo, count: Int = 3): List<MonthRecap> {
+        val records = recordsPerMonth(history)
+        val byMonth = history.groupBy { YearMonth.from(Stats.day(it.startedAt)) }
+        val now = YearMonth.now()
+        return (0 until count).map { i ->
+            val month = now.minusMonths(i.toLong())
+            val list = byMonth[month].orEmpty()
+            val muscles = mutableMapOf<String, Int>()
+            list.forEach { w ->
+                w.entries.forEach { e ->
+                    repo[e.exerciseId]?.target?.let { m -> muscles[m] = (muscles[m] ?: 0) + e.sets.count { !it.warmup } }
+                }
+            }
+            MonthRecap(
+                month, list.size, list.sumOf { it.volume }, list.sumOf { it.durationMs },
+                records[month] ?: 0, muscles.maxByOrNull { it.value }?.key,
+            )
+        }
+    }
+
+    /**
+     * Records broken per month: each workout that beats an exercise's earlier best counts once
+     * for that exercise. The first time an exercise is done sets the bar and is not a record.
+     */
+    private fun recordsPerMonth(history: List<Workout>): Map<YearMonth, Int> {
+        val best = mutableMapOf<String, Double>()
+        val out = mutableMapOf<YearMonth, Int>()
+        history.reversed().forEach { w ->
+            val month = YearMonth.from(Stats.day(w.startedAt))
+            w.entries.groupBy { it.exerciseId }.forEach { (id, entries) ->
+                val sets = entries.flatMap { it.sets }.filter { !it.warmup }
+                if (sets.isEmpty()) return@forEach
+                val score = sets.maxOf { if (it.weight > 0) Stats.e1rm(it) else it.reps.toDouble() }
+                val prev = best[id]
+                if (prev != null && score > prev) out[month] = (out[month] ?: 0) + 1
+                if (prev == null || score > prev) best[id] = score
+            }
+        }
+        return out
     }
 }

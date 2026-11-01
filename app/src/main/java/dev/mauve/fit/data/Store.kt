@@ -191,4 +191,14 @@ class Store(context: Context) {
     fun deleteWorkout(id: String) = update { d -> d.copy(history = d.history.filterNot { it.id == id }) }
 
     fun updateSettings(block: (Settings) -> Settings) = update { it.copy(settings = block(it.settings)) }
+
+    // Progress extras ---------------------------------------------------------------
+
+    fun addMeasurement(kind: String, cm: Double) = update { d ->
+        d.copy(measurements = listOf(Measurement(System.currentTimeMillis(), kind, cm)) + d.measurements)
+    }
+
+    fun deleteMeasurement(kind: String, at: Long) = update { d ->
+        d.copy(measurements = d.measurements.filterNot { it.kind == kind && it.at == at })
+    }
 }

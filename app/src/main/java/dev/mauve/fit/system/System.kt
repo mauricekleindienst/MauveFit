@@ -1,6 +1,7 @@
 package dev.mauve.fit.system
 
 import android.app.AlarmManager
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -12,6 +13,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.os.Build
 import android.os.IBinder
 import dev.mauve.fit.App
 import dev.mauve.fit.MainActivity
@@ -40,6 +42,7 @@ private const val CH_REST = "rest"
 private const val CH_REST_VIBRATE = "rest_vibrate"
 private const val CH_REST_QUIET = "rest_quiet"
 private const val CH_REMIND = "reminder"
+private const val CH_WORKOUT_ALERT = "workout_alert"
 private const val ID_WORKOUT = 1
 private const val ID_REST = 2
 private const val ID_REMIND = 3
@@ -74,10 +77,20 @@ fun createChannels(context: Context) {
         setSound(null, null)
     })
     nm.createNotificationChannel(NotificationChannel(CH_REMIND, L("Trainingserinnerung", "Workout reminder"), NotificationManager.IMPORTANCE_DEFAULT))
+    nm.createNotificationChannel(NotificationChannel(CH_WORKOUT_ALERT, L("Training gestartet", "Workout started"), NotificationManager.IMPORTANCE_HIGH).apply {
+        description = L("Meldet ein von der Uhr gestartetes Training, solange die App im Hintergrund ist", "Shows a workout started from the watch while the app is in the background")
+    })
 }
 
 private fun openApp(context: Context) = PendingIntent.getActivity(
     context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+)
+
+/** Opens the app straight on the running workout (see MainActivity.EXTRA_OPEN). */
+private fun openWorkout(context: Context) = PendingIntent.getActivity(
+    context, 1,
+    Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP).putExtra(MainActivity.EXTRA_OPEN, "workout"),
     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
 )
 
@@ -103,7 +116,11 @@ class WorkoutService : Service() {
                 if (end == null) return@onEach
                 scope.launch {
                     delay((end - System.currentTimeMillis()).coerceAtLeast(0))
-                    if (App.store.data.value.active?.restEndsAt == end && !Foreground.visible) restOver(App.store.data.value)
+                    val d = App.store.data.value
+                    if (d.active?.restEndsAt != end) return@launch
+                    // Swap the finished countdown for the next set, so the chronometer never runs below zero.
+                    getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
+                    if (!Foreground.visible) restOver(d)
                 }
             }.launchIn(scope)
         }
@@ -121,7 +138,7 @@ class WorkoutService : Service() {
         val resting = w?.restEndsAt?.let { it > System.currentTimeMillis() } == true
         val b = Notification.Builder(this, CH_WORKOUT)
             .setSmallIcon(R.drawable.ic_stat_fit)
-            .setContentIntent(openApp(this))
+            .setContentIntent(openWorkout(this))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setCategory(Notification.CATEGORY_WORKOUT)
@@ -153,7 +170,7 @@ class WorkoutService : Service() {
             .setSmallIcon(R.drawable.ic_stat_fit)
             .setContentTitle(L("Pause vorbei", "Rest over"))
             .setContentText("${s.exercise} · " + if (s.warmup) L("Aufwärmen", "Warm-up") else L("Satz ${s.setNumber} von ${s.setCount}", "Set ${s.setNumber} of ${s.setCount}"))
-            .setContentIntent(openApp(this))
+            .setContentIntent(openWorkout(this))
             .setAutoCancel(true)
             .setTimeoutAfter(60_000)
             .setColor(0xFFDB9062.toInt())
@@ -171,9 +188,45 @@ class WorkoutService : Service() {
         fun follow(context: Context) {
             CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
                 App.store.data.map { it.active != null }.distinctUntilChanged().onEach { active ->
-                    if (active) runCatching { context.startForegroundService(Intent(context, WorkoutService::class.java)) }
+                    if (active) start(context)
+                    // Drops the stand-in notice if the workout ended before the app was opened.
+                    else context.getSystemService(NotificationManager::class.java).cancel(ID_WORKOUT)
                 }.launchIn(this)
             }
+        }
+
+        /**
+         * Starts the service for the active workout. Android 12+ refuses that while the app is in the
+         * background (a workout started from the watch), so a plain notice stands in until the app
+         * comes to the front, where MainActivity calls this again. The service's notification uses
+         * the same id and replaces the notice.
+         */
+        fun start(context: Context) {
+            val d = App.store.data.value
+            if (d.active == null) return
+            try {
+                context.startForegroundService(Intent(context, WorkoutService::class.java))
+            } catch (e: IllegalStateException) {
+                if (Build.VERSION.SDK_INT >= 31 && e is ForegroundServiceStartNotAllowedException) postStarted(context, d)
+            } catch (_: SecurityException) {
+                postStarted(context, d)
+            }
+        }
+
+        private fun postStarted(context: Context, d: AppData) {
+            val w = d.active ?: return
+            val n = Notification.Builder(context, CH_WORKOUT_ALERT)
+                .setSmallIcon(R.drawable.ic_stat_fit)
+                .setContentTitle(L("Training läuft", "Workout running"))
+                .setContentText(L("${w.name} · Tippen, um das Training zu öffnen", "${w.name} · Tap to open the workout"))
+                .setContentIntent(openWorkout(context))
+                .setCategory(Notification.CATEGORY_WORKOUT)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
+                .setColor(0xFFDB9062.toInt())
+                .build()
+            runCatching { context.getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, n) }
         }
     }
 }

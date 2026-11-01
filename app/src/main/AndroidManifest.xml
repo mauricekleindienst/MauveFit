@@ -47,6 +47,19 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home screen widget: next workout and this week's progress. -->
+        <receiver
+            android:name=".widget.NextWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_workout_widget" />
+        </receiver>
+
         <!-- Commands from the Galaxy Watch app (tick set, skip rest, start workout). -->
         <service
             android:name=".watch.WatchCommandService"

@@ -17,6 +17,7 @@ import dev.mauve.fit.system.Reminders
 import dev.mauve.fit.system.WorkoutService
 import dev.mauve.fit.system.createChannels
 import dev.mauve.fit.watch.WatchSync
+import dev.mauve.fit.widget.NextWidget
 import kotlin.concurrent.thread
 
 class App : Application(), SingletonImageLoader.Factory {
@@ -30,6 +31,7 @@ class App : Application(), SingletonImageLoader.Factory {
         Haptics.init(this)
         WorkoutService.follow(this)
         Reminders.follow(this)
+        NextWidget.follow(this)
         thread(name = "exercise-db") {
             repo.all
             WatchSync.start(this)

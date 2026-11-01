@@ -117,6 +117,10 @@ data class Profile(
 @Serializable
 data class BodyWeight(val at: Long, val kg: Double)
 
+/** A tape measurement in cm; [kind] is a key of Progress.measures (waist, chest, hips, arm, thigh). */
+@Serializable
+data class Measurement(val at: Long, val kind: String, val cm: Double)
+
 @Serializable
 data class Settings(
     val weeklyGoal: Int = 3,
@@ -153,4 +157,6 @@ data class AppData(
     /** Meal-prep week: recipe id to portions, and ticked shopping items. */
     val mealPlan: Map<String, Int> = emptyMap(),
     val shoppingDone: Set<String> = emptySet(),
+    /** Body measurements, newest first. */
+    val measurements: List<Measurement> = emptyList(),
 )

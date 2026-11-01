@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Nächstes Training</string>
+    <string name="widget_description">Dein nächstes Training und der Fortschritt dieser Woche</string>
+    <string name="widget_preview_eyebrow">Als Nächstes</string>
+    <string name="widget_preview_title">Oberkörper</string>
+    <string name="widget_preview_count">6 Übungen</string>
+    <string name="widget_preview_week">Diese Woche</string>
+</resources>

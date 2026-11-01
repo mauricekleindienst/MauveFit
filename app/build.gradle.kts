@@ -65,4 +65,7 @@ dependencies {
     // Galaxy Watch sync over the Wear OS data layer.
     implementation(libs.wearable)
     implementation(libs.kotlinx.coroutines.play.services)
+
+    // Home screen widget.
+    implementation(libs.glance.appwidget)
 }

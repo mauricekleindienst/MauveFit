@@ -4,6 +4,7 @@ import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Restaurant
 import android.Manifest
 import android.os.Build
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,6 +13,8 @@ import androidx.compose.runtime.LaunchedEffect
 import dev.mauve.fit.data.L
 import dev.mauve.fit.system.Haptics
 import dev.mauve.fit.system.Foreground
+import dev.mauve.fit.system.WorkoutService
+import androidx.compose.runtime.mutableStateOf
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -95,7 +98,11 @@ private enum class Tab(val route: String, private val de: String, private val en
 }
 
 class MainActivity : ComponentActivity() {
+    /** Screen asked for by a notification ([EXTRA_OPEN]); AppRoot opens it and clears it. */
+    private val openRequest = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (savedInstanceState == null) openRequest.value = intent.getStringExtra(EXTRA_OPEN)
         // Theme and accent are fixed per activity; changing them in the settings recreates it.
         val settings = App.store.data.value.settings
         val systemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -108,14 +115,22 @@ class MainActivity : ComponentActivity() {
         setContent {
             FitTheme {
                 // Surface sets the default content colour, so plain Text is light on the dark background.
-                Surface(color = Ink.bg, contentColor = Ink.text) { AppRoot() }
+                Surface(color = Ink.bg, contentColor = Ink.text) { AppRoot(openRequest.value) { openRequest.value = null } }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.getStringExtra(EXTRA_OPEN)?.let { openRequest.value = it }
     }
 
     override fun onStart() {
         super.onStart()
         Foreground.visible = true
+        // A workout started from the watch in the background only got a stand-in notice; now that
+        // the app is in front, the real foreground service may start.
+        WorkoutService.start(this)
     }
 
     override fun onStop() {
@@ -123,14 +138,26 @@ class MainActivity : ComponentActivity() {
         Foreground.visible = false
         App.store.flush()
     }
+
+    companion object {
+        const val EXTRA_OPEN = "open"
+    }
 }
 
 @Composable
-private fun AppRoot() {
+private fun AppRoot(open: String?, onOpened: () -> Unit) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
     val data by App.store.data.collectAsStateWithLifecycle()
+    // Tapping the workout notification lands on the running workout.
+    LaunchedEffect(open, data.profile.onboarded) {
+        if (open == null || !data.profile.onboarded) return@LaunchedEffect
+        if (open == "workout" && App.store.data.value.active != null && nav.currentDestination?.route != "workout") {
+            nav.navigate("workout") { launchSingleTop = true }
+        }
+        onOpened()
+    }
     // Ask for notifications once the intro is done: needed for the rest timer in the background.
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     LaunchedEffect(data.profile.onboarded) {

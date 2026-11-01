@@ -17,6 +17,8 @@ coil = "3.3.0"
 wearable = "19.0.0"
 wearCompose = "1.4.1"
 healthServices = "1.1.0"
+# Home screen widget; 1.1.x is built with a Kotlin the AGP-embedded 2.2 compiler can read.
+glance = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -46,6 +48,7 @@ kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-cor
 wear-compose-material = { module = "androidx.wear.compose:compose-material", version.ref = "wearCompose" }
 wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
 health-services = { module = "androidx.health:health-services-client", version.ref = "healthServices" }
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

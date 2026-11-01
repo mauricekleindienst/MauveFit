@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ArrowDownward
+import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.EmojiEvents
@@ -46,6 +48,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,6 +76,7 @@ import dev.mauve.fit.data.L
 private val dayFmt get() = DateTimeFormatter.ofPattern(L("EEEE, d. MMMM", "EEEE, MMMM d"), I18n.locale)
 private val shortFmt get() = DateTimeFormatter.ofPattern(L("d. MMM", "MMM d"), I18n.locale)
 private val monthFmt get() = DateTimeFormatter.ofPattern("MMMM yyyy", I18n.locale)
+private val monthNameFmt get() = DateTimeFormatter.ofPattern("LLLL", I18n.locale)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -72,7 +84,9 @@ fun HistoryScreen(data: AppData, nav: NavController) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf<String?>(null) }
     var confirm by remember { mutableStateOf<Workout?>(null) }
-    var addWeight by remember { mutableStateOf(false) }
+    // "weight" or a measurement key while the add dialog is open; the open body card lists its entries.
+    var addFor by remember { mutableStateOf<String?>(null) }
+    var openBody by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         Modifier.statusBarsPadding(),
@@ -102,7 +116,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             }
             1 -> records(data, nav)
             2 -> achievements(data)
-            else -> body(data) { addWeight = true }
+            else -> body(data, openBody, { openBody = it }) { addFor = it }
         }
     }
 
@@ -116,22 +130,30 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             containerColor = Ink.raised,
         )
     }
-    if (addWeight) {
-        var kg by remember { mutableStateOf(data.bodyWeights.firstOrNull()?.let { Stats.fmtKg(it.kg) }.orEmpty()) }
+    addFor?.let { kind ->
+        val weight = kind == "weight"
+        val unit = if (weight) "kg" else "cm"
+        var value by remember(kind) {
+            val last = if (weight) data.bodyWeights.firstOrNull()?.kg else data.measurements.firstOrNull { it.kind == kind }?.cm
+            mutableStateOf(last?.let(Stats::fmtKg).orEmpty())
+        }
         AlertDialog(
-            onDismissRequest = { addWeight = false },
-            title = { Text(L("Körpergewicht", "Body weight")) },
+            onDismissRequest = { addFor = null },
+            title = { Text(if (weight) L("Körpergewicht", "Body weight") else Progress.measures[kind].orEmpty()) },
             text = {
-                OutlinedTextField(kg, { kg = it }, label = { Text("kg") }, singleLine = true,
+                OutlinedTextField(value, { value = it }, label = { Text(unit) }, singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
             },
             confirmButton = {
                 TextButton(onClick = {
-                    kg.replace(',', '.').toDoubleOrNull()?.takeIf { it in 25.0..350.0 }?.let(App.store::addBodyWeight)
-                    addWeight = false
+                    val v = value.replace(',', '.').toDoubleOrNull()
+                    if (weight) v?.takeIf { it in 25.0..350.0 }?.let(App.store::addBodyWeight)
+                    else v?.takeIf { it in 10.0..250.0 }?.let { App.store.addMeasurement(kind, it) }
+                    if (v != null) Haptics.tick()
+                    addFor = null
                 }) { Text(L("Speichern", "Save")) }
             },
-            dismissButton = { TextButton(onClick = { addWeight = false }) { Text(L("Abbrechen", "Cancel")) } },
+            dismissButton = { TextButton(onClick = { addFor = null }) { Text(L("Abbrechen", "Cancel")) } },
             containerColor = Ink.raised,
         )
     }
@@ -257,40 +279,105 @@ private fun LazyListScope.achievements(data: AppData) {
     }
 }
 
-private fun LazyListScope.body(data: AppData, onAdd: () -> Unit) {
-    val list = data.bodyWeights
-    item {
-        Card(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Eyebrow(L("Körpergewicht", "Body weight"))
-                    Text(list.firstOrNull()?.let { "${Stats.fmtKg(it.kg)} kg" } ?: L("Noch kein Eintrag", "No entry yet"), style = MaterialTheme.typography.headlineMedium)
-                    if (list.size >= 2) {
-                        val diff = list.first().kg - list.last().kg
-                        Text(
-                            L(
-                                "${if (diff > 0) "+" else ""}${Stats.fmtKg(Stats.roundTo(diff, 0.1))} kg seit ${Stats.day(list.last().at).format(shortFmt)}",
-                                "${if (diff > 0) "+" else ""}${Stats.fmtKg(Stats.roundTo(diff, 0.1))} kg since ${Stats.day(list.last().at).format(shortFmt)}",
-                            ),
-                            color = Ink.muted,
-                        )
-                    }
+private fun LazyListScope.body(data: AppData, open: String?, onOpen: (String?) -> Unit, onAdd: (String) -> Unit) {
+    item(key = "weight") {
+        TrendCard(
+            L("Körpergewicht", "Body weight"), "kg", data.bodyWeights.map { it.at to it.kg }, open == "weight",
+            chartHeight = 100.dp, onToggle = { onOpen(if (open == "weight") null else "weight") }, onAdd = { onAdd("weight") },
+            onDelete = App.store::deleteBodyWeight,
+        )
+    }
+    item { Eyebrow(L("Umfänge", "Measurements"), Modifier.padding(top = 8.dp)) }
+    Progress.measures.forEach { (kind, label) ->
+        item(key = "m-$kind") {
+            TrendCard(
+                label, "cm", data.measurements.filter { it.kind == kind }.map { it.at to it.cm }, open == kind,
+                chartHeight = 64.dp, onToggle = { onOpen(if (open == kind) null else kind) }, onAdd = { onAdd(kind) },
+                onDelete = { App.store.deleteMeasurement(kind, it) },
+            )
+        }
+    }
+}
+
+/**
+ * Latest value of one body metric with its change since the first entry and a small chart; tapping
+ * the card lists every entry so single ones can be deleted. [entries] are (time, value), newest first.
+ */
+@Composable
+private fun TrendCard(
+    title: String,
+    unit: String,
+    entries: List<Pair<Long, Double>>,
+    open: Boolean,
+    chartHeight: Dp,
+    onToggle: () -> Unit,
+    onAdd: () -> Unit,
+    onDelete: (Long) -> Unit,
+) {
+    Card(Modifier.fillMaxWidth().animateContentSize(), onClick = if (entries.isNotEmpty()) onToggle else null) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Eyebrow(title)
+                Text(entries.firstOrNull()?.let { "${Stats.fmtKg(it.second)} $unit" } ?: L("Noch kein Eintrag", "No entry yet"), style = MaterialTheme.typography.headlineMedium)
+                if (entries.size >= 2) {
+                    val diff = Stats.roundTo(entries.first().second - entries.last().second, 0.1)
+                    val since = Stats.day(entries.last().first).format(shortFmt)
+                    val sign = if (diff > 0) "+" else ""
+                    Text(L("$sign${Stats.fmtKg(diff)} $unit seit $since", "$sign${Stats.fmtKg(diff)} $unit since $since"), color = Ink.muted)
                 }
-                RoundButton(Icons.Rounded.Add, L("Eintragen", "Log weight"), size = 48.dp, onClick = onAdd)
             }
-            if (list.size >= 2) {
-                Spacer(Modifier.height(16.dp))
-                Sparkline(list.reversed().map { it.kg.toFloat() }, Modifier.fillMaxWidth().height(100.dp))
+            RoundButton(Icons.Rounded.Add, L("Eintragen", "Add entry"), size = 48.dp, onClick = onAdd)
+        }
+        if (entries.size >= 2) {
+            Spacer(Modifier.height(16.dp))
+            TrendChart(entries.reversed().map { it.second.toFloat() }, Modifier.fillMaxWidth().height(chartHeight))
+        }
+        if (open) {
+            Spacer(Modifier.height(12.dp))
+            entries.forEach { (at, v) ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(Stats.day(at).format(dayFmt), Modifier.weight(1f), color = Ink.muted)
+                    Text("${Stats.fmtKg(v)} $unit", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Rounded.Close, L("Löschen", "Delete"), tint = Ink.faint, modifier = Modifier.clip(Pill).clickable { Haptics.tick(); onDelete(at) })
+                }
             }
         }
     }
-    items(list, key = { "b" + it.at }) { b ->
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(Stats.day(b.at).format(dayFmt), Modifier.weight(1f), color = Ink.muted)
-            Text("${Stats.fmtKg(b.kg)} kg", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.width(8.dp))
-            Icon(Icons.Rounded.Close, L("Löschen", "Delete"), tint = Ink.faint, modifier = Modifier.clickable { App.store.deleteBodyWeight(b.at) })
+}
+
+/** Line chart with a soft fill below; values oldest first, scaled between their own min and max. */
+@Composable
+private fun TrendChart(values: List<Float>, modifier: Modifier = Modifier) {
+    val accent = Ink.accent
+    Canvas(modifier) {
+        val min = values.min()
+        val range = (values.max() - min).takeIf { it > 0f } ?: 1f
+        val pad = 6.dp.toPx()
+        val pts = values.mapIndexed { i, v ->
+            Offset(
+                pad + i * (size.width - 2 * pad) / (values.size - 1).coerceAtLeast(1),
+                pad + (1 - (v - min) / range) * (size.height - 2 * pad),
+            )
         }
+        val line = Path().apply {
+            moveTo(pts.first().x, pts.first().y)
+            for (i in 1 until pts.size) {
+                val a = pts[i - 1]
+                val b = pts[i]
+                val mx = (a.x + b.x) / 2
+                cubicTo(mx, a.y, mx, b.y, b.x, b.y)
+            }
+        }
+        val area = Path().apply {
+            addPath(line)
+            lineTo(pts.last().x, size.height)
+            lineTo(pts.first().x, size.height)
+            close()
+        }
+        drawPath(area, Brush.verticalGradient(listOf(accent.copy(alpha = 0.22f), accent.copy(alpha = 0f))))
+        drawPath(line, accent, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round))
+        drawCircle(accent, 4.5.dp.toPx(), pts.last())
     }
 }
 
@@ -305,6 +392,8 @@ private fun LazyListScope.overview(data: AppData) {
             Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
         }
     }
+    item { Heatmap(Progress.heatmap(data.history, App.repo)) }
+    item { MonthlyRecap(Progress.monthRecaps(data.history, App.repo)) }
     val muscles = Stats.muscleSets(data.history, App.repo).entries.sortedByDescending { it.value }.take(6)
     if (muscles.isNotEmpty()) item {
         Card(Modifier.fillMaxWidth()) {
@@ -321,4 +410,107 @@ private fun LazyListScope.overview(data: AppData) {
         }
     }
     item { Eyebrow(L("Trainings", "Workouts"), Modifier.padding(top = 8.dp)) }
+}
+
+/** Muscles as tiles, from cold (untrained) to hot (most sets) over the last four weeks. */
+@Composable
+private fun Heatmap(counts: Map<String, Int>) {
+    val max = counts.values.maxOrNull()?.takeIf { it > 0 } ?: 1
+    Card(Modifier.fillMaxWidth()) {
+        Eyebrow(L("Muskel-Heatmap · 28 Tage", "Muscle heatmap · 28 days"))
+        Spacer(Modifier.height(12.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            counts.entries.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { (m, n) ->
+                        val f = n / max.toFloat()
+                        val hot = f > 0.6f
+                        Column(
+                            Modifier.weight(1f).clip(RowShape)
+                                .background(if (n == 0) Ink.raised else Ink.accent.copy(alpha = 0.16f + 0.84f * f))
+                                .padding(horizontal = 10.dp, vertical = 9.dp),
+                        ) {
+                            Text(Labels.muscle(m), style = MaterialTheme.typography.labelMedium, color = if (hot) Ink.bg else Ink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("$n", style = MaterialTheme.typography.titleMedium, color = if (hot) Ink.bg else if (n == 0) Ink.faint else Ink.text)
+                        }
+                    }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(L("Kalt", "Cold"), style = MaterialTheme.typography.labelSmall, color = Ink.faint)
+            Box(
+                Modifier.weight(1f).padding(horizontal = 8.dp).height(6.dp).clip(Pill)
+                    .background(Brush.horizontalGradient(listOf(Ink.raised, Ink.accent.copy(alpha = 0.4f), Ink.accent)))
+            )
+            Text(L("Heiß · ${Stats.sets(max)}", "Hot · ${Stats.sets(max)}"), style = MaterialTheme.typography.labelSmall, color = Ink.faint)
+        }
+    }
+}
+
+/** This month and the last one, each compared with the month before it. */
+@Composable
+private fun MonthlyRecap(recaps: List<Progress.MonthRecap>) {
+    Card(Modifier.fillMaxWidth()) {
+        Eyebrow(L("Monatsrückblick", "Monthly recap"))
+        recaps.zipWithNext().take(2).forEachIndexed { i, (cur, prev) ->
+            Spacer(Modifier.height(if (i == 0) 12.dp else 18.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(cur.month.format(monthNameFmt).replaceFirstChar { it.titlecase(I18n.locale) }, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                if (i == 0) Tag(L("Läuft", "In progress"))
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RecapCell(cur.workouts.toString(), L("Trainings", "Workouts"), cur.workouts.toDouble(), prev.workouts.toDouble(), false, Modifier.weight(1f))
+                RecapCell(Stats.fmtVolume(cur.volume), L("Volumen", "Volume"), cur.volume, prev.volume, true, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RecapCell(if (cur.timeMs > 0) Stats.fmtDuration(cur.timeMs) else "0 min", L("Trainingszeit", "Time trained"), cur.timeMs.toDouble(), prev.timeMs.toDouble(), true, Modifier.weight(1f))
+                RecapCell(cur.records.toString(), L("Neue Rekorde", "New records"), cur.records.toDouble(), prev.records.toDouble(), false, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                cur.topMuscle?.let { L("Meist trainiert: ${Labels.muscle(it)}", "Most trained: ${Labels.muscle(it)}") } ?: L("Noch kein Training", "No workouts yet"),
+                color = Ink.muted, style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun RecapCell(value: String, label: String, cur: Double, prev: Double, percent: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier.clip(RowShape).background(Ink.raised).padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Text(value, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+        Spacer(Modifier.height(6.dp))
+        Change(cur, prev, percent)
+    }
+}
+
+/** Up or down against the month before: a percentage for amounts, the difference for counts. */
+@Composable
+private fun Change(cur: Double, prev: Double, percent: Boolean) {
+    if (cur == prev) {
+        Text(L("Wie im Vormonat", "Same as before"), style = MaterialTheme.typography.labelSmall, color = Ink.faint, maxLines = 1)
+        return
+    }
+    val up = cur > prev
+    val text = when {
+        percent && prev > 0 -> "${abs((cur - prev) / prev * 100).roundToInt()} %"
+        percent -> L("neu", "new")
+        else -> abs(cur - prev).roundToInt().toString()
+    }
+    val color = if (up) Ink.accent else Ink.muted
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            if (up) Icons.Rounded.ArrowUpward else Icons.Rounded.ArrowDownward,
+            if (up) L("Mehr als im Vormonat", "Up on last month") else L("Weniger als im Vormonat", "Down on last month"),
+            tint = color, modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(3.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = color, maxLines = 1)
+    }
 }

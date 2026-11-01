@@ -62,7 +62,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val thisWeek = Stats.workoutsThisWeek(history)
     val volume = Stats.weeklyVolume(history)
     val next = Stats.nextRoutine(data.routines, history, App.repo)
-    val tip = remember(data.history, data.settings) { Coach.homeTip(data, App.repo) }
+    val tip = remember(data.history, data.settings, data.routines) { Coach.homeTip(data, App.repo) }
 
     fun start(r: Routine?) {
         App.store.startWorkout(r)

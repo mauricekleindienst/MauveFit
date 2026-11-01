@@ -318,7 +318,9 @@ private fun TrendCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Eyebrow(title)
-                Text(entries.firstOrNull()?.let { "${Stats.fmtKg(it.second)} $unit" } ?: L("Noch kein Eintrag", "No entry yet"), style = MaterialTheme.typography.headlineMedium)
+                val latest = entries.firstOrNull()
+                if (latest != null) Text("${Stats.fmtKg(latest.second)} $unit", style = MaterialTheme.typography.headlineMedium)
+                else Text(L("Noch kein Eintrag", "No entry yet"), style = MaterialTheme.typography.bodyLarge, color = Ink.faint)
                 if (entries.size >= 2) {
                     val diff = Stats.roundTo(entries.first().second - entries.last().second, 0.1)
                     val since = Stats.day(entries.last().first).format(shortFmt)

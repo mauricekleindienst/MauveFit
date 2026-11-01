@@ -517,7 +517,9 @@ object Insights {
     }
 
     fun sessionLine(s: Sessions, volumeChange: Double?): String {
-        val perWeek = s.count / s.perWeek.size.toDouble().coerceAtLeast(1.0)
+        // Average over the weeks since the first session in the window, not over empty weeks before the app was used.
+        val active = s.perWeek.dropWhile { it.second == 0 }.size
+        val perWeek = s.count / active.toDouble().coerceAtLeast(1.0)
         val freq = L("im Schnitt ${dec(perWeek)} Trainings pro Woche", "${dec(perWeek)} sessions a week on average")
         return when {
             volumeChange == null -> freq.replaceFirstChar { it.uppercase() } + "."

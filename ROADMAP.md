@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.11.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.12.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -31,6 +31,13 @@ Stand: Version 1.11.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - App-Shortcuts am Icon: Training starten, Schnelltraining, Glas Wasser, Werkzeuge
 - Werkzeuge: Intervall-Timer (EMOM, Tabata, eigene), 1RM-, Scheiben- und Aufwärmrechner
 - Zielgewicht mit Tempo, Prognose und Warnung bei zu schnellem Tempo
+
+## Erledigt in 1.12
+
+- Neues Intro in 9 Schritten: Ziel, Erfahrung, Tage und Dauer, Ausstattung, Fokus, Einschränkungen, Körperdaten, Verbinden, Plan; Backup-Wiederherstellung direkt am Start
+- Plan-Generator nutzt Trainingsdauer, Fokus-Muskeln und Gelenk-Einschränkungen
+- Analysen: Kalender-Heatmap, Sätze pro Muskel gegen 10–20-Bereich, Kraftkurven mit Plateau-Erkennung, Einheiten, Rekorde, Ernährung, Körper, Anstrengung
+- Wochenbericht montags als Benachrichtigung und Karte (80 Unit-Tests)
 
 ## Als Nächstes
 

@@ -71,6 +71,7 @@ import androidx.navigation.NavController
 import dev.mauve.fit.system.Haptics
 import dev.mauve.fit.App
 import dev.mauve.fit.data.AppData
+import dev.mauve.fit.data.CardioSession
 import dev.mauve.fit.data.Progress
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.data.Workout
@@ -90,6 +91,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf<String?>(null) }
     var confirm by remember { mutableStateOf<Workout?>(null) }
+    var confirmCardio by remember { mutableStateOf<CardioSession?>(null) }
     // "weight" or a measurement key while the add dialog is open; the open body card lists its entries.
     var addFor by remember { mutableStateOf<String?>(null) }
     var openBody by remember { mutableStateOf<String?>(null) }
@@ -118,7 +120,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
         when (tab) {
             0 -> {
                 overview(data)
-                workouts(data, expanded, { expanded = it }, { confirm = it })
+                workouts(data, expanded, { expanded = it }, { confirm = it }) { confirmCardio = it }
             }
             1 -> records(data, nav)
             2 -> achievements(data)
@@ -133,6 +135,16 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             text = { Text(L("${w.name} vom ${Stats.day(w.startedAt).format(dayFmt)} wird entfernt.", "${w.name} from ${Stats.day(w.startedAt).format(dayFmt)} will be removed.")) },
             confirmButton = { TextButton(onClick = { Haptics.warn(); App.store.deleteWorkout(w.id); confirm = null }) { Text(L("Löschen", "Delete"), color = Ink.red) } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text(L("Abbrechen", "Cancel")) } },
+            containerColor = Ink.raised,
+        )
+    }
+    confirmCardio?.let { s ->
+        AlertDialog(
+            onDismissRequest = { confirmCardio = null },
+            title = { Text(L("Cardio löschen?", "Delete cardio?")) },
+            text = { Text(L("${s.kind.label} vom ${Stats.day(s.at).format(dayFmt)} wird entfernt.", "${s.kind.label} from ${Stats.day(s.at).format(dayFmt)} will be removed.")) },
+            confirmButton = { TextButton(onClick = { Haptics.warn(); App.store.deleteCardio(s.id); confirmCardio = null }) { Text(L("Löschen", "Delete"), color = Ink.red) } },
+            dismissButton = { TextButton(onClick = { confirmCardio = null }) { Text(L("Abbrechen", "Cancel")) } },
             containerColor = Ink.raised,
         )
     }
@@ -165,7 +177,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
     }
 }
 
-private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (String?) -> Unit, onDelete: (Workout) -> Unit) {
+private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (String?) -> Unit, onDelete: (Workout) -> Unit, onDeleteCardio: (CardioSession) -> Unit) {
     item {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat(Stats.fmtVolume(data.history.sumOf { it.volume }), L("bewegt", "lifted"), Modifier.weight(1f), Ink.accent)
@@ -173,15 +185,19 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
             Stat(Stats.fmtDuration(data.history.sumOf { it.durationMs }), L("Zeit", "time"), Modifier.weight(1f))
         }
     }
-    if (data.history.isEmpty()) item {
+    if (data.history.isEmpty() && data.cardio.isEmpty()) item {
         Card(Modifier.fillMaxWidth()) {
             Text(L("Noch keine Trainings", "No workouts yet"), style = MaterialTheme.typography.titleLarge)
             Text(L("Jeder abgehakte Satz landet hier, mit Volumen, Dauer und Rekorden.", "Every set you tick off lands here, with volume, duration and records."), color = Ink.muted)
         }
     }
-    data.history.groupBy { Stats.day(it.startedAt).withDayOfMonth(1) }.forEach { (month, list) ->
+    // Strength workouts and cardio in one timeline, newest first.
+    val timeline = (data.history.map { it.startedAt to it } + data.cardio.map { it.at to it }).sortedByDescending { it.first }.map { it.second }
+    timeline.groupBy { Stats.day(if (it is CardioSession) it.at else (it as Workout).startedAt).withDayOfMonth(1) }.forEach { (month, list) ->
         item(key = "m$month") { Eyebrow(month.format(monthFmt), Modifier.padding(top = 14.dp, bottom = 2.dp)) }
-        items(list, key = { it.id }) { w ->
+        items(list, key = { if (it is CardioSession) "c" + it.id else (it as Workout).id }) { item ->
+            if (item is CardioSession) { CardioRow(item) { onDeleteCardio(item) }; return@items }
+            val w = item as Workout
             val open = expanded == w.id
             Card(Modifier.fillMaxWidth().animateContentSize(), onClick = { onExpand(if (open) null else w.id) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -476,7 +492,10 @@ private fun TrendChart(values: List<Float>, modifier: Modifier = Modifier) {
 
 /** Weekly volume and sets per muscle, above the workout list. */
 private fun LazyListScope.overview(data: AppData) {
-    if (data.history.isEmpty()) return
+    if (data.history.isEmpty()) {
+        if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
+        return
+    }
     val volume = Stats.weeklyVolume(data.history)
     item {
         Card(Modifier.fillMaxWidth()) {
@@ -487,6 +506,7 @@ private fun LazyListScope.overview(data: AppData) {
     }
     item { Heatmap(Progress.heatmap(data.history, App.repo)) }
     item { MonthlyRecap(Progress.monthRecaps(data.history, App.repo)) }
+    if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
     val muscles = Stats.muscleSets(data.history, App.repo).entries.sortedByDescending { it.value }.take(6)
     if (muscles.isNotEmpty()) item {
         Card(Modifier.fillMaxWidth()) {

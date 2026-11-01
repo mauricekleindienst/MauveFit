@@ -18,6 +18,9 @@
         android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault">
 
+        <!-- Ambient mode hooks into the Wear OS shared library when the device has it. -->
+        <uses-library android:name="com.google.android.wearable" android:required="false" />
+
         <!-- Needs the phone app: workouts and plans live there. -->
         <meta-data android:name="com.google.android.wearable.standalone" android:value="false" />
 

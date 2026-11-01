@@ -13,8 +13,8 @@ android {
         applicationId = "dev.mauve.fit"
         minSdk = 30
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.4.1"
+        versionCode = 7
+        versionName = "1.5.0"
     }
 
     buildTypes {
@@ -59,4 +59,6 @@ dependencies {
 
     implementation(libs.wearable)
     implementation(libs.health.services)
+    // Ambient (always-on) support so a running workout stays on screen when the watch dims.
+    implementation(libs.wear.ambient)
 }

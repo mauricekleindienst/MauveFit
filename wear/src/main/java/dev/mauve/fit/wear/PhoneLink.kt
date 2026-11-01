@@ -1,6 +1,7 @@
 package dev.mauve.fit.wear
 
 import android.content.Context
+import androidx.core.net.toUri
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -9,9 +10,13 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.Serializable
@@ -41,6 +46,12 @@ data class WatchState(
 private const val PATH_STATE = "/mauvefit/state"
 private const val PATH_CMD = "/mauvefit/cmd"
 
+/** The state item from any node; only the paired phone publishes it. */
+private val STATE_URI = "wear://*$PATH_STATE".toUri()
+
+/** How far the watch got reaching the phone app. */
+enum class Link { Checking, NoPhone, NoApp, Ready }
+
 /** Follows the phone's published state and sends commands back to it. */
 class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
     private val data = Wearable.getDataClient(context)
@@ -48,22 +59,41 @@ class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
     private val nodes = Wearable.getNodeClient(context)
     private val json = Json { ignoreUnknownKeys = true }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var poll: Job? = null
+
+    /** Node that published the state: the phone running Mauve Fit, so commands go there and nowhere else. */
+    @Volatile private var phoneNode: String? = null
 
     private val _state = MutableStateFlow(WatchState())
     val state: StateFlow<WatchState> = _state
-    private val _connected = MutableStateFlow(true)
-    val connected: StateFlow<Boolean> = _connected
+    private val _link = MutableStateFlow(Link.Checking)
+    val link: StateFlow<Link> = _link
 
     fun connect() {
-        data.addListener(this)
-        scope.launch {
+        data.addListener(this, STATE_URI, DataClient.FILTER_LITERAL)
+        poll?.cancel()
+        poll = scope.launch {
             // Pick up whatever the phone published while the watch app was closed.
-            runCatching { data.dataItems.await().use { buf -> buf.firstOrNull { it.uri.path == PATH_STATE }?.let(::apply) } }
-            _connected.value = runCatching { nodes.connectedNodes.await().isNotEmpty() }.getOrDefault(false)
+            runCatching {
+                data.getDataItems(STATE_URI).await().use { buf -> buf.firstOrNull()?.let(::apply) }
+            }
+            // The node API has no change callback without a declared capability; a slow poll is enough here.
+            while (isActive) {
+                refresh()
+                delay(15_000)
+            }
         }
     }
 
-    fun disconnect() = data.removeListener(this)
+    fun disconnect() {
+        data.removeListener(this)
+        poll?.cancel()
+    }
+
+    fun close() {
+        disconnect()
+        scope.cancel()
+    }
 
     override fun onDataChanged(events: DataEventBuffer) {
         events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == PATH_STATE }.forEach { apply(it.dataItem) }
@@ -72,16 +102,31 @@ class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
     private fun apply(item: DataItem) {
         val raw = DataMapItem.fromDataItem(item).dataMap.getString("json") ?: return
         runCatching { json.decodeFromString(WatchState.serializer(), raw) }.onSuccess {
+            phoneNode = item.uri.host
             _state.value = it
-            _connected.value = true
+            _link.value = Link.Ready
         }
     }
 
-    suspend fun send(cmd: String) {
-        runCatching {
-            val targets = nodes.connectedNodes.await()
-            _connected.value = targets.isNotEmpty()
-            targets.forEach { messages.sendMessage(it.id, PATH_CMD, cmd.toByteArray()).await() }
+    private suspend fun refresh() {
+        val connected = runCatching { nodes.connectedNodes.await() }.getOrNull() ?: return
+        val phone = phoneNode
+        _link.value = when {
+            connected.isEmpty() -> Link.NoPhone
+            phone == null -> Link.NoApp
+            connected.any { it.id == phone } -> Link.Ready
+            // The state came from a phone that is no longer reachable.
+            else -> Link.NoPhone
         }
+    }
+
+    /** Sends [cmd] to the phone; false when it could not be delivered. */
+    suspend fun send(cmd: String): Boolean {
+        val ok = runCatching {
+            val target = phoneNode ?: nodes.connectedNodes.await().let { n -> n.firstOrNull { it.isNearby } ?: n.firstOrNull() }?.id
+            if (target == null) false else { messages.sendMessage(target, PATH_CMD, cmd.toByteArray()).await(); true }
+        }.getOrDefault(false)
+        if (!ok) refresh()
+        return ok
     }
 }

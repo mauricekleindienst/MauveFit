@@ -61,4 +61,10 @@ dependencies {
     implementation(libs.health.services)
     // Ambient (always-on) support so a running workout stays on screen when the watch dims.
     implementation(libs.wear.ambient)
+    // Tile in the watch carousel: current set, rest end time and a quick "Set done".
+    implementation(libs.wear.tiles)
+    implementation(libs.wear.protolayout)
+    implementation(libs.wear.protolayout.material)
+    implementation(libs.wear.protolayout.expression)
+    implementation(libs.concurrent.futures)
 }

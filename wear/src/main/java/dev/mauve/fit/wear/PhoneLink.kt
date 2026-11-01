@@ -54,6 +54,7 @@ enum class Link { Checking, NoPhone, NoApp, Ready }
 
 /** Follows the phone's published state and sends commands back to it. */
 class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
+    private val app = context.applicationContext
     private val data = Wearable.getDataClient(context)
     private val messages = Wearable.getMessageClient(context)
     private val nodes = Wearable.getNodeClient(context)
@@ -62,7 +63,7 @@ class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
     private var poll: Job? = null
 
     /** Node that published the state: the phone running Mauve Fit, so commands go there and nowhere else. */
-    @Volatile private var phoneNode: String? = null
+    @Volatile private var phoneNode: String? = TileCache.node(app)
 
     private val _state = MutableStateFlow(WatchState())
     val state: StateFlow<WatchState> = _state
@@ -104,6 +105,8 @@ class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
         runCatching { json.decodeFromString(WatchState.serializer(), raw) }.onSuccess {
             phoneNode = item.uri.host
             _state.value = it
+            // Keeps the tile in step while the app is open.
+            TileCache.save(app, raw, item.uri.host)
             _link.value = Link.Ready
         }
     }

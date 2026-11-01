@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.10.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.11.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -24,6 +24,13 @@ Stand: Version 1.10.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Kachel für die Uhr, Wochen-Challenges, Streak-Joker, Rekorde als Bild teilen, CSV-Export
 - Trends 2026: Auto-Regulation nach Erholung, Spracheingabe für Sätze, Cardio und Hybrid-Training (auch von der Uhr), zyklusbasiertes Training (optional, nur auf dem Gerät)
 - Unit-Tests für die Trainingslogik (40 Tests)
+
+## Erledigt in 1.11
+
+- Drei Widgets in mehreren Größen: Nächstes Training (2x1 bis 4x3, Start-Knopf), Ernährung heute (Wasser-Knopf), Serie und Erholung
+- App-Shortcuts am Icon: Training starten, Schnelltraining, Glas Wasser, Werkzeuge
+- Werkzeuge: Intervall-Timer (EMOM, Tabata, eigene), 1RM-, Scheiben- und Aufwärmrechner
+- Zielgewicht mit Tempo, Prognose und Warnung bei zu schnellem Tempo
 
 ## Als Nächstes
 

@@ -16,7 +16,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavGraphBuilder
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -131,20 +138,29 @@ private fun AppRoot() {
     }
 
     Box(Modifier.fillMaxSize()) {
-        NavHost(nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize()) {
-            composable(Tab.Home.route) { HomeScreen(data, nav) }
-            composable("library") { LibraryScreen(data, nav, pickFor = null) }
-            composable(Tab.Plans.route) { RoutinesScreen(data, nav) }
-            composable(Tab.History.route) { HistoryScreen(data, nav) }
-            composable(Tab.Nutrition.route) { NutritionScreen(data, nav) }
-            composable("exercise/{id}") { ExerciseScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            composable("routine/{id}") { RoutineEditScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            composable("pick/{target}") { LibraryScreen(data, nav, pickFor = it.arguments?.getString("target")) }
-            composable("workout") { WorkoutScreen(data, nav) }
-            composable("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            composable("quick") { QuickWorkoutScreen(data, nav) }
-            composable("settings") { SettingsScreen(data, nav) }
-            composable("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
+        NavHost(
+            nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize(),
+            // Tabs: the new tab fades in over the old one, which stays put until it is covered.
+            // Pushed screens slide fully in from the right and back out again; nothing fades, so
+            // two screens never show through each other (also while the back gesture scrubs).
+            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(300)) { it } },
+            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(300)) { -it / 4 } },
+            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(300)) { -it / 4 } },
+            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(300)) { it } },
+        ) {
+            screen(Tab.Home.route) { HomeScreen(data, nav) }
+            screen("library") { LibraryScreen(data, nav, pickFor = null) }
+            screen(Tab.Plans.route) { RoutinesScreen(data, nav) }
+            screen(Tab.History.route) { HistoryScreen(data, nav) }
+            screen(Tab.Nutrition.route) { NutritionScreen(data, nav) }
+            screen("exercise/{id}") { ExerciseScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+            screen("routine/{id}") { RoutineEditScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+            screen("pick/{target}") { LibraryScreen(data, nav, pickFor = it.arguments?.getString("target")) }
+            screen("workout") { WorkoutScreen(data, nav) }
+            screen("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+            screen("quick") { QuickWorkoutScreen(data, nav) }
+            screen("settings") { SettingsScreen(data, nav) }
+            screen("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
         }
 
         // First run: the intro covers everything until it is finished.
@@ -160,6 +176,18 @@ private fun AppRoot() {
         }
     }
 }
+
+private val tabRoutes = Tab.entries.map { it.route }.toSet()
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch() =
+    initialState.destination.route in tabRoutes && targetState.destination.route in tabRoutes
+
+/**
+ * A destination with its own opaque background, so two screens never show through each other
+ * while one slides over the other.
+ */
+private fun NavGraphBuilder.screen(route: String, content: @Composable (NavBackStackEntry) -> Unit) =
+    composable(route) { entry -> Box(Modifier.fillMaxSize().background(Ink.bg)) { content(entry) } }
 
 /**
  * Floating pill navigation: the active tab grows into a lime capsule with its label, the others

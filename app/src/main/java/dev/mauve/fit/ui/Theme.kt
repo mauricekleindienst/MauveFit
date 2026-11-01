@@ -122,32 +122,9 @@ val Display = FontFamily(newsreader(340), newsreader(400), newsreader(500))
 val Sans = FontFamily(instrument(400), instrument(500), instrument(600), instrument(700))
 val Mono = FontFamily(mono(400), mono(500), mono(600))
 
-/** Small radii as on the site (4 px buttons, 10 px panels). */
-val Pill = RoundedCornerShape(8.dp)
-
-/**
- * The crystal facet that marks panels on kalzit: one corner cut off (top right), the others
- * slightly rounded.
- */
-class Facet(private val cut: Dp = 14.dp, private val radius: Dp = 6.dp) : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
-        val c = with(density) { cut.toPx() }.coerceAtMost(minOf(size.width, size.height) / 2)
-        val r = with(density) { radius.toPx() }.coerceAtMost(minOf(size.width, size.height) / 2)
-        val p = Path().apply {
-            moveTo(r, 0f)
-            lineTo(size.width - c, 0f)
-            lineTo(size.width, c)
-            lineTo(size.width, size.height - r)
-            quadraticTo(size.width, size.height, size.width - r, size.height)
-            lineTo(r, size.height)
-            quadraticTo(0f, size.height, 0f, size.height - r)
-            lineTo(0f, r)
-            quadraticTo(0f, 0f, r, 0f)
-            close()
-        }
-        return Outline.Generic(p)
-    }
-}
+/** Fully rounded controls and soft panels. */
+val Pill = RoundedCornerShape(percent = 50)
+val Panel = RoundedCornerShape(24.dp)
 
 @Composable
 fun FitTheme(content: @Composable () -> Unit) {

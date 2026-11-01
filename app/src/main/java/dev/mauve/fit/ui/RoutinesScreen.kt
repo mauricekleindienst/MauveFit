@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.foundation.background
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -64,8 +66,28 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
     ) {
         item {
             Row(verticalAlignment = Alignment.Bottom) {
-                ScreenTitle(L("${data.routines.size} Pläne", "${data.routines.size} plans"), L("Pläne", "Plans"), Modifier.weight(1f))
-                RoundButton(Icons.Rounded.Add, L("Neuer Plan", "New plan"), size = 48.dp) { nav.navigate("routine/new") }
+                ScreenTitle(L("Pläne und Übungen", "Plans and exercises"), L("Training", "Training"), Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
+                ShortcutTile(L("Übungen", "Exercises"), L("${App.repo.all.size} mit Animation", "${App.repo.all.size} animated"), Icons.Rounded.Search, Modifier.weight(1f)) { nav.navigate("library") }
+            }
+        }
+        if (data.active == null) item {
+            GhostButton(L("Freies Training starten", "Start a free workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow) {
+                App.store.startWorkout(null)
+                nav.navigate("workout")
+            }
+        }
+        item {
+            Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Eyebrow(L("${data.routines.size} Pläne", "${data.routines.size} plans"))
+                    Text(L("Deine Pläne", "Your plans"), style = MaterialTheme.typography.headlineSmall)
+                }
+                RoundButton(Icons.Rounded.Add, L("Neuer Plan", "New plan"), size = 44.dp) { nav.navigate("routine/new") }
             }
         }
         if (data.routines.isEmpty()) item {

@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Single-colour variant of the Mauve Fit mark for themed icons (Android 13+).
--->
+<!-- Single-colour heartbeat M for themed icons (Android 13+). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -10,14 +8,8 @@
     <path
         android:fillColor="#00000000"
         android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="2.3"
-        android:strokeLineJoin="miter"
-        android:strokeMiterLimit="8"
-        android:pathData="M33,72 L40,35 L54,53 L68,35 L75,72 L69,72 L64.5,47.5 L54,61 L43.5,47.5 L39,72 Z" />
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="2.1"
-        android:strokeLineJoin="miter"
-        android:pathData="M54,34.5 L57.6,40 L54,45.5 L50.4,40 Z" />
+        android:strokeWidth="4.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M22,62 L36,62 L40,68 L46,34 L54,56 L62,34 L68,68 L72,62 L86,62" />
 </vector>

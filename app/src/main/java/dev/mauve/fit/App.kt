@@ -40,7 +40,10 @@ class App : Application(), SingletonImageLoader.Factory {
     // GIFs need the animated decoder; the disk cache holds the downloaded media for offline use.
     override fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
-            .components { add(AnimatedImageDecoder.Factory()) }
+            .components {
+                add(dev.mauve.fit.system.SharpGifDecoder.Factory())
+                add(AnimatedImageDecoder.Factory())
+            }
             .diskCache { DiskCache.Builder().directory(cacheDir.resolve("media")).maxSizeBytes(700L * 1024 * 1024).build() }
             .crossfade(true)
             .build()

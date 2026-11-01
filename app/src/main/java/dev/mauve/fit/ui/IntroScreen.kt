@@ -95,7 +95,7 @@ fun IntroScreen(initial: Profile, onDone: () -> Unit) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             (2..6).forEach { n ->
                                 Box(
-                                    Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(10.dp))
+                                    Modifier.weight(1f).aspectRatio(1f).clip(RoundedCornerShape(18.dp))
                                         .background(if (days == n) Ink.accent else Ink.surface).clickable { Haptics.tick(); days = n },
                                     contentAlignment = Alignment.Center,
                                 ) { Text("$n", style = MaterialTheme.typography.headlineMedium, color = if (days == n) Ink.bg else Ink.text) }
@@ -177,9 +177,9 @@ private fun Question(title: String, sub: String, content: @Composable () -> Unit
 @Composable
 private fun Option(title: String, sub: String, selected: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
             .background(if (selected) Ink.raised else Ink.surface)
-            .border(2.dp, if (selected) Ink.accent else Ink.surface, RoundedCornerShape(10.dp))
+            .border(2.dp, if (selected) Ink.accent else Ink.surface, RoundedCornerShape(18.dp))
             .clickable { Haptics.click(); onClick() }.padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

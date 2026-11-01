@@ -1,5 +1,8 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.ui.text.style.TextAlign
+import dev.mauve.fit.data.Labels
+import java.time.temporal.IsoFields
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -77,12 +80,12 @@ fun HistoryScreen(data: AppData, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            ScreenTitle(L("${data.history.size} Trainings", "${data.history.size} workouts"), L("Verlauf", "History"))
+            ScreenTitle(L("${data.history.size} Trainings", "${data.history.size} workouts"), L("Fortschritt", "Progress"))
         }
         stickyHeader {
             Box(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
             Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
-                listOf(L("Trainings", "Workouts"), L("Rekorde", "Records"), L("Erfolge", "Achievements"), L("Körper", "Body")).forEachIndexed { i, t ->
+                listOf(L("Überblick", "Overview"), L("Rekorde", "Records"), L("Erfolge", "Badges"), L("Körper", "Body")).forEachIndexed { i, t ->
                     Box(
                         Modifier.weight(1f).clip(Pill).background(if (tab == i) Ink.accent else Ink.surface)
                             .clickable { Haptics.tick(); tab = i }.padding(vertical = 10.dp),
@@ -93,7 +96,10 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             }
         }
         when (tab) {
-            0 -> workouts(data, expanded, { expanded = it }, { confirm = it })
+            0 -> {
+                overview(data)
+                workouts(data, expanded, { expanded = it }, { confirm = it })
+            }
             1 -> records(data, nav)
             2 -> achievements(data)
             else -> body(data) { addWeight = true }
@@ -287,4 +293,33 @@ private fun LazyListScope.body(data: AppData, onAdd: () -> Unit) {
             Icon(Icons.Rounded.Close, L("Löschen", "Delete"), tint = Ink.faint, modifier = Modifier.clickable { App.store.deleteBodyWeight(b.at) })
         }
     }
+}
+
+/** Weekly volume and sets per muscle, above the workout list. */
+private fun LazyListScope.overview(data: AppData) {
+    if (data.history.isEmpty()) return
+    val volume = Stats.weeklyVolume(data.history)
+    item {
+        Card(Modifier.fillMaxWidth()) {
+            Eyebrow(L("Volumen pro Woche", "Volume per week"))
+            Spacer(Modifier.height(14.dp))
+            Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
+        }
+    }
+    val muscles = Stats.muscleSets(data.history, App.repo).entries.sortedByDescending { it.value }.take(6)
+    if (muscles.isNotEmpty()) item {
+        Card(Modifier.fillMaxWidth()) {
+            Eyebrow(L("Sätze pro Muskel · 7 Tage", "Sets per muscle · 7 days"))
+            Spacer(Modifier.height(12.dp))
+            val max = muscles.first().value.toFloat()
+            muscles.forEach { (m, n) ->
+                Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(Labels.muscle(m), Modifier.width(118.dp), style = MaterialTheme.typography.bodyMedium)
+                    Meter(n / max, Modifier.weight(1f))
+                    Text("$n", Modifier.width(34.dp), textAlign = TextAlign.End, color = Ink.muted)
+                }
+            }
+        }
+    }
+    item { Eyebrow(L("Trainings", "Workouts"), Modifier.padding(top = 8.dp)) }
 }

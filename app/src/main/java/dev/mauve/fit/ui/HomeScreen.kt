@@ -120,22 +120,6 @@ fun HomeScreen(data: AppData, nav: NavController) {
             }) { start(next) }
         }
 
-        if (data.active == null) item {
-            Card(onClick = { nav.navigate("quick") }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).clip(Pill).background(Ink.raised), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.AutoAwesome, null, tint = Ink.accent)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(L("Schnelltraining", "Quick workout"), style = MaterialTheme.typography.titleLarge)
-                        Text(L("Bereich und Zeit wählen, der Coach baut das Training", "Pick a focus and time, the coach builds the workout"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Ink.muted)
-                }
-            }
-        }
-
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f), if (thisWeek >= goal) Ink.accent else Ink.text)
@@ -144,77 +128,15 @@ fun HomeScreen(data: AppData, nav: NavController) {
             }
         }
 
-        item {
-            Card(onClick = { nav.navigate("nutrition") }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(44.dp).clip(Pill).background(Ink.raised), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Restaurant, null, tint = Ink.accent)
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(L("Ernährung und Meal Prep", "Nutrition and meal prep"), style = MaterialTheme.typography.titleLarge)
-                        Text(
-                            data.bodyWeights.firstOrNull()?.let { Nutrition.targets(it.kg, data.profile.goal) }
-                                ?.let { L("${it.kcal} kcal · ${it.protein} g Protein am Tag", "${it.kcal} kcal · ${it.protein} g protein a day") }
-                                ?: L("Tagesziele, Rezepte, Einkaufsliste", "Daily targets, recipes, shopping list"),
-                            color = Ink.muted, style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                    Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, tint = Ink.muted)
-                }
+        if (data.active == null) item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
+                ShortcutTile(L("Freies Training", "Free workout"), L("Ohne Plan", "No plan"), Icons.Rounded.PlayArrow, Modifier.weight(1f)) { start(null) }
             }
         }
 
         if (history.isNotEmpty()) item { RecoveryCard(Progress.recovery(history, App.repo)) }
 
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-                Text(L("Pläne", "Plans"), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                if (data.active == null) Text(
-                    L("Freies Training", "Free workout"), color = Ink.accent, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { start(null) },
-                )
-            }
-        }
-        data.routines.forEach { r ->
-            item(key = r.id) {
-                Card(onClick = { nav.navigate("routine/${r.id}") }, padding = PaddingValues(14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Thumb(App.repo[r.exercises.firstOrNull()?.exerciseId.orEmpty()], 52.dp)
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(r.name, style = MaterialTheme.typography.titleLarge)
-                            Text(L("${r.exercises.size} Übungen · ${estMinutes(r)} min", "${r.exercises.size} exercises · ${estMinutes(r)} min"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
-                        }
-                        if (data.active == null) RoundButton(Icons.Rounded.PlayArrow, L("Starten", "Start")) { start(r) }
-                    }
-                }
-            }
-        }
-
-        item {
-            Card(Modifier.padding(top = 8.dp)) {
-                Eyebrow(L("Volumen pro Woche", "Volume per week"))
-                Spacer(Modifier.height(14.dp))
-                Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
-            }
-        }
-
-        val muscles = Stats.muscleSets(history, App.repo).entries.sortedByDescending { it.value }.take(6)
-        if (muscles.isNotEmpty()) item {
-            Card {
-                Eyebrow(L("Sätze pro Muskel · 7 Tage", "Sets per muscle · 7 days"))
-                Spacer(Modifier.height(12.dp))
-                val max = muscles.first().value.toFloat()
-                muscles.forEach { (m, n) ->
-                    Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(Labels.muscle(m), Modifier.width(118.dp), style = MaterialTheme.typography.bodyMedium)
-                        Meter(n / max, Modifier.weight(1f))
-                        Text("$n", Modifier.width(34.dp), textAlign = TextAlign.End, color = Ink.muted)
-                    }
-                }
-            }
-        }
     }
     }
 }
@@ -253,7 +175,7 @@ private fun NextWorkoutCard(r: Routine, onShort: () -> Unit, onStart: () -> Unit
         Box {
             ExerciseMedia(hero, Modifier.fillMaxWidth().aspectRatio(1.6f), corner = 0.dp)
             Box(
-                Modifier.padding(14.dp).clip(RoundedCornerShape(10.dp)).background(Ink.bg).padding(horizontal = 10.dp, vertical = 6.dp)
+                Modifier.padding(14.dp).clip(RoundedCornerShape(18.dp)).background(Ink.bg).padding(horizontal = 10.dp, vertical = 6.dp)
             ) { Text(L("NÄCHSTES TRAINING", "NEXT WORKOUT"), style = MaterialTheme.typography.labelSmall, color = Ink.accent) }
         }
         Column(Modifier.padding(18.dp)) {

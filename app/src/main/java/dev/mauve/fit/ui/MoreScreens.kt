@@ -136,7 +136,7 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(1 to L("Leicht", "Easy"), 2 to L("Gut", "Good"), 3 to L("Hart", "Hard")).forEach { (v, label) ->
                         Box(
-                            Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (feel == v) Ink.accent else Ink.raised)
+                            Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(if (feel == v) Ink.accent else Ink.raised)
                                 .clickable { Haptics.tick(); feel = if (feel == v) 0 else v }.padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) { Text(label, color = if (feel == v) Ink.bg else Ink.text, fontWeight = FontWeight.SemiBold) }
@@ -147,7 +147,7 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                     note, { note = it },
                     textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink.text),
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(Ink.accent),
-                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Ink.raised).padding(14.dp),
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.raised).padding(14.dp),
                     decorationBox = { inner -> if (note.isEmpty()) Text(L("Notiz, z. B. Schulter gezwickt", "Note, e.g. shoulder twinged"), color = Ink.faint); inner() },
                 )
             }
@@ -249,7 +249,7 @@ fun CoachCard(tip: Coach.Tip, modifier: Modifier = Modifier, onAction: ((Coach.A
         Coach.Tone.Info -> Ink.text
     }
     Row(
-        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Ink.surface).padding(18.dp),
+        modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Ink.surface).padding(18.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Box(Modifier.size(38.dp).clip(Pill).background(accent.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {

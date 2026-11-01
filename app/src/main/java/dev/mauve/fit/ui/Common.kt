@@ -91,7 +91,7 @@ private fun smartInvert(stage: Color): ColorFilter = run {
 @Composable
 fun ExerciseMedia(exercise: Exercise?, modifier: Modifier = Modifier, animated: Boolean = true, corner: Dp = 24.dp) {
     var retry by remember { mutableIntStateOf(0) }
-    val shape = if (corner >= 20.dp) Facet() else RoundedCornerShape(minOf(corner, 8.dp))
+    val shape = RoundedCornerShape(corner)
     val filter = remember(Ink.dark) { if (Ink.dark) smartInvert(Ink.stage) else null }
     Box(modifier.clip(shape).background(Ink.stage), contentAlignment = Alignment.Center) {
         val placeholder = @Composable { Icon(Icons.Rounded.FitnessCenter, null, tint = Ink.faint, modifier = Modifier.size(28.dp)) }
@@ -134,7 +134,7 @@ fun Card(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.clip(Facet()).background(color).border(1.dp, Ink.line, Facet())
+        modifier.clip(Panel).background(color).border(1.dp, Ink.line, Panel)
             .then(if (onClick != null) Modifier.clickable { Haptics.click(); onClick() } else Modifier)
             .padding(padding),
         content = content,
@@ -150,7 +150,7 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier, color: Color = Ink.mute
 fun BoxedLabel(text: String, modifier: Modifier = Modifier, color: Color = Ink.muted) =
     Text(
         text.uppercase(),
-        modifier.border(1.dp, Ink.lineStrong, RoundedCornerShape(3.dp)).padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier.border(1.dp, Ink.lineStrong, Pill).padding(horizontal = 10.dp, vertical = 3.dp),
         style = MaterialTheme.typography.labelSmall, color = color,
     )
 
@@ -189,7 +189,7 @@ fun Chip(text: String, selected: Boolean = false, onClick: (() -> Unit)? = null)
 /** Small read-only tag. */
 @Composable
 fun Tag(text: String, color: Color = Ink.muted) {
-    Box(Modifier.clip(RoundedCornerShape(8.dp)).background(Ink.raised).padding(horizontal = 10.dp, vertical = 5.dp)) {
+    Box(Modifier.clip(RoundedCornerShape(16.dp)).background(Ink.raised).padding(horizontal = 10.dp, vertical = 5.dp)) {
         Text(text, style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
@@ -198,7 +198,7 @@ fun Tag(text: String, color: Color = Ink.muted) {
 @Composable
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(8.dp)).background(Ink.accent).clickable { Haptics.click(); onClick() }
+        modifier.clip(RoundedCornerShape(16.dp)).background(Ink.accent).clickable { Haptics.click(); onClick() }
             .padding(horizontal = 22.dp, vertical = 17.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -212,7 +212,7 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector
 @Composable
 fun GhostButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
-        modifier.clip(RoundedCornerShape(8.dp)).border(1.5.dp, Ink.line, RoundedCornerShape(8.dp)).clickable { Haptics.click(); onClick() }
+        modifier.clip(RoundedCornerShape(16.dp)).border(1.5.dp, Ink.line, RoundedCornerShape(16.dp)).clickable { Haptics.click(); onClick() }
             .padding(horizontal = 20.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -233,21 +233,26 @@ fun RoundButton(icon: ImageVector, contentDescription: String?, modifier: Modifi
 /** "− value +" with a caption; used for plan targets. */
 @Composable
 fun Stepper(label: String, value: String, modifier: Modifier = Modifier, onMinus: () -> Unit, onPlus: () -> Unit) {
+    // Label and value stacked, the two buttons below: nothing crowds the number, even "2:00".
     Column(
-        modifier.clip(RoundedCornerShape(8.dp)).background(Ink.raised).padding(vertical = 8.dp),
+        modifier.clip(RoundedCornerShape(20.dp)).background(Ink.raised).padding(top = 10.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(Pill).clickable { Haptics.tick(); onMinus() }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Remove, L("Weniger", "Less"), tint = Ink.muted, modifier = Modifier.size(18.dp))
-            }
-            Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.width(52.dp))
-            Box(Modifier.size(34.dp).clip(Pill).clickable { Haptics.tick(); onPlus() }, contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Add, L("Mehr", "More"), tint = Ink.muted, modifier = Modifier.size(18.dp))
-            }
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, maxLines = 1, modifier = Modifier.padding(vertical = 4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            StepButton(Icons.Rounded.Remove, L("Weniger", "Less"), Modifier.weight(1f), onMinus)
+            StepButton(Icons.Rounded.Add, L("Mehr", "More"), Modifier.weight(1f), onPlus)
         }
     }
+}
+
+@Composable
+fun StepButton(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier.height(34.dp).clip(Pill).background(Ink.bg.copy(alpha = 0.55f)).clickable { Haptics.tick(); onClick() },
+        contentAlignment = Alignment.Center,
+    ) { Icon(icon, label, tint = Ink.text, modifier = Modifier.size(18.dp)) }
 }
 
 /** Progress ring for the rest timer. */
@@ -318,5 +323,18 @@ fun HeroGrid(modifier: Modifier = Modifier, cell: Dp = 28.dp) {
             drawLine(line.copy(alpha = line.alpha * a), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
             y += step
         }
+    }
+}
+
+/** Square-ish shortcut: icon in an accent disc, title and one line below. */
+@Composable
+fun ShortcutTile(title: String, sub: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(modifier, onClick = onClick, padding = PaddingValues(16.dp)) {
+        Box(Modifier.size(40.dp).clip(Pill).background(Ink.accent.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = Ink.accent, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        Text(sub, style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 1)
     }
 }

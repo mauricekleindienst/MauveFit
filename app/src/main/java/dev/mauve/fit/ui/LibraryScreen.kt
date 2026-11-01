@@ -91,7 +91,7 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
         stickyHeader {
             Column(Modifier.fillMaxWidth().background(Ink.bg).padding(top = 8.dp, bottom = 6.dp)) {
                 Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (pickFor != null) {
+                    run {
                         RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 48.dp) { nav.popBackStack() }
                         Spacer(Modifier.width(10.dp))
                     }
@@ -138,7 +138,7 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
 @Composable
 private fun SearchField(value: String, onChange: (String) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Ink.surface).padding(horizontal = 16.dp, vertical = 15.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surface).padding(horizontal = 16.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Rounded.Search, null, tint = Ink.muted)

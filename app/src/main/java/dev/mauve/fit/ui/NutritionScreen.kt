@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -59,13 +61,12 @@ fun NutritionScreen(data: AppData, nav: NavController) {
 
     LazyColumn(
         Modifier.statusBarsPadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 132.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item { ScreenTitle(goal.label, L("Ernährung", "Nutrition")) }
         stickyHeader {
             Column(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
-                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
-                Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
                     listOf(L("Ziele", "Targets"), L("Rezepte", "Recipes"), L("Einkauf", "Shopping")).forEachIndexed { i, t ->
                         Box(
@@ -77,15 +78,13 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                 }
             }
         }
-        item { ScreenTitle(goal.label, L("Ernährung", "Nutrition")) }
-
         when (tab) {
             0 -> item {
                 if (kg == null) Card(Modifier.fillMaxWidth()) {
                     Text(L("Trag dein Körpergewicht ein", "Enter your body weight"), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        L("Die Tagesziele rechnet die App aus deinem Gewicht und deinem Ziel. Eintragen unter Verlauf, Körper.",
-                            "Daily targets are worked out from your weight and goal. Add it under History, Body."),
+                        L("Die Tagesziele rechnet die App aus deinem Gewicht und deinem Ziel. Eintragen unter Fortschritt, Körper.",
+                            "Daily targets are worked out from your weight and goal. Add it under Progress, Body."),
                         color = Ink.muted,
                     )
                 } else {
@@ -149,8 +148,13 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                                 L("Hält ${r.keepsDays} Tage im Kühlschrank", "Keeps ${r.keepsDays} days in the fridge"),
                                 Modifier.weight(1f), color = Ink.faint, style = MaterialTheme.typography.bodySmall,
                             )
-                            Stepper(L("Portionen", "Portions"), "$portions", Modifier.width(150.dp),
-                                { App.store.setPortions(r.id, portions - 1) }) { App.store.setPortions(r.id, portions + 1) }
+                            // Compact inline counter: a full stepper tile would dwarf the card.
+                            StepButton(Icons.Rounded.Remove, L("Weniger", "Less"), Modifier.width(44.dp)) { App.store.setPortions(r.id, portions - 1) }
+                            Column(Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("$portions", style = MaterialTheme.typography.titleLarge, color = if (portions > 0) Ink.accent else Ink.text)
+                                Text(L("Portionen", "portions"), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+                            }
+                            StepButton(Icons.Rounded.Add, L("Mehr", "More"), Modifier.width(44.dp)) { App.store.setPortions(r.id, portions + 1) }
                         }
                         if (expanded) {
                             Spacer(Modifier.height(14.dp))
@@ -192,7 +196,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                 items(list, key = { "s" + it.name + it.unit }) { item ->
                     val done = item.name in data.shoppingDone
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Ink.surface)
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surface)
                             .clickable { Haptics.tick(); App.store.toggleShopping(item.name) }.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -216,7 +220,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
 
 @Composable
 private fun Macro(label: String, value: String, modifier: Modifier) {
-    Column(modifier.clip(RoundedCornerShape(8.dp)).background(Ink.raised).padding(12.dp)) {
+    Column(modifier.clip(RoundedCornerShape(16.dp)).background(Ink.raised).padding(12.dp)) {
         Text(value, style = MaterialTheme.typography.titleLarge)
         Text(label, color = Ink.muted, style = MaterialTheme.typography.bodySmall)
     }

@@ -1,5 +1,7 @@
 package dev.mauve.fit
 
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.Restaurant
 import android.Manifest
 import android.os.Build
 import android.content.res.Configuration
@@ -79,9 +81,9 @@ import dev.mauve.fit.ui.WorkoutScreen
 
 private enum class Tab(val route: String, private val de: String, private val en: String, val icon: ImageVector) {
     Home("home", "Heute", "Today", Icons.Rounded.Bolt),
-    Library("library", "Übungen", "Exercises", Icons.Rounded.Search),
-    Plans("plans", "Pläne", "Plans", Icons.Rounded.FormatListBulleted),
-    History("history", "Verlauf", "History", Icons.Rounded.BarChart);
+    Plans("plans", "Training", "Training", Icons.Rounded.FitnessCenter),
+    Nutrition("nutrition", "Essen", "Food", Icons.Rounded.Restaurant),
+    History("history", "Fortschritt", "Progress", Icons.Rounded.BarChart);
 
     val label: String get() = L(de, en)
 }
@@ -132,9 +134,10 @@ private fun AppRoot() {
     Box(Modifier.fillMaxSize().background(Grain)) {
         NavHost(nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize()) {
             composable(Tab.Home.route) { HomeScreen(data, nav) }
-            composable(Tab.Library.route) { LibraryScreen(data, nav, pickFor = null) }
+            composable("library") { LibraryScreen(data, nav, pickFor = null) }
             composable(Tab.Plans.route) { RoutinesScreen(data, nav) }
             composable(Tab.History.route) { HistoryScreen(data, nav) }
+            composable(Tab.Nutrition.route) { NutritionScreen(data, nav) }
             composable("exercise/{id}") { ExerciseScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
             composable("routine/{id}") { RoutineEditScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
             composable("pick/{target}") { LibraryScreen(data, nav, pickFor = it.arguments?.getString("target")) }
@@ -142,7 +145,6 @@ private fun AppRoot() {
             composable("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
             composable("quick") { QuickWorkoutScreen(data, nav) }
             composable("settings") { SettingsScreen(data, nav) }
-            composable("nutrition") { NutritionScreen(data, nav) }
             composable("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
         }
 

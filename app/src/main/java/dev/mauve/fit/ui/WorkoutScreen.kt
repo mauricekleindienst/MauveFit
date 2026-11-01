@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import android.content.Context
 import android.os.VibrationEffect
 import android.os.VibratorManager
@@ -281,24 +282,25 @@ private fun ExercisePage(
             Spacer(Modifier.height(12.dp))
             CoachLine(tip)
             Spacer(Modifier.height(16.dp))
-            Row(Modifier.padding(horizontal = 12.dp)) {
-                Text(L("SATZ", "SET"), Modifier.width(40.dp), style = MaterialTheme.typography.labelSmall, color = Ink.faint)
+            Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(L("SATZ", "SET"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
                 if (!bodyweight) Text("KG", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
                 Text(L("WDH.", "REPS"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
-                Spacer(Modifier.width(52.dp))
+                Spacer(Modifier.width(48.dp))
             }
             Spacer(Modifier.height(6.dp))
         }
         itemsIndexed(entry.sets) { i, s ->
             val bg by animateColorAsState(if (s.done) Ink.raised else Ink.surface, label = "set")
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(10.dp)).background(bg)
-                    .then(if (i == current) Modifier.border(1.5.dp, Ink.accent.copy(alpha = 0.6f), RoundedCornerShape(10.dp)) else Modifier)
+                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(18.dp)).background(bg)
+                    .then(if (i == current) Modifier.border(1.5.dp, Ink.accent.copy(alpha = 0.6f), RoundedCornerShape(18.dp)) else Modifier)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val label = if (s.warmup) "W" else "${entry.sets.take(i + 1).count { !it.warmup }}"
-                Text(label, Modifier.width(40.dp), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), color = when {
+                Text(label, Modifier.width(36.dp), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), color = when {
                     s.warmup -> Ink.mauve
                     s.done -> Ink.accent
                     else -> Ink.muted
@@ -312,7 +314,7 @@ private fun ExercisePage(
                     onPlus = { edit(i, reps = s.reps + 1) },
                     onEdit = { editing = i })
                 Box(
-                    Modifier.size(52.dp).clip(RoundedCornerShape(8.dp))
+                    Modifier.size(48.dp).clip(Pill)
                         .background(if (s.done) Ink.accent else Ink.raised)
                         .clickable {
                             onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(done = !s.done) }) }
@@ -329,8 +331,8 @@ private fun ExercisePage(
         }
         if (advice != null && handledAt != doneCount) item {
             Row(
-                Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(8.dp)).background(Ink.surface)
-                    .border(1.dp, Ink.accent.copy(alpha = 0.5f), RoundedCornerShape(8.dp)).padding(14.dp),
+                Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surface)
+                    .border(1.dp, Ink.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(Icons.Rounded.AutoAwesome, null, tint = Ink.accent, modifier = Modifier.size(18.dp))
@@ -414,7 +416,7 @@ private fun SwapDialog(exerciseId: String, data: AppData, onPick: (String) -> Un
                 items(options.size) { i ->
                     val o = options[i]
                     Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { Haptics.click(); onPick(o.id) }.padding(vertical = 8.dp),
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { Haptics.click(); onPick(o.id) }.padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Thumb(o, 48.dp)
@@ -476,7 +478,7 @@ private fun ActionChip(text: String, icon: ImageVector, onClick: () -> Unit) {
 
 @Composable
 private fun CoachLine(tip: Coach.Tip) {
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Ink.surface).padding(12.dp), verticalAlignment = Alignment.Top) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surface).padding(12.dp), verticalAlignment = Alignment.Top) {
         Icon(Icons.Rounded.AutoAwesome, null, tint = if (tip.tone == Coach.Tone.Push) Ink.accent else Ink.mauve, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(10.dp))
         Text("${tip.title}: ${tip.body}", style = MaterialTheme.typography.bodySmall)
@@ -486,19 +488,23 @@ private fun CoachLine(tip: Coach.Tip) {
 /** A value with − and + on either side; tapping the value opens exact entry. */
 @Composable
 private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, onPlus: () -> Unit, onEdit: () -> Unit) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-        Box(Modifier.size(32.dp).clip(Pill).clickable { Haptics.tick(); onMinus() }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Remove, L("Weniger", "Less"), tint = Ink.faint, modifier = Modifier.size(18.dp))
+    // One inset capsule per value, so the kg and reps controls read as two separate groups.
+    Row(
+        modifier.height(48.dp).clip(Pill).background(Ink.bg.copy(alpha = 0.45f)).padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+    ) {
+        Box(Modifier.size(36.dp).clip(Pill).clickable { Haptics.tick(); onMinus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Remove, L("Weniger", "Less"), tint = Ink.muted, modifier = Modifier.size(18.dp))
         }
         // A fixed-width target, so even a short value like "–" is easy to hit.
         Box(
-            Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(10.dp)).clickable { Haptics.click(); onEdit() },
+            Modifier.weight(1f).fillMaxHeight().clip(Pill).clickable { Haptics.click(); onEdit() },
             contentAlignment = Alignment.Center,
         ) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, maxLines = 1)
+            Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, maxLines = 1)
         }
-        Box(Modifier.size(32.dp).clip(Pill).clickable { Haptics.tick(); onPlus() }, contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Add, L("Mehr", "More"), tint = Ink.faint, modifier = Modifier.size(18.dp))
+        Box(Modifier.size(36.dp).clip(Pill).clickable { Haptics.tick(); onPlus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Add, L("Mehr", "More"), tint = Ink.muted, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -525,7 +531,7 @@ private fun AddPage(w: Workout, nav: NavController) {
 private fun RestBar(leftMs: Long, totalSec: Int) {
     Row(
         Modifier.navigationBarsPadding().padding(16.dp).fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp)).background(Ink.raised).padding(14.dp),
+            .clip(RoundedCornerShape(18.dp)).background(Ink.raised).padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Ring(leftMs / (totalSec * 1000f).coerceAtLeast(1f), Modifier.size(56.dp))

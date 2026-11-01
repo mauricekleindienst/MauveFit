@@ -288,6 +288,9 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                     }
                     Spacer(Modifier.height(8.dp))
                 }
+                Toggle(L("Wochenbericht", "Weekly report"), L("Montags um 9 Uhr: deine Zahlen der letzten Woche", "Mondays at 9: your numbers from last week"), s.weeklyReport) { v ->
+                    set { it.copy(weeklyReport = v) }
+                }
                 Toggle(L("Trainingserinnerung", "Workout reminder"), L("Nur an Tagen ohne Training", "Only on days without a workout"), s.reminder) { v ->
                     if (v && Build.VERSION.SDK_INT >= 33 && !notificationsAllowed) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
                     set { it.copy(reminder = v) }

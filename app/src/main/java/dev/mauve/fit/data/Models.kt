@@ -195,6 +195,8 @@ data class Settings(
     val autoRegulate: Boolean = true,
     /** Target body weight in kg; 0 = none. */
     val goalWeight: Double = 0.0,
+    /** Monday-morning notification with last week's numbers. */
+    val weeklyReport: Boolean = true,
 )
 
 @Serializable

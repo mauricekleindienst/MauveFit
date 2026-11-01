@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.data.WeeklyReport
 import dev.mauve.fit.system.Haptics
 
 import androidx.compose.runtime.getValue
@@ -175,6 +176,10 @@ fun HomeScreen(data: AppData, nav: NavController) {
             }
         }
 
+        // Monday and Tuesday: how last week went, before the new one takes over.
+        if (LocalDate.now().dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
+            ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
+        }
         item { ChallengeCard(challenge, data.challengesDone.size) }
 
         if (data.active == null) item {
@@ -385,6 +390,39 @@ private fun Metric(value: String, label: String, delta: Int?, modifier: Modifier
         if (delta != null && delta != 0) {
             val good = if (lowerIsBetter) delta < 0 else delta > 0
             Text((if (delta > 0) "+" else "") + delta + L(" zur Basis", " vs base"), color = if (good) Ink.accent else Ink.coral, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        }
+    }
+}
+
+/** Last week at a glance: the summary line and four numbers against the week before. */
+@Composable
+private fun ReportCard(r: WeeklyReport.Report) {
+    Card(Modifier.fillMaxWidth()) {
+        Eyebrow(L("Letzte Woche", "Last week"))
+        Text(r.headline, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            Column {
+                Text("${r.workouts}/${r.goal}", style = MaterialTheme.typography.headlineSmall, color = if (r.goalHit) Ink.accent else Ink.text)
+                Text(L("Trainings", "workouts"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+            }
+            Column {
+                Text(Stats.fmtVolume(r.volume), style = MaterialTheme.typography.headlineSmall)
+                Text(r.volumeChange?.let { (if (it >= 0) "+" else "") + "$it %" } ?: L("Volumen", "volume"),
+                    style = MaterialTheme.typography.labelSmall, color = when { (r.volumeChange ?: 0) > 0 -> Ink.accent; (r.volumeChange ?: 0) < 0 -> Ink.coral; else -> Ink.muted })
+            }
+            Column {
+                Text("${r.records}", style = MaterialTheme.typography.headlineSmall)
+                Text(L("Rekorde", "records"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+            }
+            if (r.cardioMinutes > 0) Column {
+                Text("${r.cardioMinutes}", style = MaterialTheme.typography.headlineSmall)
+                Text(L("min Cardio", "min cardio"), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+            }
+        }
+        r.topMuscle?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(L("Am meisten trainiert: ${Labels.muscle(it)}", "Trained most: ${Labels.muscle(it)}"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

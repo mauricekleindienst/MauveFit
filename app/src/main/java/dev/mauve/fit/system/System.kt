@@ -49,6 +49,7 @@ private const val CH_WORKOUT_ALERT = "workout_alert"
 private const val ID_WORKOUT = 1
 private const val ID_REST = 2
 private const val ID_REMIND = 3
+private const val ID_REPORT = 4
 
 /** True while an activity of the app is on screen; alerts are skipped then (the screen buzzes itself). */
 object Foreground {
@@ -317,5 +318,51 @@ class ReminderReceiver : BroadcastReceiver() {
             context.getSystemService(NotificationManager::class.java).notify(ID_REMIND, n)
         }
         Reminders.schedule(context)
+    }
+}
+
+/** Schedules the weekly report for Monday 9:00 and posts it when it fires. */
+object WeeklyReports {
+    fun schedule(context: Context) {
+        val am = context.getSystemService(AlarmManager::class.java)
+        val pi = PendingIntent.getBroadcast(context, 1, Intent(context, WeeklyReportReceiver::class.java), PendingIntent.FLAG_IMMUTABLE)
+        am.cancel(pi)
+        if (!App.store.data.value.settings.weeklyReport) return
+        val now = LocalDateTime.now()
+        var next = now.toLocalDate().atTime(9, 0)
+        while (!next.isAfter(now) || next.dayOfWeek != java.time.DayOfWeek.MONDAY) next = next.plusDays(1)
+        val at = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        am.setWindow(AlarmManager.RTC_WAKEUP, at, 30 * 60_000L, pi)
+    }
+
+    fun follow(context: Context) {
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+            App.store.data.map { it.settings.weeklyReport }.distinctUntilChanged().onEach { schedule(context) }.launchIn(this)
+        }
+    }
+}
+
+class WeeklyReportReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) { WeeklyReports.schedule(context); return }
+        val d = App.store.data.value
+        // Nobody wants a report about nothing: only once the app has been used for training.
+        if (d.settings.weeklyReport && d.history.isNotEmpty()) {
+            val r = dev.mauve.fit.data.WeeklyReport.of(d, dev.mauve.fit.data.WeeklyReport.lastWeekStart(), App.repo::get)
+            val n = Notification.Builder(context, CH_REMIND)
+                .setSmallIcon(R.drawable.ic_stat_fit)
+                .setContentTitle(L("Dein Wochenbericht", "Your weekly report"))
+                .setContentText(r.headline)
+                .setStyle(Notification.BigTextStyle().bigText(r.headline + "\n" + L(
+                    "${r.sets} Sätze · ${Stats.fmtVolume(r.volume)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min Cardio" else "",
+                    "${r.sets} sets · ${Stats.fmtVolume(r.volume)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min cardio" else "",
+                )))
+                .setContentIntent(openApp(context))
+                .setAutoCancel(true)
+                .setColor(0xFFDB9062.toInt())
+                .build()
+            runCatching { context.getSystemService(NotificationManager::class.java).notify(ID_REPORT, n) }
+        }
+        WeeklyReports.schedule(context)
     }
 }

@@ -88,6 +88,14 @@
         </service>
 
         <receiver
+            android:name=".system.WeeklyReportReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".system.ReminderReceiver"
             android:exported="false">
             <intent-filter>

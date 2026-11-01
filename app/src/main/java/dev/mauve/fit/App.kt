@@ -1,5 +1,6 @@
 package dev.mauve.fit
 
+import dev.mauve.fit.system.WeeklyReports
 import android.app.Application
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -35,6 +36,7 @@ class App : Application(), SingletonImageLoader.Factory {
         store.settleStreak()
         WorkoutService.follow(this)
         Reminders.follow(this)
+        WeeklyReports.follow(this)
         NextWidget.follow(this)
         thread(name = "exercise-db") {
             repo.all

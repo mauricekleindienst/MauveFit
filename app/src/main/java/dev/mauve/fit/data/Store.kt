@@ -1,5 +1,7 @@
 package dev.mauve.fit.data
 
+import kotlin.math.roundToInt
+import dev.mauve.fit.system.Recovery
 import android.content.Context
 import dev.mauve.fit.App
 import kotlinx.coroutines.CoroutineScope
@@ -55,11 +57,17 @@ class Store(context: Context) {
     fun startWorkout(routine: Routine?, short: Boolean = false) = update { d ->
         if (d.active != null) return@update d
         val plan = routine?.let { if (short) Coach.shortVersion(it) else it }
+        // Auto-regulation: on a poorly recovered day every starting weight comes down a little.
+        val score = Recovery.today.value?.score
+        val load = if (d.settings.autoRegulate) Coach.readinessLoad(score) else 1.0
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
-            val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps)
+            val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
             ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset)
         }.withSupersetsCleaned()
-        d.copy(active = Workout(name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries))
+        d.copy(active = Workout(
+            name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries,
+            readinessCut = ((1 - load) * 100).roundToInt(), readinessScore = score ?: 0,
+        ))
     }
 
     /** Applies a weight change to the unticked sets of one exercise (coach suggestion). */

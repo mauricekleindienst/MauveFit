@@ -501,6 +501,11 @@ private fun RecoverySection() {
                 )
                 Spacer(Modifier.height(8.dp))
                 GhostButton(L("Jetzt aktualisieren", "Refresh now"), Modifier.fillMaxWidth()) { scope.launch { Recovery.refresh(context) } }
+                Spacer(Modifier.height(8.dp))
+                val auto = App.store.data.collectAsState().value.settings.autoRegulate
+                Toggle(L("Gewichte anpassen", "Adjust weights"), L("Bei schlechter Erholung 5 bis 10 % leichter starten", "Start 5 to 10 % lighter on poorly recovered days"), auto) { v ->
+                    App.store.updateSettings { it.copy(autoRegulate = v) }
+                }
             }
             else -> PrimaryButton(L("Mit Health Connect verbinden", "Connect Health Connect"), Modifier.fillMaxWidth()) { ask.launch(Recovery.permissions) }
         }

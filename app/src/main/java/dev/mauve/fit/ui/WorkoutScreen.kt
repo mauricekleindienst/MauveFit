@@ -1,5 +1,12 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.data.I18n
+import dev.mauve.fit.data.VoiceInput
+import androidx.compose.material.icons.rounded.Mic
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.speech.RecognizerIntent
+import android.content.Intent
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material3.Switch
@@ -274,6 +281,19 @@ private fun ExercisePage(
     var noting by remember { mutableStateOf(false) }
     val note = data.exerciseNotes[entry.exerciseId].orEmpty()
     val current = entry.sets.indexOfFirst { !it.done }
+
+    /** Ticks set [i] (or unticks it), with the haptics and rest handling a tap on its check gives. */
+    fun toggleDone(i: Int) {
+        val s = entry.sets.getOrNull(i) ?: return
+        onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(done = !s.done) }) }
+        if (s.done) Haptics.tick()
+        else if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) Haptics.success() else Haptics.heavy()
+        if (!s.done) {
+            onSetDone(s.warmup)
+            if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) onAllDone()
+        }
+    }
+
     // Weight advice after a set that clearly over- or undershot its target; hidden once applied or dismissed.
     val advice = Coach.setAdvice(entry, step)
     val doneCount = entry.sets.count { it.done }
@@ -314,6 +334,26 @@ private fun ExercisePage(
         })
     }
 
+    // Voice: "60 Kilo 8", "8 reps", "fertig" fill (and tick) the current set, hands free.
+    var heard by remember { mutableStateOf<String?>(null) }
+    val listen = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
+        val said = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull() ?: return@rememberLauncherForActivityResult
+        val i = current.takeIf { it >= 0 } ?: return@rememberLauncherForActivityResult
+        val p = VoiceInput.parse(said, bodyweight)
+        heard = if (p.empty) L("Nicht verstanden: „$said“", "Didn't catch that: \"$said\"") else said
+        if (p.weight != null || p.reps != null) { Haptics.click(); edit(i, weight = p.weight, reps = p.reps) }
+        if (p.done) toggleDone(i)
+    }
+    val context = LocalContext.current
+    fun speak() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, if (I18n.german) "de-DE" else "en-US")
+            .putExtra(RecognizerIntent.EXTRA_PROMPT, L("Zum Beispiel: 60 Kilo 8, fertig", "For example: 60 kilos 8, done"))
+        if (intent.resolveActivity(context.packageManager) != null) listen.launch(intent)
+        else heard = L("Spracheingabe ist auf diesem Gerät nicht verfügbar", "Voice input is not available on this device")
+    }
+
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 170.dp)) {
         item {
             ExerciseMedia(e, Modifier.fillMaxWidth().height(mediaStageHeight()).clickable(onClick = onOpen), corner = 28.dp)
@@ -335,6 +375,7 @@ private fun ExercisePage(
             if (note.isNotBlank()) NoteLine(note) { noting = true }
             Spacer(Modifier.height(12.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (current >= 0) ActionChip(L("Sprechen", "Voice"), Icons.Rounded.Mic) { Haptics.tick(); speak() }
                 ActionChip(L("Tauschen", "Swap"), Icons.Rounded.SwapHoriz) { swapping = true }
                 if (canWarmUp) ActionChip(L("Aufwärmen", "Warm-up"), Icons.Rounded.LocalFireDepartment, onWarmup)
                 if (last.isNotEmpty() && entry.sets.any { !it.done && !it.warmup }) ActionChip(L("Wie letztes Mal", "Same as last time"), Icons.Rounded.History) {
@@ -343,7 +384,13 @@ private fun ExercisePage(
                 if (note.isBlank()) ActionChip(L("Notiz", "Note"), Icons.Rounded.EditNote) { noting = true }
             }
             Spacer(Modifier.height(12.dp))
+            heard?.let { Text(L("Gehört: ", "Heard: ") + it, Modifier.padding(bottom = 8.dp, start = 4.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall) }
             CoachLine(tip)
+            data.active?.takeIf { it.readinessCut > 0 }?.let { w -> Text(
+                L("Heute ${w.readinessCut} % leichter: Erholung ${w.readinessScore} von 100 laut Uhr.",
+                    "${w.readinessCut} % lighter today: readiness ${w.readinessScore} of 100 from your watch."),
+                Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.coral, style = MaterialTheme.typography.bodySmall,
+            ) }
             // In a block the week's phase shapes the numbers above; say so, or "one step up" reads wrong.
             Coach.blockWeek(data)?.let { b ->
                 Text(
@@ -387,15 +434,7 @@ private fun ExercisePage(
                 Box(
                     Modifier.size(48.dp).clip(Pill)
                         .background(if (s.done) Ink.accent else Ink.raised)
-                        .clickable {
-                            onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(done = !s.done) }) }
-                            if (s.done) Haptics.tick()
-                            else if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) Haptics.success() else Haptics.heavy()
-                            if (!s.done) {
-                                onSetDone(s.warmup)
-                                if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) onAllDone()
-                            }
-                        },
+                        .clickable { toggleDone(i) },
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Rounded.Check, L("Satz erledigt", "Set done"), tint = if (s.done) Ink.bg else Ink.muted) }
             }

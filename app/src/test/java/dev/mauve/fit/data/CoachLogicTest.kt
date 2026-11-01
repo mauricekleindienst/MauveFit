@@ -117,6 +117,13 @@ class CoachLogicTest {
         assertTrue(Recovery.score(0, 90.0, 50.0, 10.0, 60.0) >= 0)
     }
 
+    @Test fun readinessLowersLoadOnlyOnPoorDays() {
+        assertEquals(1.0, Coach.readinessLoad(null), 1e-9)
+        assertEquals(1.0, Coach.readinessLoad(80), 1e-9)
+        assertEquals(0.95, Coach.readinessLoad(55), 1e-9)
+        assertEquals(0.9, Coach.readinessLoad(30), 1e-9)
+    }
+
     // --- CSV ----------------------------------------------------------------------------------
 
     @Test fun csvHasOneRowPerDoneSetAndQuotesCommas() {

@@ -68,6 +68,9 @@ data class Workout(
     val note: String = "",
     /** Last time anything changed in the running workout; 0 for workouts saved before it existed. */
     val lastActivityAt: Long = 0,
+    /** Percent the starting weights were lowered for poor recovery (0 = not adjusted), and the score behind it. */
+    val readinessCut: Int = 0,
+    val readinessScore: Int = 0,
 ) {
     /** When the workout was last touched, falling back to its start. */
     val lastActive: Long get() = lastActivityAt.takeIf { it > 0 } ?: startedAt
@@ -187,6 +190,8 @@ data class Settings(
     /** Running training block: start (0 = none) and length in weeks (4 or 6). */
     val blockStart: Long = 0,
     val blockWeeks: Int = 4,
+    /** Lower starting weights on days the watch reports poor recovery. */
+    val autoRegulate: Boolean = true,
 )
 
 @Serializable

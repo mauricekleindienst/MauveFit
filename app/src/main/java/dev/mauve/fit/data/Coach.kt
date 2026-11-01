@@ -208,7 +208,19 @@ object Coach {
      * from the strongest similar exercise (same target muscle and equipment) at 85 %, because a
      * new movement needs practice. Lighter weeks take 70 %.
      */
-    fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int): Double {
+    /**
+     * Load factor for today's readiness (auto-regulation): a short night or a raised resting pulse
+     * means lighter starting weights; normal days change nothing. Null when there is no watch data.
+     */
+    fun readinessLoad(score: Int?): Double = when {
+        score == null -> 1.0
+        score < 40 -> 0.9
+        score < 60 -> 0.95
+        else -> 1.0
+    }
+
+    /** [load] scales the suggestion, e.g. for readiness; 1.0 leaves it as progression decided. */
+    fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0): Double {
         val step = d.settings.weightStep
         val last = Stats.lastSets(d.history, exerciseId)
         var w = if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
@@ -222,6 +234,7 @@ object Coach {
         // A block's phase sets the load; outside a block the light week does.
         val phase = blockWeek(d)?.phase
         if (phase != null) w *= phase.load else if (deloadActive(d)) w *= 0.7
+        w *= load
         return if (w <= 0) 0.0 else Stats.roundTo(w, step).coerceAtLeast(step)
     }
 

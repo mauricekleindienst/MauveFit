@@ -1,6 +1,11 @@
 package dev.mauve.fit.ui
 
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.runtime.rememberCoroutineScope
+import dev.mauve.fit.data.Motivation
+import dev.mauve.fit.system.ShareImage
+import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -71,8 +76,40 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
     }
     val muscles = w.entries.groupBy { App.repo[it.exerciseId]?.target ?: "" }
         .mapValues { (_, es) -> es.sumOf { e -> e.sets.count { !it.warmup } } }.entries.sortedByDescending { it.value }
-    LaunchedEffect(id) { if (records.isNotEmpty()) { kotlinx.coroutines.delay(350); Haptics.record() } }
+    // The weekly challenge, and whether this very workout completed it.
+    val challenge = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
+    val challengeWon = remember(id, challenge) {
+        challenge.done && !Motivation.challenge(data.copy(history = data.history.filterNot { it.id == id }), App.repo).done
+    }
+    LaunchedEffect(id) {
+        if (records.isNotEmpty()) { kotlinx.coroutines.delay(350); Haptics.record() }
+        if (challenge.done && App.store.completeChallenge(challenge.week)) {
+            kotlinx.coroutines.delay(if (records.isNotEmpty()) 900 else 350)
+            Haptics.success()
+        }
+    }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    fun shareImage() {
+        // New records first; without any, the best set of each exercise.
+        val rows = records.ifEmpty {
+            w.entries.groupBy { it.exerciseId }.mapNotNull { (exId, es) ->
+                es.flatMap { it.sets }.filter { !it.warmup }.maxByOrNull { Stats.e1rm(it) * 1000 + it.reps }?.let { exId to it }
+            }.sortedByDescending { (_, s) -> Stats.e1rm(s) }
+        }.take(4).map { (exId, s) -> (App.repo[exId]?.title ?: exId) to ShareImage.setText(s) }
+        val card = ShareImage.Card(
+            title = w.name,
+            date = Stats.day(w.startedAt).format(java.time.format.DateTimeFormatter.ofPattern(L("EEEE, d. MMMM yyyy", "EEEE, MMMM d, yyyy"), dev.mauve.fit.data.I18n.locale)),
+            stats = listOf(
+                Stats.fmtDuration(w.durationMs) to L("Dauer", "Duration"),
+                "${w.doneSets.size}" to if (w.doneSets.size == 1) L("Satz", "Set") else L("Sätze", "Sets"),
+                Stats.headline(w) to if (w.volume > 0) L("Volumen", "Volume") else L("Gesamt", "Total"),
+            ),
+            heading = if (records.isNotEmpty()) L("Neue Rekorde", "New records") else L("Beste Sätze", "Best sets"),
+            rows = rows,
+        )
+        scope.launch { runCatching { ShareImage.share(context, card) } }
+    }
     fun share() {
         val lines = buildList {
             add("${w.name} · ${Stats.day(w.startedAt).format(java.time.format.DateTimeFormatter.ofPattern(if (dev.mauve.fit.data.I18n.german) "d. MMMM" else "MMMM d"))}")
@@ -123,7 +160,20 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
             }
         }
         item {
+            GhostButton(L("Als Bild teilen", "Share as image"), Modifier.fillMaxWidth(), Icons.Rounded.Image) { shareImage() }
+            Spacer(Modifier.height(10.dp))
             GhostButton(L("Training teilen", "Share workout"), Modifier.fillMaxWidth(), Icons.Rounded.Share) { Haptics.click(); share() }
+        }
+        if (challengeWon) item {
+            Card(color = Ink.raised) {
+                Eyebrow(L("Wochen-Challenge geschafft", "Weekly challenge done"), color = Ink.accent)
+                Text(challenge.title, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    L("Damit hast du ${data.challengesDone.size.coerceAtLeast(1)} Challenges geschafft. Nächsten Montag wartet die nächste.",
+                        "That makes ${data.challengesDone.size.coerceAtLeast(1)} challenges done. A new one waits next Monday."),
+                    color = Ink.muted, style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
         if (records.isNotEmpty()) item {
             Card(color = Ink.accent) {

@@ -212,6 +212,14 @@ data class AppData(
     val ownRecipes: List<Nutrition.Recipe> = emptyList(),
     /** Products scanned by barcode, newest first, so they can be logged again offline. */
     val scannedFoods: List<ScannedFood> = emptyList(),
+    /** ISO weeks ("2026-W44") whose weekly challenge was completed; its size is the count shown. */
+    val challengesDone: Set<String> = emptySet(),
+    /** Streak freezes in stock (0 to 2) and the missed weeks they covered, as ISO week keys. */
+    val freezes: Int = 0,
+    val frozenWeeks: Set<String> = emptySet(),
+    /** Last week the freeze bookkeeping settled ("" = never) and the goal weeks in a row up to it. */
+    val streakSettled: String = "",
+    val streakRun: Int = 0,
 )
 
 /** One thing eaten on [date] (ISO yyyy-MM-dd); [recipeId] is set when it came from a recipe. */

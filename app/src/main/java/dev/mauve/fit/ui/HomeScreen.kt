@@ -16,7 +16,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import dev.mauve.fit.data.Motivation
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -70,6 +74,15 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val next = Stats.nextRoutine(data.routines, history, App.repo)
     val recovery by Recovery.today.collectAsState()
     val tip = remember(data.history, data.settings, data.routines) { Coach.homeTip(data, App.repo) }
+    val challenge = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
+    val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
+
+    // A new week may have started while the app stayed open: book the one that ended.
+    LaunchedEffect(Stats.weekKey(LocalDate.now())) { App.store.settleStreak() }
+    // Completed outside the summary (e.g. a goal change): count it and celebrate once here.
+    LaunchedEffect(challenge.week, challenge.done) {
+        if (challenge.done && App.store.completeChallenge(challenge.week)) Haptics.success()
+    }
 
     fun start(r: Routine?) {
         App.store.startWorkout(r)
@@ -152,12 +165,15 @@ fun HomeScreen(data: AppData, nav: NavController) {
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f), if (thisWeek >= goal) Ink.accent else Ink.text)
-                Stat("${Stats.weekStreak(history, goal)}", L("Serie", "streak"), Modifier.weight(1f), Ink.coral)
-                Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f))
+            // Same height for all three, even when the streak carries its freeze line.
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f).fillMaxHeight(), if (thisWeek >= goal) Ink.accent else Ink.text)
+                StreakStat(streak, data.freezes, Modifier.weight(1f).fillMaxHeight())
+                Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
             }
         }
+
+        item { ChallengeCard(challenge, data.challengesDone.size) }
 
         if (data.active == null) item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -169,6 +185,37 @@ fun HomeScreen(data: AppData, nav: NavController) {
         if (history.isNotEmpty()) item { RecoveryCard(Progress.recovery(history, App.repo)) }
 
     }
+    }
+}
+
+/** The week streak like [Stat], with the freezes in stock below it. */
+@Composable
+private fun StreakStat(streak: Int, freezes: Int, modifier: Modifier) {
+    Card(modifier, padding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)) {
+        Text("$streak", style = MaterialTheme.typography.headlineMedium, color = Ink.coral, maxLines = 1, softWrap = false)
+        Text(L("Serie", "streak"), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+        if (freezes > 0) Text(Motivation.freezeLabel(freezes), style = MaterialTheme.typography.labelSmall, color = Ink.accent, maxLines = 1)
+    }
+}
+
+/** This week's challenge: what to do, how far along, and a word of praise once it is done. */
+@Composable
+fun ChallengeCard(c: Motivation.Challenge, completed: Int, modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Eyebrow(L("Wochen-Challenge", "Weekly challenge"), Modifier.weight(1f), color = if (c.done) Ink.accent else Ink.muted)
+            if (c.done) Tag(L("Geschafft", "Done"), Ink.accent) else Text(c.label, style = MaterialTheme.typography.labelLarge, color = Ink.muted)
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(c.title, style = MaterialTheme.typography.titleLarge)
+        Spacer(Modifier.height(10.dp))
+        Meter(c.fraction, Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (c.done) L("Stark. Das ist deine ${completed.coerceAtLeast(1)}. geschaffte Challenge.", "Nice work. That makes ${completed.coerceAtLeast(1)} challenges done.")
+            else c.detail,
+            style = MaterialTheme.typography.bodySmall, color = if (c.done) Ink.text else Ink.muted,
+        )
     }
 }
 

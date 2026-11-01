@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.IsoFields
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
 
@@ -154,5 +155,34 @@ object Stats {
         val type = when (s.type) { SetType.Drop -> " D"; SetType.Failure -> L(" V", " F"); else -> "" }
         val rpe = if (s.rpe > 0) " @${s.rpe}" else ""
         return base + type + rpe
+    }
+
+    /** ISO week key of the week containing [date], e.g. "2026-W44". */
+    fun weekKey(date: LocalDate): String =
+        "%d-W%02d".format(java.util.Locale.ROOT, date.get(IsoFields.WEEK_BASED_YEAR), date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR))
+
+    /** Monday of the week a [weekKey] names, or null for anything else. */
+    fun weekOf(key: String): LocalDate? = runCatching {
+        val (year, week) = key.split("-W").map { it.toInt() }
+        LocalDate.of(year, 1, 4).with(IsoFields.WEEK_OF_WEEK_BASED_YEAR, week.toLong()).let(::weekStart)
+    }.getOrNull()
+
+    /**
+     * Like [weekStreak], but [frozen] weeks (ISO keys) were covered by a freeze: they neither count
+     * nor break the run.
+     */
+    fun weekStreak(history: List<Workout>, goal: Int, frozen: Set<String>): Int {
+        val perWeek = history.groupingBy { weekStart(day(it.startedAt)) }.eachCount()
+        var week = weekStart(LocalDate.now(zone))
+        if ((perWeek[week] ?: 0) < goal) week = week.minusWeeks(1)
+        var streak = 0
+        while (true) {
+            when {
+                (perWeek[week] ?: 0) >= goal.coerceAtLeast(1) -> streak++
+                weekKey(week) !in frozen -> break
+            }
+            week = week.minusWeeks(1)
+        }
+        return streak
     }
 }

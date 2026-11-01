@@ -94,6 +94,17 @@
                 android:resource="@xml/next_workout_widget" />
         </receiver>
 
+        <!-- Hands the share pictures in cache/share to the app picked in the share sheet. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.share"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- Commands from the Galaxy Watch app (tick set, skip rest, start workout). -->
         <service
             android:name=".watch.WatchCommandService"

@@ -41,7 +41,7 @@ object Progress {
         val h = d.history
         val sets = h.sumOf { it.doneSets.size }
         val volume = h.sumOf { it.volume }
-        val streak = Stats.weekStreak(h, d.settings.weeklyGoal)
+        val streak = Stats.weekStreak(h, d.settings.weeklyGoal, d.frozenWeeks)
         val bestStreak = bestWeekStreak(h, d.settings.weeklyGoal).coerceAtLeast(streak)
         val zone = ZoneId.systemDefault()
         val hours = h.map { Instant.ofEpochMilli(it.startedAt).atZone(zone).hour }

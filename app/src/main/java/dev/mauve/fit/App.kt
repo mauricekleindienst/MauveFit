@@ -31,6 +31,8 @@ class App : Application(), SingletonImageLoader.Factory {
         Haptics.init(this)
         // A workout forgotten while the app was closed ends here, before anything shows it.
         if (store.closeIdleWorkout()) WorkoutService.closedNotice(this)
+        // A missed week spends a freeze before the streak is shown anywhere.
+        store.settleStreak()
         WorkoutService.follow(this)
         Reminders.follow(this)
         NextWidget.follow(this)

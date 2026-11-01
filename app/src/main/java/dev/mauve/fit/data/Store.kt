@@ -293,4 +293,22 @@ class Store(context: Context) {
     fun rememberScan(food: ScannedFood) = update { d ->
         d.copy(scannedFoods = (listOf(food) + d.scannedFoods.filterNot { it.code == food.code }).take(50))
     }
+
+    // Motivation extras -------------------------------------------------------------
+
+    /** Counts this week's challenge as done; true only the first time, so the caller celebrates once. */
+    fun completeChallenge(weekKey: String): Boolean {
+        var added = false
+        update { d ->
+            if (weekKey in d.challengesDone) d
+            else { added = true; d.copy(challengesDone = d.challengesDone + weekKey) }
+        }
+        return added
+    }
+
+    /** Books every finished week since the last call: earns freezes, spends one on a missed week. */
+    fun settleStreak() = update { d ->
+        val s = Motivation.settle(d.history, d.settings.weeklyGoal, Motivation.FreezeState(d.freezes, d.frozenWeeks, d.streakSettled, d.streakRun))
+        d.copy(freezes = s.freezes, frozenWeeks = s.frozen, streakSettled = s.settled, streakRun = s.run)
+    }
 }

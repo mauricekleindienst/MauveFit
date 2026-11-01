@@ -89,6 +89,11 @@ import dev.mauve.fit.ui.IntroScreen
 import dev.mauve.fit.ui.QuickWorkoutScreen
 import dev.mauve.fit.ui.SettingsScreen
 import dev.mauve.fit.ui.SummaryScreen
+import dev.mauve.fit.ui.ToolsScreen
+import dev.mauve.fit.data.Stats
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import java.time.LocalDate
 import dev.mauve.fit.ui.WorkoutScreen
 
 private enum class Tab(val route: String, private val de: String, private val en: String, val icon: ImageVector) {
@@ -101,7 +106,7 @@ private enum class Tab(val route: String, private val de: String, private val en
 }
 
 class MainActivity : ComponentActivity() {
-    /** Screen asked for by a notification ([EXTRA_OPEN]); AppRoot opens it and clears it. */
+    /** Screen asked for by a notification, launcher shortcut or widget ([EXTRA_OPEN]); AppRoot opens it and clears it. */
     private val openRequest = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -160,11 +165,33 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route
     val data by App.store.data.collectAsStateWithLifecycle()
-    // Tapping the workout notification lands on the running workout.
+    val context = LocalContext.current
+    // Tapping the workout notification lands on the running workout; launcher shortcuts and the
+    // widget ask for the other screens.
     LaunchedEffect(open, data.profile.onboarded) {
         if (open == null || !data.profile.onboarded) return@LaunchedEffect
-        if (open == "workout" && App.store.data.value.active != null && nav.currentDestination?.route != "workout") {
-            nav.navigate("workout") { launchSingleTop = true }
+        val d = App.store.data.value
+        when (open) {
+            "workout" -> if (d.active != null && nav.currentDestination?.route != "workout") nav.navigate("workout") { launchSingleTop = true }
+            // Starts the coach's next plan, or just opens the workout that is already running.
+            "start-next" -> {
+                if (d.active == null) App.store.startWorkout(Stats.nextRoutine(d.routines, d.history, App.repo))
+                if (nav.currentDestination?.route != "workout") nav.navigate("workout") { launchSingleTop = true }
+            }
+            "quick", "tools" -> nav.navigate(open) { launchSingleTop = true }
+            "nutrition" -> nav.navigate(Tab.Nutrition.route) {
+                popUpTo(Tab.Home.route) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+            // A glass of water is logged in place; a short notice is all the feedback it needs.
+            "water" -> {
+                val today = LocalDate.now().toString()
+                App.store.addWater(today, 250)
+                Haptics.click()
+                val total = App.store.data.value.water[today] ?: 0
+                Toast.makeText(context, L("250 ml Wasser eingetragen, heute $total ml", "250 ml of water logged, $total ml today"), Toast.LENGTH_SHORT).show()
+            }
         }
         onOpened()
     }
@@ -196,6 +223,7 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
             screen("workout") { WorkoutScreen(data, nav) }
             screen("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
             screen("quick") { QuickWorkoutScreen(data, nav) }
+            screen("tools") { ToolsScreen(data, nav) }
             screen("settings") { SettingsScreen(data, nav) }
             screen("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
         }

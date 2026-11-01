@@ -84,9 +84,12 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
-                ShortcutTile(L("Übungen", "Exercises"), L("${App.repo.all.size} mit Animation", "${App.repo.all.size} animated"), Icons.Rounded.Search, Modifier.weight(1f)) { nav.navigate("library") }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
+                    ShortcutTile(L("Übungen", "Exercises"), L("${App.repo.all.size} mit Animation", "${App.repo.all.size} animated"), Icons.Rounded.Search, Modifier.weight(1f)) { nav.navigate("library") }
+                }
+                ToolsTile { nav.navigate("tools") }
             }
         }
         item { CardioCard(data) }

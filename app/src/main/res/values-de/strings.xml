@@ -15,4 +15,16 @@
     <string name="shortcut_water_long">Glas Wasser</string>
     <string name="shortcut_tools_short">Werkzeuge</string>
     <string name="shortcut_tools_long">Werkzeuge</string>
+    <string name="widget_nutrition_name">Ernährung heute</string>
+    <string name="widget_nutrition_description">Kalorien, Protein und Wasser von heute, mit Knopf für ein weiteres Glas</string>
+    <string name="widget_nutrition_preview_eyebrow">Heute</string>
+    <string name="widget_nutrition_preview_kcal">Kalorien</string>
+    <string name="widget_nutrition_preview_water">Wasser 3/10</string>
+    <string name="widget_nutrition_preview_glass">+ Glas</string>
+    <string name="widget_streak_name">Serie und Erholung</string>
+    <string name="widget_streak_description">Deine Wochenserie, Joker und die Erholung von heute</string>
+    <string name="widget_streak_preview_eyebrow">Serie</string>
+    <string name="widget_streak_preview_weeks">5 Wochen</string>
+    <string name="widget_streak_preview_freeze">1 Joker</string>
+    <string name="widget_streak_preview_readiness">Erholung</string>
 </resources>

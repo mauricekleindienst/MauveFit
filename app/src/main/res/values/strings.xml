@@ -19,4 +19,16 @@
     <string name="shortcut_water_long">Glass of water</string>
     <string name="shortcut_tools_short">Tools</string>
     <string name="shortcut_tools_long">Tools</string>
+    <string name="widget_nutrition_name">Nutrition today</string>
+    <string name="widget_nutrition_description">Calories, protein and water for today, with a button for one more glass</string>
+    <string name="widget_nutrition_preview_eyebrow">Today</string>
+    <string name="widget_nutrition_preview_kcal">Calories</string>
+    <string name="widget_nutrition_preview_water">Water 3/10</string>
+    <string name="widget_nutrition_preview_glass">+ glass</string>
+    <string name="widget_streak_name">Streak and readiness</string>
+    <string name="widget_streak_description">Your week streak, freezes and readiness for today</string>
+    <string name="widget_streak_preview_eyebrow">Streak</string>
+    <string name="widget_streak_preview_weeks">5 weeks</string>
+    <string name="widget_streak_preview_freeze">1 freeze</string>
+    <string name="widget_streak_preview_readiness">Readiness</string>
 </resources>

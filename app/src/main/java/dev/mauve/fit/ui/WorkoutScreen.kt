@@ -344,6 +344,13 @@ private fun ExercisePage(
             }
             Spacer(Modifier.height(12.dp))
             CoachLine(tip)
+            // In a block the week's phase shapes the numbers above; say so, or "one step up" reads wrong.
+            Coach.blockWeek(data)?.let { b ->
+                Text(
+                    L("Block, Woche ${b.week}: ${b.phase.label}. ${b.phase.blurb}", "Block, week ${b.week}: ${b.phase.label}. ${b.phase.blurb}"),
+                    Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
+                )
+            }
             e?.steps?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
             Spacer(Modifier.height(16.dp))
             Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

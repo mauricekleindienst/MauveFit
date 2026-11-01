@@ -1,5 +1,9 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.Switch
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -278,16 +282,34 @@ private fun ExercisePage(
         (entry.sets.firstOrNull()?.weight ?: 0.0) > data.settings.barWeight
 
     /** Changes one set; the same change carries to later unticked sets that still had the old value. */
-    fun edit(i: Int, weight: Double? = null, reps: Int? = null) = onChange { en ->
+    /**
+     * Changes one set and carries the change down to the open sets below, so nothing has to be typed
+     * twice. Normally only sets that still matched the old value follow; with [all] every open set
+     * below takes the new values. Warm-ups never inherit working weights.
+     */
+    fun edit(i: Int, weight: Double? = null, reps: Int? = null, all: Boolean = false) = onChange { en ->
         val old = en.sets[i]
         en.copy(sets = en.sets.mapIndexed { j, s ->
             when {
                 j == i -> s.copy(weight = weight ?: s.weight, reps = reps ?: s.reps)
-                j > i && !s.done -> s.copy(
-                    weight = if (weight != null && s.weight == old.weight) weight else s.weight,
-                    reps = if (reps != null && s.reps == old.reps) reps else s.reps,
+                j > i && !s.done && s.warmup == old.warmup -> s.copy(
+                    weight = if (weight != null && (all || s.weight == old.weight)) weight else s.weight,
+                    reps = if (reps != null && (all || s.reps == old.reps)) reps else s.reps,
                 )
                 else -> s
+            }
+        })
+    }
+
+    /** Fills the open working sets with last session's values, set by set. */
+    fun useLast() = onChange { en ->
+        var k = 0
+        en.copy(sets = en.sets.map { s ->
+            if (s.warmup) s
+            else {
+                val src = last.getOrNull(k) ?: last.last()
+                k++
+                if (s.done) s else s.copy(weight = src.weight, reps = src.reps)
             }
         })
     }
@@ -312,9 +334,12 @@ private fun ExercisePage(
             // The personal setup note sits right under the name, so it is read before the first set.
             if (note.isNotBlank()) NoteLine(note) { noting = true }
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ActionChip(L("Tauschen", "Swap"), Icons.Rounded.SwapHoriz) { swapping = true }
                 if (canWarmUp) ActionChip(L("Aufwärmen", "Warm-up"), Icons.Rounded.LocalFireDepartment, onWarmup)
+                if (last.isNotEmpty() && entry.sets.any { !it.done && !it.warmup }) ActionChip(L("Wie letztes Mal", "Same as last time"), Icons.Rounded.History) {
+                    Haptics.click(); useLast()
+                }
                 if (note.isBlank()) ActionChip(L("Notiz", "Note"), Icons.Rounded.EditNote) { noting = true }
             }
             Spacer(Modifier.height(12.dp))
@@ -417,6 +442,8 @@ private fun ExercisePage(
         val focus = remember { FocusRequester() }
         LaunchedEffect(i) { runCatching { focus.requestFocus() } }
         var reps by remember(i) { mutableStateOf("${s.reps}") }
+        val hasFollowing = entry.sets.drop(i + 1).any { !it.done && it.warmup == s.warmup }
+        var toAll by remember(i) { mutableStateOf(true) }
         AlertDialog(
             onDismissRequest = { editing = null },
             title = { Text(L("Satz ${i + 1}", "Set ${i + 1}")) },
@@ -429,11 +456,18 @@ private fun ExercisePage(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
                 if (Coach.usesBarbell(e)) PlateView(kg.replace(',', '.').toDoubleOrNull() ?: 0.0, data.settings.barWeight)
+                if (hasFollowing) Row(
+                    Modifier.padding(top = 14.dp).fillMaxWidth().clip(RowShape).clickable { Haptics.tick(); toAll = !toAll }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(L("Für die folgenden Sätze übernehmen", "Apply to the following sets"), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Switch(toAll, { toAll = it })
+                }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    edit(i, weight = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0), reps = reps.toIntOrNull()?.coerceAtLeast(0))
+                    edit(i, weight = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0), reps = reps.toIntOrNull()?.coerceAtLeast(0), all = toAll)
                     editing = null
                 }) { Text(L("Übernehmen", "Apply")) }
             },

@@ -90,6 +90,7 @@ import dev.mauve.fit.ui.QuickWorkoutScreen
 import dev.mauve.fit.ui.SettingsScreen
 import dev.mauve.fit.ui.SummaryScreen
 import dev.mauve.fit.ui.ToolsScreen
+import dev.mauve.fit.ui.InsightsScreen
 import dev.mauve.fit.data.Stats
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
@@ -224,6 +225,7 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
             screen("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
             screen("quick") { QuickWorkoutScreen(data, nav) }
             screen("tools") { ToolsScreen(data, nav) }
+            screen("insights") { InsightsScreen(data, nav) }
             screen("settings") { SettingsScreen(data, nav) }
             screen("intro") { IntroScreen(data.profile) { nav.popBackStack() } }
         }

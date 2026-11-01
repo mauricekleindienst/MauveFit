@@ -19,6 +19,10 @@
     <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
     <!-- Opt-in cycle-based training: period start dates, only asked for when the user chooses it. -->
     <uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
+    <!-- Cardio from the watch: sessions, their distance and pulse, imported on request. -->
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

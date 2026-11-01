@@ -348,4 +348,24 @@ class Store(context: Context) {
         tmp.writeText(json.encodeToString(CycleSettings.serializer(), c))
         tmp.renameTo(cycleFile)
     }
+
+    // Cardio extras -----------------------------------------------------------------
+
+    fun addCardio(session: CardioSession) = update { d -> d.copy(cardio = (d.cardio + session).sortedByDescending { it.at }) }
+
+    fun deleteCardio(id: String) = update { d -> d.copy(cardio = d.cardio.filterNot { it.id == id }) }
+
+    /**
+     * Adds sessions from the watch, skipping any that start within a minute of one already
+     * logged (imported before, or entered by hand). Returns how many were new.
+     */
+    fun importCardio(sessions: List<CardioSession>): Int {
+        var added = 0
+        update { d ->
+            val fresh = Cardio.newSessions(d.cardio, sessions)
+            added = fresh.size
+            if (fresh.isEmpty()) d else d.copy(cardio = (d.cardio + fresh).sortedByDescending { it.at })
+        }
+        return added
+    }
 }

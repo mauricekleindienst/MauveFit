@@ -89,6 +89,7 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
                 ShortcutTile(L("Übungen", "Exercises"), L("${App.repo.all.size} mit Animation", "${App.repo.all.size} animated"), Icons.Rounded.Search, Modifier.weight(1f)) { nav.navigate("library") }
             }
         }
+        item { CardioCard(data) }
         item { BlockPlanner(data) }
         if (data.active == null) item {
             GhostButton(L("Freies Training starten", "Start a free workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow) {

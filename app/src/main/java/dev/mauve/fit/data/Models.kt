@@ -1,5 +1,6 @@
 package dev.mauve.fit.data
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -225,6 +226,8 @@ data class AppData(
     /** Last week the freeze bookkeeping settled ("" = never) and the goal weeks in a row up to it. */
     val streakSettled: String = "",
     val streakRun: Int = 0,
+    /** Cardio sessions, logged by hand or taken over from the watch, newest first. */
+    val cardio: List<CardioSession> = emptyList(),
 )
 
 /** One thing eaten on [date] (ISO yyyy-MM-dd); [recipeId] is set when it came from a recipe. */
@@ -238,4 +241,36 @@ data class FoodEntry(
     val carbs: Int = 0,
     val fat: Int = 0,
     val recipeId: String? = null,
+)
+
+/** Kind of cardio; the keys are what the backup stores. */
+@Serializable
+enum class CardioKind(private val de: String, private val en: String) {
+    @SerialName("run") Run("Laufen", "Run"),
+    @SerialName("bike") Bike("Rad", "Bike"),
+    @SerialName("row") Row("Rudern", "Row"),
+    @SerialName("walk") Walk("Gehen", "Walk"),
+    @SerialName("swim") Swim("Schwimmen", "Swim"),
+    @SerialName("other") Other("Sonstiges", "Other"),
+    ;
+
+    val label get() = L(de, en)
+}
+
+/**
+ * One cardio session starting at [at]. [rpe] is effort on a 1 to 10 scale (null = not rated);
+ * [source] is "manual" or "health" (imported from Health Connect). Cardio never counts toward
+ * the weekly goal, which stays about strength workouts.
+ */
+@Serializable
+data class CardioSession(
+    val id: String = newId(),
+    val at: Long = System.currentTimeMillis(),
+    val kind: CardioKind = CardioKind.Run,
+    val minutes: Int = 30,
+    val distanceKm: Double? = null,
+    val avgHr: Int? = null,
+    val rpe: Int? = null,
+    val source: String = "manual",
+    val note: String = "",
 )

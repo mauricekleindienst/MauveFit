@@ -317,6 +317,7 @@ object Coach {
             ),
             Tone.Rest,
         )
+        cardioTip(d, now)?.let { return it }
 
         // A record set in the last two days deserves a mention.
         // Only a real improvement counts: the exercise needs an earlier session to beat.
@@ -686,5 +687,52 @@ object Coach {
                 "Cycle: energy needs can rise slightly. A little more carbohydrate and enough water are fine.",
             )
         }
+    }
+
+    // --- Cardio ------------------------------------------------------------------------------
+
+    /** Cardio counts against the legs for this long after it ends. */
+    private const val LEG_FATIGUE_MS = 48 * 3_600_000L
+
+    /**
+     * The latest run or ride of the last 48 h that was hard or long (see [Cardio.isHard] and
+     * [Cardio.LONG_MINUTES]); easy short sessions leave the legs alone.
+     */
+    fun legLoad(cardio: List<CardioSession>, now: Long = System.currentTimeMillis()): CardioSession? =
+        cardio.filter { Cardio.loadsLegs(it) && (Cardio.isHard(it) || it.minutes >= Cardio.LONG_MINUTES) }
+            .filter { now - Cardio.end(it) in 0 until LEG_FATIGUE_MS }
+            .maxByOrNull { it.at }
+
+    /**
+     * [recovery] from [Progress.recovery] with cardio taken into account: after a heavy run or
+     * ride the legs start at 30 to 50 % (lower when hard and long) and recover linearly over 48 h.
+     * The lower of the two values wins, so a leg day just before still counts.
+     */
+    fun withCardio(recovery: Map<String, Float>, cardio: List<CardioSession>, now: Long = System.currentTimeMillis()): Map<String, Float> {
+        val s = legLoad(cardio, now) ?: return recovery
+        val legs = Progress.groups.entries.firstOrNull { "quads" in it.value }?.key ?: return recovery
+        val floor = if (Cardio.isHard(s) && s.minutes >= Cardio.LONG_MINUTES) 0.3f else 0.5f
+        val cap = (floor + (1 - floor) * (now - Cardio.end(s)) / LEG_FATIGUE_MS.toFloat()).coerceIn(0f, 1f)
+        return recovery.mapValues { (group, r) -> if (group == legs) minOf(r, cap) else r }
+    }
+
+    /** After a heavy run or ride: suggest the upper body or the short version today. */
+    private fun cardioTip(d: AppData, now: Long): Tip? {
+        val s = legLoad(d.cardio, now) ?: return null
+        // A strength session after the cardio already settled the day.
+        if (d.history.firstOrNull()?.let { it.startedAt > Cardio.end(s) } == true) return null
+        val days = Stats.day(now).toEpochDay() - Stats.day(s.at).toEpochDay()
+        val whenDe = when (days) { 0L -> "Vorhin"; 1L -> "Gestern"; else -> "Vorgestern" }
+        val whenEn = when (days) { 0L -> "Earlier today"; 1L -> "Yesterday"; else -> "Two days ago" }
+        val amount = s.distanceKm?.takeIf { it > 0 }?.let(Cardio::fmtKm) ?: Cardio.fmtMinutes(s.minutes)
+        val run = s.kind == CardioKind.Run
+        return Tip(
+            L("Beine schonen", "Go easy on the legs"),
+            L(
+                "$whenDe $amount ${if (run) "gelaufen" else "Rad gefahren"}: heute Oberkörper oder die Kurzversion.",
+                "$whenEn you ${if (run) "ran" else "rode"} $amount: upper body today, or the short version.",
+            ),
+            Tone.Rest,
+        )
     }
 }

@@ -163,6 +163,8 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                     }
                 }
                 item { DayTotals(eaten, targets, kg) }
+                // Opt-in: only there while cycle-based training is on and up to date.
+                dev.mauve.fit.data.Coach.cycleNutrition(App.store.cycle.value)?.let { line -> item { Text(line, color = Ink.muted, style = MaterialTheme.typography.bodySmall) } }
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         PrimaryButton(L("Aus Rezept", "From recipe"), Modifier.weight(1f)) { picking = true }

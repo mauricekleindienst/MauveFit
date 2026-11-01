@@ -319,4 +319,33 @@ class Store(context: Context) {
         val s = Motivation.settle(d.history, d.settings.weeklyGoal, Motivation.FreezeState(d.freezes, d.frozenWeeks, d.streakSettled, d.streakRun))
         d.copy(freezes = s.freezes, frozenWeeks = s.frozen, streakSettled = s.settled, streakRun = s.run)
     }
+
+    // Cycle extras ------------------------------------------------------------------
+
+    // Its own file in the no-backup folder: never part of data.json, a backup, the export or a
+    // device transfer. While switched off the file does not exist.
+    private val cycleFile = File(context.noBackupFilesDir, "cycle.json")
+    private val _cycle = MutableStateFlow(
+        runCatching { json.decodeFromString<CycleSettings>(cycleFile.readText()) }.getOrDefault(CycleSettings())
+    )
+    val cycle: StateFlow<CycleSettings> = _cycle
+
+    fun updateCycle(block: (CycleSettings) -> CycleSettings) {
+        _cycle.update(block)
+        scope.launch { saveCycle() }
+    }
+
+    /** Switching off forgets everything: the setting, the date and the length. */
+    fun setCycleOn(on: Boolean) = updateCycle { if (on) it.copy(on = true) else CycleSettings() }
+
+    fun clearCycle() = setCycleOn(false)
+
+    @Synchronized
+    private fun saveCycle() {
+        val c = _cycle.value
+        if (!c.on) { cycleFile.delete(); return }
+        val tmp = File(cycleFile.parentFile, "cycle.json.tmp")
+        tmp.writeText(json.encodeToString(CycleSettings.serializer(), c))
+        tmp.renameTo(cycleFile)
+    }
 }

@@ -1,6 +1,17 @@
 package dev.mauve.fit.ui
 
 import dev.mauve.fit.data.CsvExport
+import dev.mauve.fit.data.Cycle
+import dev.mauve.fit.system.CycleHealth
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.rememberDatePickerState
+import java.time.Instant
+import java.time.ZoneOffset
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.launch
@@ -232,6 +243,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         }
 
         item { RecoverySection() }
+        item { CycleSection() }
         item {
             Section(L("Training", "Training"), Icons.Rounded.AutoAwesome) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -432,7 +444,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         title = { Text(L("Alle Daten löschen?", "Delete all data?")) },
         text = { Text(L("Trainings, Pläne, Rekorde und Einstellungen werden entfernt. Das lässt sich nur mit einem Backup rückgängig machen.", "Workouts, plans, records and settings are removed. Only a backup can undo this.")) },
         confirmButton = {
-            TextButton(onClick = { Haptics.warn(); confirmReset = false; App.store.reset(); nav.navigate("home") { popUpTo(0) } }) { Text(L("Löschen", "Delete"), color = Ink.red) }
+            TextButton(onClick = { Haptics.warn(); confirmReset = false; App.store.reset(); App.store.clearCycle(); nav.navigate("home") { popUpTo(0) } }) { Text(L("Löschen", "Delete"), color = Ink.red) }
         },
         dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(L("Abbrechen", "Cancel")) } },
         containerColor = Ink.raised,
@@ -510,4 +522,131 @@ private fun RecoverySection() {
             else -> PrimaryButton(L("Mit Health Connect verbinden", "Connect Health Connect"), Modifier.fillMaxWidth()) { ask.launch(Recovery.permissions) }
         }
     }
+}
+
+/**
+ * Opt-in cycle-based training. Off by default; the date comes from Health Connect or is entered by
+ * hand. Switching it off deletes what was stored.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CycleSection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val c by App.store.cycle.collectAsState()
+    var confirmOff by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
+    var granted by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(c.on, c.source) {
+        if (c.on && c.source == "health") {
+            granted = CycleHealth.granted(context)
+            if (granted == true) CycleHealth.sync(context)
+        }
+    }
+    val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
+        granted = got.containsAll(CycleHealth.permissions)
+        if (granted == true) { Haptics.success(); scope.launch { CycleHealth.sync(context) } }
+    }
+    val dateFmt = DateTimeFormatter.ofPattern(L("d. MMMM yyyy", "MMMM d, yyyy"), I18n.locale)
+    val start = Cycle.parse(c.lastStart)
+
+    Section(L("Zyklus", "Cycle"), Icons.Rounded.CalendarMonth) {
+        Toggle(L("Zyklusbasiertes Training", "Cycle-based training"), L("Aus, bis du es einschaltest", "Off until you turn it on"), c.on) { v ->
+            if (v) App.store.setCycleOn(true)
+            else if (c.lastStart.isNotBlank()) confirmOff = true
+            else App.store.setCycleOn(false)
+        }
+        Text(
+            L(
+                "Wenn du möchtest, zeigt dir die App deine Zyklusphase, den Zyklustag und einen kurzen Hinweis für Training und Ernährung. " +
+                    "Dafür braucht sie nur den ersten Tag deiner letzten Periode und deine übliche Zykluslänge. Die Angaben bleiben auf diesem Telefon, " +
+                    "sind in keinem Backup enthalten und werden nie geteilt. Ausschalten löscht sie.",
+                "If you like, the app shows your cycle phase, the cycle day and a short hint for training and food. " +
+                    "All it needs is the first day of your last period and your usual cycle length. This stays on this phone, " +
+                    "is left out of every backup and is never shared. Turning it off deletes it.",
+            ),
+            color = Ink.muted, style = MaterialTheme.typography.bodySmall,
+        )
+        if (c.on) {
+            Spacer(Modifier.height(12.dp))
+            val hc = CycleHealth.available(context)
+            if (hc) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Chip(L("Selbst eintragen", "Enter myself"), c.source == "manual") { App.store.updateCycle { it.copy(source = "manual") } }
+                    Chip("Health Connect", c.source == "health") { App.store.updateCycle { it.copy(source = "health") } }
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+            if (c.source == "health" && hc) {
+                if (granted == true) {
+                    Text(
+                        start?.let { L("Verbunden · letzte Periode ab ${it.format(dateFmt)}", "Connected · last period from ${it.format(dateFmt)}") }
+                            ?: L("Verbunden · noch keine Periodendaten in Health Connect", "Connected · no period data in Health Connect yet"),
+                        color = Ink.accent, style = MaterialTheme.typography.titleSmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    GhostButton(L("Jetzt aktualisieren", "Refresh now"), Modifier.fillMaxWidth()) { scope.launch { CycleHealth.sync(context) } }
+                } else {
+                    Text(L("Liest nur den Beginn deiner Perioden, sonst nichts.", "Reads only the start of your periods, nothing else."),
+                        color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    PrimaryButton(L("Periodendaten freigeben", "Allow period data"), Modifier.fillMaxWidth()) { ask.launch(CycleHealth.permissions) }
+                }
+            } else {
+                Text(L("Erster Tag der letzten Periode", "First day of your last period"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                Text(start?.format(dateFmt) ?: L("Noch nicht eingetragen", "Not entered yet"), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                GhostButton(L("Datum wählen", "Pick date"), Modifier.fillMaxWidth()) { picking = true }
+            }
+            Spacer(Modifier.height(10.dp))
+            Stepper(L("Übliche Zykluslänge", "Usual cycle length"), L("${c.length} Tage", "${c.length} days"), Modifier.fillMaxWidth(),
+                { App.store.updateCycle { it.copy(length = (it.length - 1).coerceAtLeast(Cycle.MIN_LENGTH)) } },
+                { App.store.updateCycle { it.copy(length = (it.length + 1).coerceAtMost(Cycle.MAX_LENGTH)) } })
+            Spacer(Modifier.height(8.dp))
+            Text(Coach.cycleDisclaimer, color = Ink.faint, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+
+    if (picking) {
+        // The picker works in UTC midnights; only today and the past can be chosen.
+        val todayUtc = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = (start ?: LocalDate.now()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= todayUtc
+            },
+        )
+        val colors = DatePickerDefaults.colors(
+            containerColor = Ink.raised,
+            selectedDayContainerColor = Ink.accent, selectedDayContentColor = Ink.bg,
+            todayDateBorderColor = Ink.accent, todayContentColor = Ink.accent,
+        )
+        DatePickerDialog(
+            onDismissRequest = { picking = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        Haptics.click()
+                        val day = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+                        App.store.updateCycle { it.copy(lastStart = day.toString()) }
+                    }
+                    picking = false
+                }) { Text(L("Übernehmen", "Save"), color = Ink.accent) }
+            },
+            dismissButton = { TextButton(onClick = { picking = false }) { Text(L("Abbrechen", "Cancel")) } },
+            colors = colors,
+        ) { DatePicker(state, colors = colors) }
+    }
+
+    if (confirmOff) AlertDialog(
+        onDismissRequest = { confirmOff = false },
+        title = { Text(L("Zyklusdaten löschen?", "Delete cycle data?")) },
+        text = { Text(L("Das Startdatum und die Zykluslänge werden von diesem Telefon gelöscht. Einen Health-Connect-Zugriff kannst du in Health Connect entziehen.",
+            "The start date and cycle length are deleted from this phone. Health Connect access can be removed in Health Connect.")) },
+        confirmButton = {
+            TextButton(onClick = { Haptics.warn(); App.store.setCycleOn(false); confirmOff = false }) { Text(L("Ausschalten und löschen", "Turn off and delete"), color = Ink.red) }
+        },
+        dismissButton = { TextButton(onClick = { confirmOff = false }) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
 }

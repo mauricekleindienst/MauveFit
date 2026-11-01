@@ -121,7 +121,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
         }
         when (tab) {
             0 -> {
-                overview(data)
+                overview(data, nav)
                 workouts(data, expanded, { expanded = it }, { confirm = it }) { confirmCardio = it }
             }
             1 -> records(data, nav)
@@ -493,8 +493,9 @@ private fun TrendChart(values: List<Float>, modifier: Modifier = Modifier) {
     }
 }
 
-/** Weekly volume and sets per muscle, above the workout list. */
-private fun LazyListScope.overview(data: AppData) {
+/** Insights entry, weekly volume and sets per muscle, above the workout list. */
+private fun LazyListScope.overview(data: AppData, nav: NavController) {
+    if (data.history.isNotEmpty()) item(key = "insights") { InsightsTile(data) { nav.navigate("insights") { launchSingleTop = true } } }
     if (data.history.isEmpty()) {
         if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
         return

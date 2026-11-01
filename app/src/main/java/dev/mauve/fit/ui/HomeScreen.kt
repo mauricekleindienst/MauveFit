@@ -73,6 +73,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val volume = Stats.weeklyVolume(history)
     val next = Stats.nextRoutine(data.routines, history, App.repo)
     val recovery by Recovery.today.collectAsState()
+    val cycle by App.store.cycle.collectAsState()
     val tip = remember(data.history, data.settings, data.routines) { Coach.homeTip(data, App.repo) }
     val challenge = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
@@ -155,6 +156,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
         }
 
         recovery?.let { r -> item { ReadinessCard(r, onShort = next?.let { n -> { App.store.startWorkout(n, short = true); nav.navigate("workout") } }.takeIf { data.active == null && r.score < 50 }) } }
+        if (cycle.on) item { CycleCard(cycle) { nav.navigate("settings") } }
         Coach.blockWeek(data)?.let { b -> item { BlockCard(b) } }
 
         if (data.active == null && next != null) item {

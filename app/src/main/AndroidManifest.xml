@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY" />
+    <!-- Opt-in cycle-based training: period start dates, only asked for when the user chooses it. -->
+    <uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />

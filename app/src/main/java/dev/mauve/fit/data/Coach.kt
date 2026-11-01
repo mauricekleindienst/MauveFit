@@ -623,4 +623,55 @@ object Coach {
 
     /** A running workout untouched this long is treated as forgotten and closed. */
     const val IDLE_LIMIT_MS = 3 * 60 * 60_000L
+
+    // --- Cycle ---------------------------------------------------------------------------
+
+    /** Shown under every cycle hint. */
+    val cycleDisclaimer get() = L("Richtwerte, keine medizinische Beratung.", "Guidance, not medical advice.")
+
+    /**
+     * One practical training line per phase. Kept general on purpose: how people feel across the
+     * cycle varies a lot, so these are options, never rules.
+     */
+    fun cycleTraining(phase: Cycle.Phase): String = when (phase) {
+        Cycle.Phase.Menstrual -> L(
+            "Trainiere nach Gefühl. Leichtere oder kürzere Einheiten sind völlig in Ordnung, wenn dir danach ist.",
+            "Train by feel. Lighter or shorter sessions are fine if you need them.",
+        )
+        Cycle.Phase.Follicular -> L(
+            "Gutes Fenster für schwere Sätze und neue Rekorde.",
+            "A good window for heavy sets and new records.",
+        )
+        Cycle.Phase.Ovulation -> L(
+            "Viele fühlen sich jetzt kräftig. Gründlich aufwärmen und bei Sprüngen und Richtungswechseln auf saubere Technik achten.",
+            "Many feel strong now. Warm up well and keep clean technique on jumps and changes of direction.",
+        )
+        Cycle.Phase.Luteal -> L(
+            "Höhere Körpertemperatur und Müdigkeit sind häufig: längere Pausen sind okay, viel trinken, etwas mehr Kohlenhydrate sind in Ordnung.",
+            "Higher body temperature and fatigue are common: allow longer rests, keep hydrated, a little more carbohydrate is fine.",
+        )
+    }
+
+    /** A matching food line, e.g. for the nutrition screen; null when cycle training is off or out of date. */
+    fun cycleNutrition(c: CycleSettings, today: java.time.LocalDate = java.time.LocalDate.now()): String? {
+        val s = Cycle.status(c, today)?.takeIf { !it.stale } ?: return null
+        return when (s.phase) {
+            Cycle.Phase.Menstrual -> L(
+                "Zyklus: Eisenreiches wie Hülsenfrüchte, Fleisch oder Haferflocken und genug Flüssigkeit tun jetzt gut.",
+                "Cycle: iron-rich foods such as legumes, meat or oats and enough fluids are helpful now.",
+            )
+            Cycle.Phase.Follicular -> L(
+                "Zyklus: Kohlenhydrate rund ums Training unterstützen schwere Einheiten.",
+                "Cycle: carbohydrates around training support heavy sessions.",
+            )
+            Cycle.Phase.Ovulation -> L(
+                "Zyklus: ausgewogen essen und genug trinken, mehr braucht es nicht.",
+                "Cycle: eat balanced and drink enough, nothing more is needed.",
+            )
+            Cycle.Phase.Luteal -> L(
+                "Zyklus: Der Energiebedarf kann leicht steigen. Etwas mehr Kohlenhydrate und genug Wasser sind in Ordnung.",
+                "Cycle: energy needs can rise slightly. A little more carbohydrate and enough water are fine.",
+            )
+        }
+    }
 }

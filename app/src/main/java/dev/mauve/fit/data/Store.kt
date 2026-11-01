@@ -267,4 +267,11 @@ class Store(context: Context) {
     fun deleteOwnRecipe(id: String) = update { d ->
         d.copy(ownRecipes = d.ownRecipes.filterNot { it.id == id }, mealPlan = d.mealPlan - id)
     }
+
+    // Barcode extras ----------------------------------------------------------------
+
+    /** Puts [food] first in the scanned list, replacing an older copy of the same code; keeps 50. */
+    fun rememberScan(food: ScannedFood) = update { d ->
+        d.copy(scannedFoods = (listOf(food) + d.scannedFoods.filterNot { it.code == food.code }).take(50))
+    }
 }

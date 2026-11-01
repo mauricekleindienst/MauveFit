@@ -68,4 +68,8 @@ dependencies {
 
     // Home screen widget.
     implementation(libs.glance.appwidget)
+
+    // Food barcode scanner and the Open Food Facts lookup.
+    implementation(libs.code.scanner)
+    implementation(libs.okhttp)
 }

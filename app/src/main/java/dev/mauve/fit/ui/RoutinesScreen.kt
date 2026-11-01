@@ -100,7 +100,7 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
             Card(onClick = { nav.navigate("routine/${r.id}") }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(r.name, style = MaterialTheme.typography.headlineSmall)
+                        Text(r.name, style = MaterialTheme.typography.titleLarge)
                         val muscles = r.exercises.mapNotNull { App.repo[it.exerciseId]?.target }.distinct()
                         Text(
                             r.note.ifBlank { muscles.take(4).joinToString(" · ") { Labels.muscle(it) }.ifBlank { L("Leer", "Empty") } },
@@ -159,7 +159,7 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     ) {
         stickyHeader {
             Row(
-                Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp),
+                Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }

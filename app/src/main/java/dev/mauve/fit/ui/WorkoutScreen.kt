@@ -260,7 +260,7 @@ private fun ExercisePage(
 
     LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 170.dp)) {
         item {
-            ExerciseMedia(e, Modifier.fillMaxWidth().aspectRatio(1.35f).clickable(onClick = onOpen), corner = 28.dp)
+            ExerciseMedia(e, Modifier.fillMaxWidth().height(mediaStageHeight()).clickable(onClick = onOpen), corner = 28.dp)
             Spacer(Modifier.height(16.dp))
             Eyebrow(
                 L(
@@ -490,7 +490,7 @@ private fun CoachLine(tip: Coach.Tip) {
 private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, onPlus: () -> Unit, onEdit: () -> Unit) {
     // One inset capsule per value, so the kg and reps controls read as two separate groups.
     Row(
-        modifier.height(48.dp).clip(Pill).background(Ink.bg.copy(alpha = 0.45f)).padding(horizontal = 4.dp),
+        modifier.height(48.dp).clip(Pill).background(Ink.line.copy(alpha = 0.6f)).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
     ) {
         Box(Modifier.size(36.dp).clip(Pill).clickable { Haptics.tick(); onMinus() }, contentAlignment = Alignment.Center) {

@@ -177,7 +177,7 @@ fun QuickWorkoutScreen(data: AppData, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         stickyHeader {
-            Row(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Row(Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp)) {
                 RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
             }
         }
@@ -220,7 +220,8 @@ fun QuickWorkoutScreen(data: AppData, nav: NavController) {
                             Text(e?.title ?: p.exerciseId, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
                             Text(e?.let { Labels.muscle(it.target) }.orEmpty(), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
                         }
-                        Text("${p.sets} × ${p.reps}", color = Ink.accent, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.width(12.dp))
+                        Text("${p.sets} × ${p.reps}", color = Ink.accent, fontWeight = FontWeight.SemiBold, maxLines = 1)
                     }
                 }
             }

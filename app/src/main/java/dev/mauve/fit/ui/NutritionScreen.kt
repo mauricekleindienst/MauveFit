@@ -1,5 +1,8 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.style.TextAlign
+
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.animation.animateContentSize
@@ -58,6 +61,8 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     val kg = data.bodyWeights.firstOrNull()?.kg
     val goal = data.profile.goal
     val planned = data.mealPlan.values.sum()
+    var askWeight by remember { mutableStateOf(false) }
+    if (askWeight) WeightDialog { askWeight = false }
 
     LazyColumn(
         Modifier.statusBarsPadding(),
@@ -66,14 +71,14 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     ) {
         item { ScreenTitle(goal.label, L("Ernährung", "Nutrition")) }
         stickyHeader {
-            Column(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Column(Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp)) {
                 Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
                     listOf(L("Ziele", "Targets"), L("Rezepte", "Recipes"), L("Einkauf", "Shopping")).forEachIndexed { i, t ->
                         Box(
                             Modifier.weight(1f).clip(Pill).background(if (tab == i) Ink.accent else Ink.surface)
                                 .clickable { Haptics.tick(); tab = i }.padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center,
-                        ) { Text(t, color = if (tab == i) Ink.bg else Ink.muted, fontWeight = FontWeight.SemiBold) }
+                        ) { Text(t, color = if (tab == i) Ink.bg else Ink.muted, style = MaterialTheme.typography.labelLarge, maxLines = 1) }
                     }
                 }
             }
@@ -83,10 +88,12 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                 if (kg == null) Card(Modifier.fillMaxWidth()) {
                     Text(L("Trag dein Körpergewicht ein", "Enter your body weight"), style = MaterialTheme.typography.titleLarge)
                     Text(
-                        L("Die Tagesziele rechnet die App aus deinem Gewicht und deinem Ziel. Eintragen unter Fortschritt, Körper.",
-                            "Daily targets are worked out from your weight and goal. Add it under Progress, Body."),
+                        L("Die Tagesziele rechnet die App aus deinem Gewicht und deinem Ziel.",
+                            "Daily targets are worked out from your weight and goal."),
                         color = Ink.muted,
                     )
+                    Spacer(Modifier.height(14.dp))
+                    PrimaryButton(L("Gewicht eintragen", "Enter weight"), Modifier.fillMaxWidth()) { askWeight = true }
                 } else {
                     val t = Nutrition.targets(kg, goal)
                     Card(Modifier.fillMaxWidth()) {
@@ -132,29 +139,24 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                     val portions = data.mealPlan[r.id] ?: 0
                     val expanded = open == r.id
                     Card(Modifier.fillMaxWidth().animateContentSize(), onClick = { open = if (expanded) null else r.id }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(r.name, style = MaterialTheme.typography.titleLarge)
-                                Text(
-                                    "${r.kcal} kcal · ${r.protein} g Protein · ${r.minutes} min",
-                                    color = Ink.muted, style = MaterialTheme.typography.bodySmall,
-                                )
-                            }
-                            if (goal in r.goals) Tag(L("passt", "fits"), Ink.accent)
+                        // The tag sits on the title's first line, also when the title wraps.
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text(r.name, Modifier.weight(1f).padding(end = 10.dp), style = MaterialTheme.typography.titleLarge)
+                            if (goal in r.goals) Tag(L("passt", "fits"), Ink.accent, Modifier.padding(top = 2.dp))
                         }
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            L("${r.kcal} kcal · ${r.protein} g Protein · ${r.minutes} min · hält ${r.keepsDays} Tage",
+                                "${r.kcal} kcal · ${r.protein} g protein · ${r.minutes} min · keeps ${r.keepsDays} days"),
+                            color = Ink.muted, style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(14.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                L("Hält ${r.keepsDays} Tage im Kühlschrank", "Keeps ${r.keepsDays} days in the fridge"),
-                                Modifier.weight(1f), color = Ink.faint, style = MaterialTheme.typography.bodySmall,
+                                L("Portionen diese Woche", "Portions this week"),
+                                Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = Ink.text,
                             )
-                            // Compact inline counter: a full stepper tile would dwarf the card.
-                            StepButton(Icons.Rounded.Remove, L("Weniger", "Less"), Modifier.width(44.dp)) { App.store.setPortions(r.id, portions - 1) }
-                            Column(Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("$portions", style = MaterialTheme.typography.titleLarge, color = if (portions > 0) Ink.accent else Ink.text)
-                                Text(L("Portionen", "portions"), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
-                            }
-                            StepButton(Icons.Rounded.Add, L("Mehr", "More"), Modifier.width(44.dp)) { App.store.setPortions(r.id, portions + 1) }
+                            PortionCounter(portions, { App.store.setPortions(r.id, portions - 1) }) { App.store.setPortions(r.id, portions + 1) }
                         }
                         if (expanded) {
                             Spacer(Modifier.height(14.dp))
@@ -188,8 +190,8 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                 item {
                     Text(
                         if (planned == 0) L("Noch keine Portionen geplant. Wähle sie unter Rezepte.", "No portions planned yet. Pick them under Recipes.")
-                        else L("$planned Portionen geplant · ${list.count { it.name in data.shoppingDone }} von ${list.size} im Korb",
-                            "$planned portions planned · ${list.count { it.name in data.shoppingDone }} of ${list.size} in the basket"),
+                        else L("$planned ${if (planned == 1) "Portion" else "Portionen"} geplant · ${list.count { it.name in data.shoppingDone }} von ${list.size} im Korb",
+                            "$planned ${if (planned == 1) "portion" else "portions"} planned · ${list.count { it.name in data.shoppingDone }} of ${list.size} in the basket"),
                         color = Ink.muted,
                     )
                 }
@@ -224,4 +226,47 @@ private fun Macro(label: String, value: String, modifier: Modifier) {
         Text(value, style = MaterialTheme.typography.titleLarge)
         Text(label, color = Ink.muted, style = MaterialTheme.typography.bodySmall)
     }
+}
+
+/** One capsule: minus, count, plus. Outlined in the accent once something is planned. */
+@Composable
+private fun PortionCounter(count: Int, onMinus: () -> Unit, onPlus: () -> Unit) {
+    Row(
+        Modifier.height(40.dp).clip(Pill).background(Ink.raised)
+            .border(1.dp, if (count > 0) Ink.accent else Ink.line, Pill),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp).clip(Pill).clickable(enabled = count > 0) { Haptics.tick(); onMinus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Remove, L("Weniger", "Less"), tint = if (count > 0) Ink.text else Ink.faint, modifier = Modifier.size(18.dp))
+        }
+        Text("$count", Modifier.width(28.dp), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
+            color = if (count > 0) Ink.accent else Ink.text)
+        Box(Modifier.size(40.dp).clip(Pill).clickable { Haptics.tick(); onPlus() }, contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Add, L("Mehr", "More"), tint = Ink.text, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun WeightDialog(onDone: () -> Unit) {
+    var kg by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDone,
+        title = { Text(L("Körpergewicht", "Body weight")) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                kg, { kg = it }, label = { Text("kg") }, singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = {
+                kg.replace(',', '.').toDoubleOrNull()?.takeIf { it in 25.0..350.0 }?.let(App.store::addBodyWeight)
+                Haptics.success()
+                onDone()
+            }) { Text(L("Speichern", "Save")) }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDone) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
 }

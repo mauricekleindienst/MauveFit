@@ -83,14 +83,14 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             ScreenTitle(L("${data.history.size} Trainings", "${data.history.size} workouts"), L("Fortschritt", "Progress"))
         }
         stickyHeader {
-            Box(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+            Box(Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(vertical = 8.dp)) {
             Row(Modifier.fillMaxWidth().clip(Pill).background(Ink.surface).padding(4.dp)) {
                 listOf(L("Überblick", "Overview"), L("Rekorde", "Records"), L("Erfolge", "Badges"), L("Körper", "Body")).forEachIndexed { i, t ->
                     Box(
                         Modifier.weight(1f).clip(Pill).background(if (tab == i) Ink.accent else Ink.surface)
                             .clickable { Haptics.tick(); tab = i }.padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center,
-                    ) { Text(t, color = if (tab == i) Ink.bg else Ink.muted, fontWeight = FontWeight.SemiBold) }
+                    ) { Text(t, color = if (tab == i) Ink.bg else Ink.muted, style = MaterialTheme.typography.labelLarge, maxLines = 1) }
                 }
             }
             }
@@ -210,9 +210,10 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
                 Thumb(ex, 50.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(ex?.title ?: r.exerciseId, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(ex?.title ?: r.exerciseId, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(r.date.format(shortFmt), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
                 }
+                Spacer(Modifier.width(10.dp))
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         if (r.best.weight > 0) "${Stats.fmtKg(r.best.weight)} × ${r.best.reps}" else L("${r.best.reps} Wdh.", "${r.best.reps} reps"),
@@ -220,8 +221,6 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
                     )
                     if (r.best.weight > 0) Text("1RM ~${Stats.fmtKg(Stats.roundTo(r.e1rm, 0.5))} kg", color = Ink.accent, style = MaterialTheme.typography.bodySmall)
                 }
-                Spacer(Modifier.width(6.dp))
-                Icon(Icons.Rounded.EmojiEvents, null, tint = Ink.faint)
             }
         }
     }

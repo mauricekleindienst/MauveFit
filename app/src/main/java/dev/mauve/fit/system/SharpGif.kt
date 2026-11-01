@@ -12,6 +12,10 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.bumptech.glide.gifdecoder.GifDecoder
 import com.bumptech.glide.gifdecoder.StandardGifDecoder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import okio.ByteString.Companion.encodeUtf8
 import kotlin.math.exp
 import kotlin.math.floor
@@ -28,21 +32,29 @@ class SharpGifDecoder(private val source: ImageSource, private val options: Opti
         val gif = StandardGifDecoder(Provider)
         gif.read(bytes)
         val res = options.context.resources
-        val anim = AnimationDrawable().apply { isOneShot = false }
-        val n = gif.frameCount.coerceAtLeast(1)
-        repeat(n) {
+        // Frames must be read in order (disposal depends on the previous one); sharpening them is
+        // independent, so it runs on all cores.
+        val raw = ArrayList<Triple<IntArray, Int, Int>>()
+        val delays = ArrayList<Int>()
+        repeat(gif.frameCount.coerceAtLeast(1)) {
             gif.advance()
             val delay = gif.nextDelay.let { if (it < 20) 100 else it }
             val frame = gif.nextFrame ?: return@repeat
-            val w = frame.width
-            val h = frame.height
-            val px = IntArray(w * h)
-            frame.getPixels(px, 0, w, 0, 0, w, h)
-            val out = Upscale.sharp(px, w, h, SCALE)
-            val bmp = Bitmap.createBitmap(out, w * SCALE, h * SCALE, Bitmap.Config.ARGB_8888)
-            anim.addFrame(BitmapDrawable(res, bmp).apply { isFilterBitmap = true }, delay)
+            val px = IntArray(frame.width * frame.height)
+            frame.getPixels(px, 0, frame.width, 0, 0, frame.width, frame.height)
+            raw += Triple(px, frame.width, frame.height)
+            delays += delay
         }
         gif.clear()
+        val sharp = coroutineScope {
+            raw.map { (px, w, h) -> async(Dispatchers.Default) { Upscale.sharp(px, w, h, SCALE) } }.awaitAll()
+        }
+        val anim = AnimationDrawable().apply { isOneShot = false }
+        sharp.forEachIndexed { i, out ->
+            val (_, w, h) = raw[i]
+            val bmp = Bitmap.createBitmap(out, w * SCALE, h * SCALE, Bitmap.Config.ARGB_8888)
+            anim.addFrame(BitmapDrawable(res, bmp).apply { isFilterBitmap = true }, delays[i])
+        }
         return DecodeResult(image = anim.asImage(), isSampled = false)
     }
 

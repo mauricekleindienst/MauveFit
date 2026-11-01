@@ -82,19 +82,17 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
 
     LazyColumn(Modifier.statusBarsPadding(), contentPadding = PaddingValues(bottom = 132.dp)) {
         item {
-            Box(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp)) {
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 4.dp)) {
+                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
+                Spacer(Modifier.height(16.dp))
                 if (pickFor != null) ScreenTitle(L("Hinzufügen", "Add"), L("Übung wählen", "Choose exercise"))
                 else ScreenTitle(L("${repo.all.size} Übungen", "${repo.all.size} exercises"), L("Übungen", "Exercises"))
             }
         }
         // Back, search and filters stay pinned while the results scroll underneath.
         stickyHeader {
-            Column(Modifier.fillMaxWidth().background(Ink.bg).padding(top = 8.dp, bottom = 6.dp)) {
+            Column(Modifier.fillMaxWidth().background(Ink.bg).background(Grain).padding(top = 8.dp, bottom = 6.dp)) {
                 Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    run {
-                        RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 48.dp) { nav.popBackStack() }
-                        Spacer(Modifier.width(10.dp))
-                    }
                     Box(Modifier.weight(1f)) { SearchField(query) { query = it } }
                 }
                 Spacer(Modifier.height(12.dp))

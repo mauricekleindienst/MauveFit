@@ -1,5 +1,11 @@
 package dev.mauve.fit.ui
 
+import coil3.compose.AsyncImage
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -93,6 +99,10 @@ fun ExerciseMedia(exercise: Exercise?, modifier: Modifier = Modifier, animated: 
     var retry by remember { mutableIntStateOf(0) }
     val shape = RoundedCornerShape(corner)
     val filter = remember(Ink.dark) { if (Ink.dark) smartInvert(Ink.stage) else null }
+    // Animations are drawn at most at their decoded size (540 px), never stretched beyond it, so they
+    // stay sharp; the stage around them fills the rest.
+    val nativeSize = with(LocalDensity.current) { MEDIA_PX.toDp() }
+    val fit = if (animated) Modifier.widthIn(max = nativeSize).heightIn(max = nativeSize).aspectRatio(1f) else Modifier.fillMaxSize()
     Box(modifier.clip(shape).background(Ink.stage), contentAlignment = Alignment.Center) {
         val placeholder = @Composable { Icon(Icons.Rounded.FitnessCenter, null, tint = Ink.faint, modifier = Modifier.size(28.dp)) }
         if (exercise == null) placeholder()
@@ -102,15 +112,21 @@ fun ExerciseMedia(exercise: Exercise?, modifier: Modifier = Modifier, animated: 
                 contentDescription = exercise.title,
                 contentScale = ContentScale.Fit,
                 colorFilter = filter,
-                modifier = Modifier.fillMaxSize(),
-                loading = { if (animated) CircularProgressIndicator(Modifier.size(22.dp), color = Ink.faint, strokeWidth = 2.dp) },
+                modifier = fit,
+                // While the animation is fetched and sharpened, the still frame holds its place.
+                loading = {
+                    if (animated) AsyncImage(
+                        exercise.imageUrl, null, Modifier.fillMaxSize().alpha(0.55f),
+                        contentScale = ContentScale.Fit, colorFilter = filter,
+                    )
+                },
                 error = {
                     SubcomposeAsyncImage(
                         model = if (animated) exercise.gifFallback else exercise.imageFallback,
                         contentDescription = exercise.title,
                         contentScale = ContentScale.Fit,
                         colorFilter = filter,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = fit,
                         error = {
                             Box(Modifier.fillMaxSize().clickable { Haptics.tick(); retry++ }, contentAlignment = Alignment.Center) { placeholder() }
                         },
@@ -120,6 +136,13 @@ fun ExerciseMedia(exercise: Exercise?, modifier: Modifier = Modifier, animated: 
         }
     }
 }
+
+/** Decoded animation size: 180 px source, upscaled three times. */
+const val MEDIA_PX = 540
+
+/** Height for a stage that shows one animation at full sharpness plus a margin. */
+@Composable
+fun mediaStageHeight(): Dp = with(LocalDensity.current) { MEDIA_PX.toDp() } + 24.dp
 
 @Composable
 fun Thumb(exercise: Exercise?, size: Dp = 56.dp) = ExerciseMedia(exercise, Modifier.size(size), animated = false, corner = 16.dp)
@@ -188,8 +211,8 @@ fun Chip(text: String, selected: Boolean = false, onClick: (() -> Unit)? = null)
 
 /** Small read-only tag. */
 @Composable
-fun Tag(text: String, color: Color = Ink.muted) {
-    Box(Modifier.clip(RoundedCornerShape(16.dp)).background(Ink.raised).padding(horizontal = 10.dp, vertical = 5.dp)) {
+fun Tag(text: String, color: Color = Ink.muted, modifier: Modifier = Modifier) {
+    Box(modifier.clip(Pill).background(Ink.raised).padding(horizontal = 10.dp, vertical = 5.dp)) {
         Text(text, style = MaterialTheme.typography.labelMedium, color = color)
     }
 }
@@ -250,7 +273,7 @@ fun Stepper(label: String, value: String, modifier: Modifier = Modifier, onMinus
 @Composable
 fun StepButton(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
-        modifier.height(34.dp).clip(Pill).background(Ink.bg.copy(alpha = 0.55f)).clickable { Haptics.tick(); onClick() },
+        modifier.height(34.dp).clip(Pill).background(Ink.line).clickable { Haptics.tick(); onClick() },
         contentAlignment = Alignment.Center,
     ) { Icon(icon, label, tint = Ink.text, modifier = Modifier.size(18.dp)) }
 }

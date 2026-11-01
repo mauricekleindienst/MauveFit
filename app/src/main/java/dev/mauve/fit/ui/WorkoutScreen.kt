@@ -298,7 +298,7 @@ private fun ExercisePage(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val label = if (s.warmup) "W" else "${entry.sets.take(i + 1).count { !it.warmup }}"
-                Text(label, Modifier.width(40.dp), style = MaterialTheme.typography.titleLarge, color = when {
+                Text(label, Modifier.width(40.dp), style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), color = when {
                     s.warmup -> Ink.mauve
                     s.done -> Ink.accent
                     else -> Ink.muted

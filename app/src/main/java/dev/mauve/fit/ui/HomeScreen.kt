@@ -69,6 +69,8 @@ fun HomeScreen(data: AppData, nav: NavController) {
         nav.navigate("workout")
     }
 
+    Box(Modifier.fillMaxSize()) {
+    HeroGrid(Modifier.fillMaxWidth().height(320.dp))
     LazyColumn(
         Modifier.statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 132.dp),
@@ -137,7 +139,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f), if (thisWeek >= goal) Ink.accent else Ink.text)
-                Stat("${Stats.weekStreak(history, goal)}", L("Wochen-Serie", "week streak"), Modifier.weight(1f), Ink.coral)
+                Stat("${Stats.weekStreak(history, goal)}", L("Serie", "streak"), Modifier.weight(1f), Ink.coral)
                 Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f))
             }
         }
@@ -213,6 +215,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
                 }
             }
         }
+    }
     }
 }
 

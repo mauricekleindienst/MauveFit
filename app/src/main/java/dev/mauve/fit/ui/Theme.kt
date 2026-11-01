@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
@@ -182,4 +183,21 @@ fun FitTheme(content: @Composable () -> Unit) {
         outline = p.line, outlineVariant = p.line, error = p.red, onError = p.bg,
     )
     MaterialTheme(colorScheme = colors, typography = typography, content = content)
+}
+
+/** Fine film grain as on kalzit's hero, generated once and tiled. */
+val Grain: androidx.compose.ui.graphics.ShaderBrush by lazy {
+    val size = 160
+    val rnd = java.util.Random(7)
+    val px = IntArray(size * size) {
+        val v = rnd.nextInt(256)
+        android.graphics.Color.argb(rnd.nextInt(18), v, v, v)
+    }
+    val bmp = android.graphics.Bitmap.createBitmap(px, size, size, android.graphics.Bitmap.Config.ARGB_8888)
+    androidx.compose.ui.graphics.ShaderBrush(
+        androidx.compose.ui.graphics.ImageShader(
+            bmp.asImageBitmap(),
+            androidx.compose.ui.graphics.TileMode.Repeated, androidx.compose.ui.graphics.TileMode.Repeated,
+        ),
+    )
 }

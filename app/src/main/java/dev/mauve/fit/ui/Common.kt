@@ -134,7 +134,7 @@ fun Card(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.clip(Facet()).background(color)
+        modifier.clip(Facet()).background(color).border(1.dp, Ink.line, Facet())
             .then(if (onClick != null) Modifier.clickable { Haptics.click(); onClick() } else Modifier)
             .padding(padding),
         content = content,
@@ -168,8 +168,8 @@ fun ScreenTitle(eyebrow: String, title: String, modifier: Modifier = Modifier) {
 @Composable
 fun Stat(value: String, label: String, modifier: Modifier = Modifier, accent: Color = Ink.text) {
     Card(modifier, padding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)) {
-        Text(value, style = MaterialTheme.typography.headlineSmall, color = accent, maxLines = 1)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = accent, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
     }
 }
 
@@ -294,3 +294,29 @@ fun Meter(fraction: Float, modifier: Modifier = Modifier, color: Color = Ink.acc
 }
 
 fun Modifier.screenPadding() = padding(horizontal = 20.dp)
+
+/**
+ * The site's hero grid: hairlines on a regular raster, fading out downwards. Drawn behind the top
+ * of a screen.
+ */
+@Composable
+fun HeroGrid(modifier: Modifier = Modifier, cell: Dp = 28.dp) {
+    val line = Ink.text.copy(alpha = if (Ink.dark) 0.07f else 0.08f)
+    androidx.compose.foundation.Canvas(modifier) {
+        val step = cell.toPx()
+        var x = 0f
+        while (x <= size.width) {
+            drawLine(
+                androidx.compose.ui.graphics.Brush.verticalGradient(listOf(line, Color.Transparent), 0f, size.height),
+                Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f,
+            )
+            x += step
+        }
+        var y = 0f
+        while (y <= size.height) {
+            val a = 1f - y / size.height
+            drawLine(line.copy(alpha = line.alpha * a), Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
+            y += step
+        }
+    }
+}

@@ -8,3 +8,8 @@
 # implementation so the release build doesn't crash on start.
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
 -keep class androidx.work.impl.WorkDatabase_Impl { *; }
+
+# ML Kit's code scanner wires its components by reflection; keep them whole for release builds.
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.internal.mlkit_code_scanner.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_** { *; }

@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.6.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.8.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -10,26 +10,27 @@ Stand: Version 1.6.0 (November 2026). Sortiert nach Nutzen für das Training, ni
 - Körpermaße mit Verlauf, Muskel-Heatmap, Monatsrückblick, Startbildschirm-Widget
 - Training von der Uhr starten, auch wenn das Handy im Hintergrund ist
 
-## Als Nächstes (1.7)
+## Erledigt in 1.7 und 1.8
 
-- **Supersätze auf der Uhr:** Satz abhaken von der Uhr folgt noch dem einfachen Pausentimer.
-- **Satztyp- und RPE-Markierungen** auch im Verlauf und in der Zusammenfassung.
-- **Vorlage 5/3/1 und Starting Strength.**
+- Geräteauswahl (nur Maschinen, ohne Körpergewicht ...), Alternativen pro Gerät, Plan-Menü per Gedrückthalten
+- Supersätze auf der Uhr, Satztyp/RPE im Verlauf, Vorlagen Kraft-Basis und vier Grundübungen
+- Ausführung im Training, Training teilen, Fortschrittsfotos, Akzentfarbe vom Hintergrundbild
+- Trainingsblöcke über 4 oder 6 Wochen (Grundlage, Aufbau, Spitze, Entlastung)
+- Erholung von der Uhr über Health Connect (Schlaf, Ruhepuls, HRV)
+- Barcode-Scanner mit Open Food Facts
+
+## Als Nächstes
+
 - **Uhr-App auf echter Galaxy Watch testen.** Bisher nur gebaut, nicht auf einem Gerät oder Wear-Emulator gelaufen.
 
 ## Coach
 
-- **Periodisierung über Wochen:** Blöcke mit Aufbau, Intensität und Deload, automatisch geplant statt nur bei Stagnation.
-- **Erholung aus Uhr-Daten:** Ruhepuls und Schlaf (Health Connect) fließen in den Tagesvorschlag ein.
-- **Technik-Hinweise pro Übung** aus den Schritten des Datensatzes als kurze Merksätze im Training.
 
 ## Ernährung
 
-- **Barcode-Scanner** über eine offene Lebensmitteldatenbank (Open Food Facts).
 
 ## Fortschritt
 
-- **Fortschrittsfotos,** nur lokal gespeichert.
 
 ## Plattform
 
@@ -42,7 +43,6 @@ Stand: Version 1.6.0 (November 2026). Sortiert nach Nutzen für das Training, ni
 ## Design und Bedienung
 
 - **Animierte Übergänge** zwischen Liste und Übungsdetail (Shared Element).
-- **Dynamische Farben** von Android als zusätzliche Akzentoption.
 - **Barrierefreiheit:** TalkBack-Beschriftungen prüfen, große Schrift testen, Kontrast im hellen Modus messen.
 - **Weitere Sprachen:** Der Datensatz hat Anleitungen in 10 Sprachen; Spanisch, Französisch, Italienisch, Polnisch und Türkisch lassen sich übernehmen.
 

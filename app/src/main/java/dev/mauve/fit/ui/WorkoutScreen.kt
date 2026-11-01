@@ -572,37 +572,6 @@ private fun SetLabel(number: String, s: SetEntry, onType: (warmup: Boolean, type
 }
 
 /** Alternatives in a dialog so the workout stays in place. */
-@Composable
-private fun SwapDialog(exerciseId: String, data: AppData, onPick: (String) -> Unit, onDismiss: () -> Unit) {
-    val options = remember(exerciseId) { Coach.alternatives(App.repo, exerciseId, data.profile.setup) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(L("Übung tauschen", "Swap exercise")) },
-        text = {
-            LazyColumn(Modifier.height(420.dp)) {
-                item { Text(L("Gleicher Zielmuskel, passend zu deiner Ausstattung.", "Same target muscle, matching your equipment."), color = Ink.muted, modifier = Modifier.padding(bottom = 8.dp)) }
-                items(options.size) { i ->
-                    val o = options[i]
-                    Row(
-                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable { Haptics.click(); onPick(o.id) }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Thumb(o, 48.dp)
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(o.title, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleSmall)
-                            Text(Labels.equipment(o.equipment), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text(L("Abbrechen", "Cancel")) } },
-        containerColor = Ink.raised,
-    )
-}
-
 /** Barbell loading per side, drawn as plates sized by weight. */
 @Composable
 private fun PlateView(total: Double, bar: Double) {

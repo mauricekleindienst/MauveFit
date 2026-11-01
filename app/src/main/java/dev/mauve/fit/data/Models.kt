@@ -116,6 +116,27 @@ enum class Setup(
     fun allows(equipment: String) = this.equipment.isEmpty() || equipment in this.equipment
 }
 
+/**
+ * Equipment groups for the user's preference, e.g. "machines only" or "no body-weight moves like
+ * pull-ups". Equipment outside every group (cardio machines, tyres...) counts as off once the user
+ * has narrowed the choice.
+ */
+enum class Kit(val key: String, private val de: String, private val en: String, val equipment: Set<String>) {
+    Machines("machines", "Maschinen", "Machines", setOf("leverage machine", "sled machine", "smith machine", "assisted")),
+    Cables("cables", "Kabelzug", "Cables", setOf("cable", "rope")),
+    Dumbbells("dumbbells", "Kurzhanteln", "Dumbbells", setOf("dumbbell", "kettlebell")),
+    Barbells("barbells", "Langhanteln", "Barbells", setOf("barbell", "ez barbell", "olympic barbell", "trap bar")),
+    Bodyweight("bodyweight", "Körpergewicht", "Body weight", setOf("body weight", "weighted", "stability ball", "bosu ball", "medicine ball", "roller", "wheel roller")),
+    Bands("bands", "Bänder", "Bands", setOf("band", "resistance band")),
+    ;
+
+    val label get() = L(de, en)
+
+    companion object {
+        fun of(equipment: String) = entries.firstOrNull { equipment in it.equipment }
+    }
+}
+
 @Serializable
 data class Profile(
     val goal: Goal = Goal.Muscle,
@@ -123,7 +144,11 @@ data class Profile(
     val days: Int = 3,
     val setup: Setup = Setup.Gym,
     val onboarded: Boolean = false,
-)
+    /** Kit keys the user wants to train with; empty means everything the setup allows. */
+    val kit: Set<String> = emptySet(),
+) {
+    fun allows(equipment: String) = setup.allows(equipment) && (kit.isEmpty() || Kit.of(equipment)?.key in kit)
+}
 
 @Serializable
 data class BodyWeight(val at: Long, val kg: Double)

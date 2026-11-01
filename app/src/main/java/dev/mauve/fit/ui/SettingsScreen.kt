@@ -130,6 +130,12 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                     ),
                     color = Ink.muted,
                 )
+                Spacer(Modifier.height(16.dp))
+                KitPicker(p.setup, p.kit) { App.store.setKit(it) }
+                Spacer(Modifier.height(6.dp))
+                Text(L("Gilt für Schnelltraining und Tauschen sofort, für deine Pläne nach „Plan neu erstellen“.",
+                    "Applies to quick workouts and swaps right away, to your plans after \"Rebuild plan\"."),
+                    color = Ink.faint, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
                 GhostButton(L("Plan neu erstellen", "Rebuild plan"), Modifier.fillMaxWidth()) { nav.navigate("intro") }
             }

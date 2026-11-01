@@ -66,6 +66,7 @@ fun IntroScreen(initial: Profile, onDone: () -> Unit) {
     var level by rememberSaveable { mutableStateOf(initial.level) }
     var days by rememberSaveable { mutableIntStateOf(initial.days) }
     var setup by rememberSaveable { mutableStateOf(initial.setup) }
+    var kit by rememberSaveable { mutableStateOf(initial.kit) }
     var seed by rememberSaveable { mutableIntStateOf(0) }
     val last = 5
     BackHandler(enabled = step > 0) { step-- }
@@ -115,8 +116,10 @@ fun IntroScreen(initial: Profile, onDone: () -> Unit) {
                     }
                     4 -> Question(L("Wo trainierst du?", "Where do you train?"), L("Der Coach wählt nur Übungen, die du mit deiner Ausstattung machen kannst.", "The coach only picks exercises you can do with your equipment.")) {
                         Setup.entries.forEach { Option(it.label, it.blurb, setup == it) { setup = it } }
+                        Spacer(Modifier.height(18.dp))
+                        KitPicker(setup, kit) { kit = it }
                     }
-                    else -> ProgramPreview(Profile(goal, level, days, setup), seed) { seed++ }
+                    else -> ProgramPreview(Profile(goal, level, days, setup, kit = kit), seed) { seed++ }
                 }
             }
         }
@@ -128,7 +131,7 @@ fun IntroScreen(initial: Profile, onDone: () -> Unit) {
             ) {
                 if (step < last) step++
                 else {
-                    val profile = Profile(goal, level, days, setup)
+                    val profile = Profile(goal, level, days, setup, kit = kit)
                     App.store.completeOnboarding(profile, Coach.buildProgram(App.repo, profile, seed))
                     onDone()
                 }

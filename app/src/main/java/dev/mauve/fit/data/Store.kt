@@ -178,6 +178,26 @@ class Store(context: Context) {
 
     fun deleteRoutine(id: String) = update { d -> d.copy(routines = d.routines.filterNot { it.id == id }) }
 
+    /** A copy placed right after the original, with its own superset groups. */
+    fun duplicateRoutine(id: String) = update { d ->
+        val i = d.routines.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return@update d
+        val r = d.routines[i]
+        val ids = r.exercises.mapNotNull { it.superset }.distinct().associateWith { newId() }
+        val copy = r.copy(id = newId(), name = r.name + L(" (Kopie)", " (copy)"), exercises = r.exercises.map { it.copy(superset = it.superset?.let(ids::get)) })
+        d.copy(routines = d.routines.toMutableList().apply { add(i + 1, copy) })
+    }
+
+    /** Replaces one exercise of a plan, keeping its sets, reps, rest and superset link. */
+    fun replaceInRoutine(routineId: String, index: Int, exerciseId: String) = update { d ->
+        d.copy(routines = d.routines.map { r ->
+            if (r.id != routineId || index !in r.exercises.indices) r
+            else r.copy(exercises = r.exercises.toMutableList().also { it[index] = it[index].copy(exerciseId = exerciseId) })
+        })
+    }
+
+    /** Equipment preference; the plan itself only changes when the user rebuilds it. */
+    fun setKit(kit: Set<String>) = update { d -> d.copy(profile = d.profile.copy(kit = if (kit.size == Kit.entries.size) emptySet() else kit)) }
+
     fun addToRoutine(routineId: String, exerciseId: String) = update { d ->
         d.copy(routines = d.routines.map {
             if (it.id == routineId) it.copy(exercises = it.exercises + PlanExercise(exerciseId, restSec = d.settings.defaultRest)) else it

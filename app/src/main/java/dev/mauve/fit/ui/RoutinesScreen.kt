@@ -1,5 +1,8 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.material.icons.rounded.SwapHoriz
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.foundation.background
@@ -106,7 +109,10 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
             }
         }
         items(data.routines, key = { it.id }) { r ->
-            Card(onClick = { nav.navigate("routine/${r.id}") }) {
+            var menu by remember { mutableStateOf(false) }
+            var confirm by remember { mutableStateOf(false) }
+            Box {
+            Card(onClick = { nav.navigate("routine/${r.id}") }, onLongClick = { menu = true }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(r.name, style = MaterialTheme.typography.titleLarge)
@@ -136,6 +142,27 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
                     )
                 }
             }
+            // Press and hold: the plan's actions without opening it.
+            DropdownMenu(menu, { menu = false }, containerColor = Ink.raised) {
+                if (data.active == null && r.exercises.isNotEmpty()) DropdownMenuItem({ Text(L("Starten", "Start")) }, {
+                    menu = false; App.store.startWorkout(r); nav.navigate("workout")
+                }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) })
+                DropdownMenuItem({ Text(L("Bearbeiten", "Edit")) }, { menu = false; nav.navigate("routine/${r.id}") },
+                    leadingIcon = { Icon(Icons.Rounded.Edit, null) })
+                DropdownMenuItem({ Text(L("Duplizieren", "Duplicate")) }, { menu = false; Haptics.click(); App.store.duplicateRoutine(r.id) },
+                    leadingIcon = { Icon(Icons.Rounded.ContentCopy, null) })
+                DropdownMenuItem({ Text(L("Löschen", "Delete"), color = Ink.red) }, { menu = false; confirm = true },
+                    leadingIcon = { Icon(Icons.Rounded.DeleteOutline, null, tint = Ink.red) })
+            }
+            }
+            if (confirm) AlertDialog(
+                onDismissRequest = { confirm = false },
+                title = { Text(L("Plan löschen?", "Delete plan?")) },
+                text = { Text(L("„${r.name}“ wird entfernt. Dein Verlauf bleibt erhalten.", "“${r.name}” will be removed. Your history stays.")) },
+                confirmButton = { TextButton(onClick = { Haptics.warn(); App.store.deleteRoutine(r.id); confirm = false }) { Text(L("Löschen", "Delete"), color = Ink.red) } },
+                dismissButton = { TextButton(onClick = { confirm = false }) { Text(L("Abbrechen", "Cancel")) } },
+                containerColor = Ink.raised,
+            )
         }
         item {
             GhostButton(L("Vorlage hinzufügen", "Add template"), Modifier.fillMaxWidth(), Icons.Rounded.LibraryAdd) { chooseTemplate = true }
@@ -182,6 +209,7 @@ fun restLabel(sec: Int): String = if (sec < 60) "$sec s" else "%d:%02d".format(s
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
+    var replacing by remember { mutableStateOf<Int?>(null) }
     if (id == "new") {
         LaunchedEffect(Unit) {
             val r = Routine(name = L("Neuer Plan", "New plan"))
@@ -191,6 +219,11 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
         return
     }
     val r = data.routines.firstOrNull { it.id == id } ?: return
+    replacing?.let { i ->
+        r.exercises.getOrNull(i)?.let { p ->
+            SwapDialog(p.exerciseId, data, L("Übung ersetzen", "Replace exercise"), onPick = { App.store.replaceInRoutine(r.id, i, it); replacing = null }) { replacing = null }
+        }
+    }
     var confirmDelete by remember { mutableStateOf(false) }
     // Moves and removals can break a superset apart; cleaning keeps only real neighbours linked.
     fun save(block: (Routine) -> Routine) = App.store.saveRoutine(block(r).let { it.copy(exercises = it.exercises.withSupersetsCleaned()) })
@@ -259,6 +292,8 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                                 { menu = false; Haptics.click(); save { it.copy(exercises = it.exercises.toggleSupersetWithNext(i)) } },
                                 leadingIcon = { Icon(if (linked) Icons.Rounded.LinkOff else Icons.Rounded.Link, null) },
                             )
+                            DropdownMenuItem({ Text(L("Ersetzen", "Replace")) }, { menu = false; replacing = i },
+                                leadingIcon = { Icon(Icons.Rounded.SwapHoriz, null) })
                             DropdownMenuItem({ Text(L("Entfernen", "Remove"), color = Ink.red) }, {
                                 menu = false
                                 save { it.copy(exercises = it.exercises.filterIndexed { j, _ -> j != i }) }

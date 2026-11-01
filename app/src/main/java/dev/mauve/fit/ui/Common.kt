@@ -1,5 +1,9 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.spring
@@ -164,10 +168,11 @@ fun Card(
     color: Color = Ink.surface,
     padding: PaddingValues = PaddingValues(20.dp),
     shape: Shape = Panel,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.then(if (onClick != null) Modifier.pressable { Haptics.click(); onClick() } else Modifier)
+        modifier.then(if (onClick != null) Modifier.pressable(onLongClick?.let { l -> { Haptics.heavy(); l() } }) { Haptics.click(); onClick() } else Modifier)
             .clip(shape).background(color)
             .padding(padding),
         content = content,
@@ -175,12 +180,13 @@ fun Card(
 }
 
 /** Click with a springy press-in; used for every large tappable surface. */
-fun Modifier.pressable(onClick: () -> Unit): Modifier = composed {
+@OptIn(ExperimentalFoundationApi::class)
+fun Modifier.pressable(onLongClick: (() -> Unit)? = null, onClick: () -> Unit): Modifier = composed {
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.55f, stiffness = 600f), label = "press")
     graphicsLayer { scaleX = scale; scaleY = scale }
-        .clickable(interactionSource = source, indication = null, onClick = onClick)
+        .combinedClickable(interactionSource = source, indication = null, onLongClick = onLongClick, onClick = onClick)
 }
 
 @Composable
@@ -346,5 +352,31 @@ fun ShortcutTile(title: String, sub: String, icon: ImageVector, modifier: Modifi
         Spacer(Modifier.height(14.dp))
         Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1)
         Text(sub, style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 1)
+    }
+}
+
+/**
+ * Which equipment the coach may use, e.g. machines only or no body-weight moves like pull-ups.
+ * Only groups the setup offers are shown; all on is stored as "no preference".
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun KitPicker(setup: dev.mauve.fit.data.Setup, kit: Set<String>, onChange: (Set<String>) -> Unit) {
+    val offered = dev.mauve.fit.data.Kit.entries.filter { k -> k.equipment.any(setup::allows) }
+    if (offered.size < 2) return
+    val on = kit.ifEmpty { offered.map { it.key }.toSet() }
+    Text(L("Welche Geräte willst du nutzen?", "Which equipment do you want to use?"), style = MaterialTheme.typography.titleMedium)
+    Text(L("Abwählen, was du nicht magst, zum Beispiel Körpergewicht für keine Klimmzüge.", "Switch off what you don't want, e.g. body weight for no pull-ups."),
+        color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+    Spacer(Modifier.height(10.dp))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        offered.forEach { k ->
+            val selected = k.key in on
+            Chip(k.label, selected) {
+                // At least one group stays on, or the coach would have nothing to pick from.
+                val next = if (selected) on - k.key else on + k.key
+                if (next.isNotEmpty()) onChange(if (next.size == offered.size) emptySet() else next)
+            }
+        }
     }
 }

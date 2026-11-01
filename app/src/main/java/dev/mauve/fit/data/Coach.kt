@@ -46,17 +46,25 @@ object Coach {
         return s
     }
 
-    private fun candidates(repo: ExerciseRepo, target: String, setup: Setup, level: Level, exclude: Set<String>, main: Boolean = false) =
-        repo.all.filter { it.target == target && setup.allows(it.equipment) && it.id !in exclude }
+    private fun candidates(repo: ExerciseRepo, target: String, allow: (String) -> Boolean, level: Level, exclude: Set<String>, main: Boolean = false) =
+        repo.all.filter { it.target == target && allow(it.equipment) && it.id !in exclude }
             .sortedByDescending { score(it, level, main) }
 
+    /** Picks for a target with the user's kit; if the kit has nothing for it, the setup alone decides. */
+    private fun candidates(repo: ExerciseRepo, target: String, p: Profile, exclude: Set<String>, main: Boolean = false) =
+        candidates(repo, target, p::allows, p.level, exclude, main).ifEmpty { candidates(repo, target, p.setup::allows, p.level, exclude, main) }
+
     /** Alternatives for a swap: same target muscle, sorted by how typical they are. */
-    fun alternatives(repo: ExerciseRepo, exerciseId: String, setup: Setup, limit: Int = 12): List<Exercise> {
+    fun alternatives(repo: ExerciseRepo, exerciseId: String, allow: (String) -> Boolean, limit: Int = 12): List<Exercise> {
         val e = repo[exerciseId] ?: return emptyList()
         // A compound lift gets compound alternatives, an isolation move gets isolation ones.
         val compound = compoundWords.any { it in e.name } && isolationWords.none { it in e.name }
-        return candidates(repo, e.target, setup, Level.Intermediate, setOf(exerciseId), main = compound).take(limit)
+        return candidates(repo, e.target, allow, Level.Intermediate, setOf(exerciseId), main = compound).take(limit)
     }
+
+    /** Alternatives per equipment group, e.g. the machine version of a free-weight lift. */
+    fun alternativesByKit(repo: ExerciseRepo, exerciseId: String, limit: Int = 8): Map<Kit, List<Exercise>> =
+        Kit.entries.associateWith { kit -> alternatives(repo, exerciseId, { it in kit.equipment }, limit) }.filterValues { it.isNotEmpty() }
 
     // --- Programs ---------------------------------------------------------------------
 
@@ -120,7 +128,7 @@ object Coach {
         return split(p).map { day ->
             val used = mutableSetOf<String>()
             val exercises = dayTemplates.getValue(day).mapIndexedNotNull { i, target ->
-                val pick = candidates(repo, target, p.setup, p.level, used, main = i < 2).take(if (seed == 0) 1 else 4).randomOrNull(random)
+                val pick = candidates(repo, target, p, used, main = i < 2).take(if (seed == 0) 1 else 4).randomOrNull(random)
                     ?: return@mapIndexedNotNull null
                 used += pick.id
                 val rx = prescription(p.goal, p.level, main = i < 2)
@@ -159,7 +167,7 @@ object Coach {
         val targets = regions.getValue(region)
         val used = mutableSetOf<String>()
         val exercises = (0 until count).mapNotNull { i ->
-            val pick = candidates(repo, targets[i % targets.size], p.setup, p.level, used).take(5).randomOrNull(random)
+            val pick = candidates(repo, targets[i % targets.size], p, used).take(5).randomOrNull(random)
                 ?: return@mapNotNull null
             used += pick.id
             PlanExercise(pick.id, rx.sets, rx.reps, rx.rest)
@@ -394,7 +402,7 @@ object Coach {
         if (max < 12 || sets * 4 > max) return null
         val muscles = Progress.groups[group].orEmpty()
         val routine = Stats.nextRoutine(d.routines, d.history, repo) ?: return null
-        val pick = repo.all.filter { it.target in muscles && d.profile.setup.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
+        val pick = repo.all.filter { it.target in muscles && d.profile.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
             .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
         return Tip(
             L("$group kommt zu kurz", "$group is falling behind"),
@@ -548,7 +556,7 @@ object Coach {
             .maxByOrNull { r -> r.exercises.count { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
             ?.takeIf { r -> r.exercises.any { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
             ?: Stats.nextRoutine(d.routines, d.history, repo) ?: return null
-        val pick = repo.all.filter { it.target in gap.muscles && gap.fits(it) && d.profile.setup.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
+        val pick = repo.all.filter { it.target in gap.muscles && gap.fits(it) && d.profile.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
             .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
         return Tip(
             gap.title,

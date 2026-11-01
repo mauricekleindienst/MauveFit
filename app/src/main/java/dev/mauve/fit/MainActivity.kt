@@ -168,12 +168,12 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
         NavHost(
             nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize(),
             // Tabs: the new tab fades in over the old one, which stays put until it is covered.
-            // Pushed screens slide fully in from the right and back out again; nothing fades, so
-            // two screens never show through each other (also while the back gesture scrubs).
-            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(300)) { it } },
-            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(300)) { -it / 4 } },
-            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(300)) { -it / 4 } },
-            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(300)) { it } },
+            // Pushed screens move edge to edge like pages, so they never overlap; that keeps it
+            // clean whichever of the two is drawn on top (also while the back gesture scrubs).
+            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { it } },
+            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { -it } },
+            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { -it } },
+            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { it } },
         ) {
             screen(Tab.Home.route) { HomeScreen(data, nav) }
             screen("library") { LibraryScreen(data, nav, pickFor = null) }

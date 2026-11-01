@@ -27,6 +27,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MauveFit">
 
+        <!-- Lets Play services fetch the barcode scanner module at install, not on the first scan. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

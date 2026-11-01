@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.LocalDrink
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Restaurant
 import androidx.compose.material.icons.rounded.Share
@@ -91,6 +92,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     var askWeight by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf(false) }
     var customEntry by remember { mutableStateOf(false) }
+    val barcode = rememberBarcodeFlow()
     // A new recipe is edited as an empty draft; null means the editor is closed.
     var editing by remember { mutableStateOf<Nutrition.Recipe?>(null) }
     var newRecipe by remember { mutableStateOf(false) }
@@ -106,6 +108,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
         Haptics.success()
         customEntry = false
     }) { customEntry = false }
+    BarcodeDialogs(barcode, todayKey)
     if (newRecipe || editing != null) RecipeEditor(editing, onSave = { r ->
         App.store.saveOwnRecipe(r)
         Haptics.success()
@@ -166,6 +169,10 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                         GhostButton(L("Freier Eintrag", "Custom entry"), Modifier.weight(1f)) { customEntry = true }
                     }
                 }
+                item {
+                    GhostButton(L("Scannen", "Scan"), Modifier.fillMaxWidth(), icon = Icons.Rounded.QrCodeScanner) { barcode.scan(context) }
+                }
+                if (data.scannedFoods.isNotEmpty()) item { RecentScans(data.scannedFoods, barcode::open) }
                 if (eaten.isEmpty()) item {
                     Text(
                         L("Noch nichts eingetragen. Eine Rezept-Portion ist ein Tipp entfernt.", "Nothing logged yet. A recipe portion is one tap away."),

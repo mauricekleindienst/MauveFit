@@ -205,6 +205,8 @@ data class AppData(
     val water: Map<String, Int> = emptyMap(),
     /** Recipes the user wrote; they work everywhere the built-in ones do. */
     val ownRecipes: List<Nutrition.Recipe> = emptyList(),
+    /** Products scanned by barcode, newest first, so they can be logged again offline. */
+    val scannedFoods: List<ScannedFood> = emptyList(),
 )
 
 /** One thing eaten on [date] (ISO yyyy-MM-dd); [recipeId] is set when it came from a recipe. */

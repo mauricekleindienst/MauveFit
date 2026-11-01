@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.8.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.10.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -18,6 +18,12 @@ Stand: Version 1.8.0 (November 2026). Sortiert nach Nutzen für das Training, ni
 - Trainingsblöcke über 4 oder 6 Wochen (Grundlage, Aufbau, Spitze, Entlastung)
 - Erholung von der Uhr über Health Connect (Schlaf, Ruhepuls, HRV)
 - Barcode-Scanner mit Open Food Facts
+
+## Erledigt in 1.9 und 1.10
+
+- Kachel für die Uhr, Wochen-Challenges, Streak-Joker, Rekorde als Bild teilen, CSV-Export
+- Trends 2026: Auto-Regulation nach Erholung, Spracheingabe für Sätze, Cardio und Hybrid-Training (auch von der Uhr), zyklusbasiertes Training (optional, nur auf dem Gerät)
+- Unit-Tests für die Trainingslogik (40 Tests)
 
 ## Als Nächstes
 

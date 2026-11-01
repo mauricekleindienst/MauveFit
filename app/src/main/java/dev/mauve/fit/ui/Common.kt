@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -243,12 +244,13 @@ fun Tag(text: String, color: Color = Ink.muted, modifier: Modifier = Modifier) {
 fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
         modifier.pressable { Haptics.click(); onClick() }.clip(Pill).background(Ink.accent)
-            .padding(horizontal = 24.dp, vertical = 18.dp),
+            .padding(horizontal = 18.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) { Icon(icon, null, tint = Ink.bg); Spacer(Modifier.width(8.dp)) }
-        Text(text, color = Ink.bg, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        // One line always: a button label that wraps reads as two buttons.
+        Text(text, color = Ink.bg, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -257,12 +259,12 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector
 fun GhostButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
     Row(
         modifier.pressable { Haptics.click(); onClick() }.clip(Pill).background(Ink.raised)
-            .padding(horizontal = 22.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) { Icon(icon, null, tint = Ink.text); Spacer(Modifier.width(8.dp)) }
-        Text(text, color = Ink.text, style = MaterialTheme.typography.titleMedium)
+        Text(text, color = Ink.text, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

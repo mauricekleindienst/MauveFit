@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ splash: the app mark on the app background. -->
+    <style name="Theme.MauveFit" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/crust</item>
+        <item name="android:windowSplashScreenBackground">@color/crust</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_fg</item>
+    </style>
+</resources>

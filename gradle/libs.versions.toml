@@ -1,0 +1,51 @@
+[versions]
+agp = "9.4.0"
+# Pinned to the Kotlin Gradle Plugin that AGP 9.4.0 embeds (Kotlin comes from AGP since 9.0).
+kotlin = "2.2.10"
+
+composeBom = "2026.09.00"
+materialIcons = "1.7.8"
+coreKtx = "1.19.0"
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+navigationCompose = "2.10.1"
+
+coroutines = "1.11.0"
+serialization = "1.11.0"
+# Newer Coil releases are built with Kotlin 2.4, which the AGP-embedded 2.2 compiler cannot read.
+coil = "3.3.0"
+wearable = "19.0.0"
+wearCompose = "1.4.1"
+healthServices = "1.1.0"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-material-icons = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIcons" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }
+
+wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "wearable" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+wear-compose-material = { module = "androidx.wear.compose:compose-material", version.ref = "wearCompose" }
+wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
+health-services = { module = "androidx.health:health-services-client", version.ref = "healthServices" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

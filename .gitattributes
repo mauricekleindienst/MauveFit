@@ -1,0 +1,13 @@
+# Normalize to LF in the repository. gradlew in particular must stay LF or the
+# Linux CI runner cannot execute it.
+* text=auto eol=lf
+
+gradlew text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.jar binary
+*.png binary
+*.webp binary
+*.ttf binary
+*.otf binary

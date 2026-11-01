@@ -1,0 +1,273 @@
+package dev.mauve.fit.ui
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BookmarkAdd
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import dev.mauve.fit.system.Haptics
+import dev.mauve.fit.App
+import dev.mauve.fit.data.AppData
+import dev.mauve.fit.data.Coach
+import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Labels
+import dev.mauve.fit.data.Stats
+
+/** Shown after saving a workout: the numbers, new records and what was trained. */
+@Composable
+fun SummaryScreen(id: String, data: AppData, nav: NavController) {
+    val w = data.history.firstOrNull { it.id == id } ?: return
+    var feel by rememberSaveable { mutableIntStateOf(w.feel) }
+    var note by rememberSaveable { mutableStateOf(w.note) }
+    val earlier = data.history.filter { it.startedAt < w.startedAt }
+    val records = w.entries.mapNotNull { e ->
+        val best = e.sets.filter { !it.warmup && it.weight > 0 }.maxByOrNull { Stats.e1rm(it) } ?: return@mapNotNull null
+        val previous = Stats.sessions(earlier, e.exerciseId).maxOfOrNull { it.e1rm } ?: return@mapNotNull null
+        if (Stats.e1rm(best) > previous + 0.01) e.exerciseId to best else null
+    }
+    val muscles = w.entries.groupBy { App.repo[it.exerciseId]?.target ?: "" }
+        .mapValues { (_, es) -> es.sumOf { e -> e.sets.count { !it.warmup } } }.entries.sortedByDescending { it.value }
+    LaunchedEffect(id) { if (records.isNotEmpty()) { kotlinx.coroutines.delay(350); Haptics.record() } }
+    val headline = when {
+        records.isNotEmpty() -> L("Rekordtag.", "Record day.")
+        w.doneSets.size >= 20 -> L("Stark durchgezogen.", "Strong session.")
+        else -> L("Erledigt.", "Done.")
+    }
+
+    LazyColumn(
+        Modifier.statusBarsPadding(),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 32.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item {
+            Eyebrow(w.name, color = Ink.accent)
+            Text(headline, style = MaterialTheme.typography.displayMedium)
+            Text(
+                L(
+                    "Einheit Nr. ${data.history.size} · ${Stats.workoutsThisWeek(data.history)} von ${data.settings.weeklyGoal} diese Woche",
+                    "Session #${data.history.size} · ${Stats.workoutsThisWeek(data.history)} of ${data.settings.weeklyGoal} this week",
+                ),
+                color = Ink.muted,
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Stat(Stats.fmtDuration(w.durationMs), L("Dauer", "Duration"), Modifier.weight(1f))
+                Stat("${w.doneSets.size}", if (w.doneSets.size == 1) L("Satz", "Set") else L("Sätze", "Sets"), Modifier.weight(1f))
+                Stat(Stats.fmtVolume(w.volume), L("Volumen", "Volume"), Modifier.weight(1f), Ink.accent)
+            }
+        }
+        if (records.isNotEmpty()) item {
+            Card(color = Ink.accent) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.EmojiEvents, null, tint = Ink.bg)
+                    Spacer(Modifier.width(8.dp))
+                    Eyebrow(L("Neue Rekorde", "New records"), color = Ink.bg)
+                }
+                Spacer(Modifier.height(8.dp))
+                records.forEach { (exId, s) ->
+                    Row(Modifier.padding(vertical = 4.dp)) {
+                        Text(App.repo[exId]?.title ?: exId, Modifier.weight(1f), color = Ink.bg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("${Stats.fmtKg(s.weight)} kg × ${s.reps}", color = Ink.bg)
+                    }
+                }
+            }
+        }
+        item {
+            Card {
+                Eyebrow(L("Trainierte Muskeln", "Muscles trained"))
+                Spacer(Modifier.height(10.dp))
+                val max = muscles.firstOrNull()?.value?.toFloat() ?: 1f
+                muscles.forEach { (m, n) ->
+                    Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(Labels.muscle(m), Modifier.width(118.dp))
+                        Meter(n / max, Modifier.weight(1f))
+                        Text("$n", Modifier.width(34.dp), textAlign = TextAlign.End, color = Ink.muted)
+                    }
+                }
+            }
+        }
+        item {
+            Card {
+                Eyebrow(L("Wie war's?", "How was it?"))
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(1 to L("Leicht", "Easy"), 2 to L("Gut", "Good"), 3 to L("Hart", "Hard")).forEach { (v, label) ->
+                        Box(
+                            Modifier.weight(1f).clip(RoundedCornerShape(8.dp)).background(if (feel == v) Ink.accent else Ink.raised)
+                                .clickable { Haptics.tick(); feel = if (feel == v) 0 else v }.padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center,
+                        ) { Text(label, color = if (feel == v) Ink.bg else Ink.text, fontWeight = FontWeight.SemiBold) }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.foundation.text.BasicTextField(
+                    note, { note = it },
+                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink.text),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(Ink.accent),
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Ink.raised).padding(14.dp),
+                    decorationBox = { inner -> if (note.isEmpty()) Text(L("Notiz, z. B. Schulter gezwickt", "Note, e.g. shoulder twinged"), color = Ink.faint); inner() },
+                )
+            }
+        }
+        item {
+            PrimaryButton(L("Fertig", "Done"), Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                App.store.setFeel(w.id, feel, note.trim())
+                nav.navigate("home") { popUpTo("home") { inclusive = true } }
+            }
+        }
+    }
+}
+
+/** The coach builds a one-off workout from a body region and a time budget. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun QuickWorkoutScreen(data: AppData, nav: NavController) {
+    var region by rememberSaveable { mutableStateOf(Coach.regions.keys.first()) }
+    var minutes by rememberSaveable { mutableIntStateOf(30) }
+    var seed by rememberSaveable { mutableIntStateOf(1) }
+    var saved by remember { mutableStateOf(false) }
+    val routine = remember(region, minutes, seed, data.profile) { Coach.quickWorkout(App.repo, data.profile, region, minutes, seed) }
+
+    LazyColumn(
+        Modifier.statusBarsPadding(),
+        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        stickyHeader {
+            Row(Modifier.fillMaxWidth().background(Ink.bg).padding(vertical = 8.dp)) {
+                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
+            }
+        }
+        item {
+            ScreenTitle("Coach", L("Schnelltraining", "Quick workout"))
+            Text(
+                L(
+                    "Wähle Bereich und Zeit, der Coach stellt passende Übungen für ${data.profile.setup.label.lowercase()} zusammen.",
+                    "Pick a focus and time, the coach puts together matching exercises for ${data.profile.setup.label.lowercase()}.",
+                ),
+                color = Ink.muted,
+            )
+        }
+        item {
+            Eyebrow(L("Bereich", "Focus"), Modifier.padding(top = 8.dp, bottom = 8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(Coach.regions.keys.toList()) { r -> Chip(Coach.regionLabel(r), r == region) { region = r; saved = false } }
+            }
+            Eyebrow(L("Dauer", "Duration"), Modifier.padding(top = 16.dp, bottom = 8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(15, 30, 45, 60).forEach { m -> Chip("$m min", m == minutes) { minutes = m; saved = false } }
+            }
+        }
+        item {
+            Card(Modifier.padding(top = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(routine.name, style = MaterialTheme.typography.titleLarge)
+                        Text(L("${routine.exercises.size} Übungen · ca. ${estMinutes(routine)} min", "${routine.exercises.size} exercises · about ${estMinutes(routine)} min"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                    }
+                    RoundButton(Icons.Rounded.Refresh, L("Neu würfeln", "Shuffle")) { seed++; saved = false }
+                }
+                Spacer(Modifier.height(10.dp))
+                routine.exercises.forEach { p ->
+                    val e = App.repo[p.exerciseId]
+                    Row(Modifier.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Thumb(e, 46.dp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(e?.title ?: p.exerciseId, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+                            Text(e?.let { Labels.muscle(it.target) }.orEmpty(), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text("${p.sets} × ${p.reps}", color = Ink.accent, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                GhostButton(if (saved) L("Gespeichert", "Saved") else L("Als Plan", "Save as plan"), Modifier.weight(1f), Icons.Rounded.BookmarkAdd) {
+                    if (!saved) { App.store.saveRoutine(routine.copy(id = dev.mauve.fit.data.newId())); saved = true }
+                }
+                PrimaryButton(L("Starten", "Start"), Modifier.weight(1f), Icons.Rounded.PlayArrow) {
+                    App.store.startWorkout(routine)
+                    nav.navigate("workout") { popUpTo("quick") { inclusive = true } }
+                }
+            }
+        }
+    }
+}
+
+/** Card for the coach's message; colour follows the tone. */
+@Composable
+fun CoachCard(tip: Coach.Tip, modifier: Modifier = Modifier, onAction: ((Coach.Action) -> Unit)? = null) {
+    val accent = when (tip.tone) {
+        Coach.Tone.Push -> Ink.accent
+        Coach.Tone.Rest -> Ink.mauve
+        Coach.Tone.Win -> Ink.coral
+        Coach.Tone.Info -> Ink.text
+    }
+    Row(
+        modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(Ink.surface).padding(18.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Box(Modifier.size(38.dp).clip(Pill).background(accent.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.AutoAwesome, null, tint = accent, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Eyebrow("Coach · ${tip.title}", color = accent)
+            Spacer(Modifier.height(4.dp))
+            Text(tip.body, style = MaterialTheme.typography.bodyMedium)
+            val action = tip.action
+            if (action != null && onAction != null) {
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    Modifier.clip(Pill).background(accent).clickable { Haptics.click(); onAction(action) }
+                        .padding(horizontal = 16.dp, vertical = 9.dp),
+                ) { Text(action.label, color = Ink.bg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge) }
+            }
+        }
+    }
+}

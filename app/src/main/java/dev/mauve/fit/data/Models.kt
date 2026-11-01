@@ -1,0 +1,156 @@
+package dev.mauve.fit.data
+
+import kotlinx.serialization.Serializable
+import java.util.UUID
+
+fun newId(): String = UUID.randomUUID().toString()
+
+/** One exercise slot in a plan: what to aim for each time it is trained. */
+@Serializable
+data class PlanExercise(
+    val exerciseId: String,
+    val sets: Int = 3,
+    val reps: Int = 10,
+    val restSec: Int = 90,
+)
+
+@Serializable
+data class Routine(
+    val id: String = newId(),
+    val name: String,
+    val note: String = "",
+    val exercises: List<PlanExercise> = emptyList(),
+)
+
+@Serializable
+data class SetEntry(
+    val weight: Double = 0.0,
+    val reps: Int = 0,
+    val done: Boolean = false,
+    /** Warm-up sets are logged but left out of volume and records. */
+    val warmup: Boolean = false,
+    /** Reps the plan asked for (0 = unknown); the coach compares it with what was done. */
+    val target: Int = 0,
+)
+
+@Serializable
+data class ExerciseEntry(
+    val exerciseId: String,
+    val restSec: Int = 90,
+    val sets: List<SetEntry> = listOf(SetEntry()),
+)
+
+/** A workout in progress (AppData.active) or finished (AppData.history). */
+@Serializable
+data class Workout(
+    val id: String = newId(),
+    val name: String,
+    val routineId: String? = null,
+    val startedAt: Long = System.currentTimeMillis(),
+    val finishedAt: Long? = null,
+    val entries: List<ExerciseEntry> = emptyList(),
+    /** Wall-clock time the running rest timer ends, kept here so it survives the app being killed. */
+    val restEndsAt: Long? = null,
+    val restTotalSec: Int = 0,
+    /** How it felt (0 = not rated, 1 easy, 2 good, 3 hard) and a free note, set on the summary. */
+    val feel: Int = 0,
+    val note: String = "",
+) {
+    /** Completed working sets (warm-ups excluded). */
+    val doneSets: List<Pair<String, SetEntry>>
+        get() = entries.flatMap { e -> e.sets.filter { it.done && !it.warmup }.map { e.exerciseId to it } }
+    val volume: Double get() = doneSets.sumOf { (_, s) -> s.weight * s.reps }
+    val durationMs: Long get() = (finishedAt ?: System.currentTimeMillis()) - startedAt
+}
+
+@Serializable
+enum class Goal(private val de: String, private val en: String, private val deBlurb: String, private val enBlurb: String) {
+    Strength("Kraft", "Strength", "Schwerer heben, wenige Wiederholungen", "Lift heavier, fewer reps"),
+    Muscle("Muskelaufbau", "Build muscle", "Mehr Muskelmasse, mittlere Wiederholungen", "More muscle, moderate reps"),
+    Fitness("Fitness", "Fitness", "Fit und belastbar, zügige Einheiten", "Fit and resilient, brisk sessions"),
+    FatLoss("Abnehmen", "Lose fat", "Viel Bewegung, kurze Pausen", "Lots of movement, short rests"),
+    ;
+
+    val label get() = L(de, en)
+    val blurb get() = L(deBlurb, enBlurb)
+}
+
+@Serializable
+enum class Level(private val de: String, private val en: String, private val deBlurb: String, private val enBlurb: String) {
+    Beginner("Einsteiger", "Beginner", "Weniger als 6 Monate Training", "Less than 6 months of training"),
+    Intermediate("Fortgeschritten", "Intermediate", "Regelmäßig seit über 6 Monaten", "Training regularly for 6+ months"),
+    Advanced("Erfahren", "Advanced", "Mehrere Jahre strukturiertes Training", "Several years of structured training"),
+    ;
+
+    val label get() = L(de, en)
+    val blurb get() = L(deBlurb, enBlurb)
+}
+
+@Serializable
+enum class Setup(
+    private val de: String, private val en: String, private val deBlurb: String, private val enBlurb: String,
+    val equipment: Set<String>,
+) {
+    Gym("Fitnessstudio", "Gym", "Hanteln, Kabelzug und Maschinen", "Free weights, cables and machines", emptySet()),
+    Dumbbells("Kurzhanteln", "Dumbbells", "Zuhause mit Kurzhanteln und Bändern", "At home with dumbbells and bands",
+        setOf("body weight", "dumbbell", "kettlebell", "band", "resistance band", "stability ball")),
+    Home("Ohne Geräte", "No equipment", "Nur Körpergewicht", "Body weight only",
+        setOf("body weight")),
+    ;
+
+    val label get() = L(de, en)
+    val blurb get() = L(deBlurb, enBlurb)
+
+    /** Empty set means everything is available. */
+    fun allows(equipment: String) = this.equipment.isEmpty() || equipment in this.equipment
+}
+
+@Serializable
+data class Profile(
+    val goal: Goal = Goal.Muscle,
+    val level: Level = Level.Beginner,
+    val days: Int = 3,
+    val setup: Setup = Setup.Gym,
+    val onboarded: Boolean = false,
+)
+
+@Serializable
+data class BodyWeight(val at: Long, val kg: Double)
+
+@Serializable
+data class Settings(
+    val weeklyGoal: Int = 3,
+    val defaultRest: Int = 90,
+    val weightStep: Double = 2.5,
+    val barWeight: Double = 20.0,
+    val vibrate: Boolean = true,
+    val sound: Boolean = true,
+    val keepScreenOn: Boolean = true,
+    /** Workout reminder: weekdays 1 (Monday) to 7, at hour:minute. */
+    val reminder: Boolean = false,
+    val reminderDays: Set<Int> = setOf(1, 3, 5),
+    val reminderHour: Int = 18,
+    val reminderMinute: Int = 0,
+    /** "system", "de" or "en". */
+    val language: String = "system",
+    /** "system", "dark" or "light". */
+    val theme: String = "system",
+    /** Accent key, see ui.Accent. */
+    val accent: String = "copper",
+    /** While now < deloadUntil, suggested weights are lowered for a lighter week. */
+    val deloadUntil: Long = 0,
+)
+
+@Serializable
+data class AppData(
+    val routines: List<Routine> = Templates.routines,
+    val history: List<Workout> = emptyList(),
+    val active: Workout? = null,
+    val favorites: Set<String> = emptySet(),
+    val settings: Settings = Settings(),
+    val profile: Profile = Profile(),
+    val bodyWeights: List<BodyWeight> = emptyList(),
+    /** Meal-prep week: recipe id to portions, and ticked shopping items. */
+    val mealPlan: Map<String, Int> = emptyMap(),
+    val shoppingDone: Set<String> = emptySet(),
+)

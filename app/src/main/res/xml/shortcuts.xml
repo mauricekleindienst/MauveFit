@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press on the launcher icon. Each opens MainActivity with EXTRA_OPEN ("open") set. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="start_next"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_next"
+        android:shortcutShortLabel="@string/shortcut_next_short"
+        android:shortcutLongLabel="@string/shortcut_next_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="dev.mauve.fit.MainActivity"
+            android:targetPackage="dev.mauve.fit">
+            <extra
+                android:name="open"
+                android:value="start-next" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_quick"
+        android:shortcutShortLabel="@string/shortcut_quick_short"
+        android:shortcutLongLabel="@string/shortcut_quick_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="dev.mauve.fit.MainActivity"
+            android:targetPackage="dev.mauve.fit">
+            <extra
+                android:name="open"
+                android:value="quick" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="water"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_water"
+        android:shortcutShortLabel="@string/shortcut_water_short"
+        android:shortcutLongLabel="@string/shortcut_water_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="dev.mauve.fit.MainActivity"
+            android:targetPackage="dev.mauve.fit">
+            <extra
+                android:name="open"
+                android:value="water" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:shortcutId="tools"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_tools"
+        android:shortcutShortLabel="@string/shortcut_tools_short"
+        android:shortcutLongLabel="@string/shortcut_tools_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="dev.mauve.fit.MainActivity"
+            android:targetPackage="dev.mauve.fit">
+            <extra
+                android:name="open"
+                android:value="tools" />
+        </intent>
+    </shortcut>
+</shortcuts>

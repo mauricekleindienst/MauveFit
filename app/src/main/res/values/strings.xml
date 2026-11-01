@@ -9,4 +9,14 @@
     <string name="widget_preview_title">Upper body</string>
     <string name="widget_preview_count">6 exercises</string>
     <string name="widget_preview_week">This week</string>
+
+    <!-- Launcher shortcuts (long-press the app icon). -->
+    <string name="shortcut_next_short">Workout</string>
+    <string name="shortcut_next_long">Start next workout</string>
+    <string name="shortcut_quick_short">Quick</string>
+    <string name="shortcut_quick_long">Quick workout</string>
+    <string name="shortcut_water_short">Water</string>
+    <string name="shortcut_water_long">Glass of water</string>
+    <string name="shortcut_tools_short">Tools</string>
+    <string name="shortcut_tools_long">Tools</string>
 </resources>

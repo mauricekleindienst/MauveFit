@@ -6,4 +6,13 @@
     <string name="widget_preview_title">Oberkörper</string>
     <string name="widget_preview_count">6 Übungen</string>
     <string name="widget_preview_week">Diese Woche</string>
+
+    <string name="shortcut_next_short">Training</string>
+    <string name="shortcut_next_long">Nächstes Training starten</string>
+    <string name="shortcut_quick_short">Schnell</string>
+    <string name="shortcut_quick_long">Schnelltraining</string>
+    <string name="shortcut_water_short">Wasser</string>
+    <string name="shortcut_water_long">Glas Wasser</string>
+    <string name="shortcut_tools_short">Werkzeuge</string>
+    <string name="shortcut_tools_long">Werkzeuge</string>
 </resources>

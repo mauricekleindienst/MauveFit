@@ -41,6 +41,8 @@ data class WatchState(
     val restTotalSec: Int = 0,
     val doneSets: Int = 0,
     val suggestion: String = "",
+    val week: Int = 0,
+    val goal: Int = 0,
 )
 
 private const val PATH_STATE = "/mauvefit/state"

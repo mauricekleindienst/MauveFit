@@ -132,6 +132,8 @@ class MauveTileService : TileService() {
             text(tileText("Nächstes Training", "Next workout"), Typography.TYPOGRAPHY_CAPTION1, TileInk.MUTED),
             gap(2f),
             text(s.suggestion, Typography.TYPOGRAPHY_TITLE2, TileInk.TEXT, maxLines = 2),
+            gap(4f),
+            text(tileText("Diese Woche ${s.week}/${s.goal}", "This week ${s.week}/${s.goal}"), Typography.TYPOGRAPHY_CAPTION1, if (s.goal > 0 && s.week >= s.goal) TileInk.COPPER else TileInk.MUTED),
         ) else column(
             text(tileText("Kein Training läuft", "No workout running"), Typography.TYPOGRAPHY_TITLE3, TileInk.TEXT, maxLines = 2),
         )

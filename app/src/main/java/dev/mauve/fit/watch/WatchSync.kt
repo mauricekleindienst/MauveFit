@@ -45,6 +45,9 @@ data class WatchState(
     val restTotalSec: Int = 0,
     val doneSets: Int = 0,
     val suggestion: String = "",
+    /** This week's workouts against the weekly goal, for the tile. */
+    val week: Int = 0,
+    val goal: Int = 0,
 )
 
 const val PATH_STATE = "/mauvefit/state"
@@ -56,7 +59,10 @@ object WatchSync {
 
     /** The watch follows the first exercise that still has unticked sets. */
     fun state(d: AppData): WatchState {
-        val w = d.active ?: return WatchState(suggestion = Stats.nextRoutine(d.routines, d.history, App.repo)?.name.orEmpty())
+        val w = d.active ?: return WatchState(
+            suggestion = Stats.nextRoutine(d.routines, d.history, App.repo)?.name.orEmpty(),
+            week = Stats.workoutsThisWeek(d.history), goal = d.settings.weeklyGoal,
+        )
         val idx = Supersets.current(w.entries)
         val entry = w.entries.getOrNull(idx)
         val setIdx = entry?.sets?.indexOfFirst { !it.done }?.takeIf { it >= 0 } ?: 0

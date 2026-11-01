@@ -155,6 +155,14 @@ data class Profile(
     val onboarded: Boolean = false,
     /** Kit keys the user wants to train with; empty means everything the setup allows. */
     val kit: Set<String> = emptySet(),
+    /** Preferred session length in minutes (30, 45, 60, 75); 0 lets the goal decide. */
+    val sessionMinutes: Int = 0,
+    /** [Focus] keys of body areas that get extra work, and [Limit] keys of joints to spare. */
+    val focus: Set<String> = emptySet(),
+    val limits: Set<String> = emptySet(),
+    /** Body data from the intro; 0 = not given. */
+    val heightCm: Int = 0,
+    val birthYear: Int = 0,
 ) {
     fun allows(equipment: String) = setup.allows(equipment) && (kit.isEmpty() || Kit.of(equipment)?.key in kit)
 }
@@ -278,3 +286,52 @@ data class CardioSession(
     val source: String = "manual",
     val note: String = "",
 )
+
+/** Body areas the user can ask the coach to emphasise, mapped to the dataset's target muscles. */
+enum class Focus(val key: String, private val de: String, private val en: String, val targets: List<String>, val sample: String) {
+    Chest("chest", "Brust", "Chest", listOf("pectorals"), "0025"),
+    Back("back", "Rücken", "Back", listOf("lats", "upper back"), "0861"),
+    Shoulders("shoulders", "Schultern", "Shoulders", listOf("delts"), "0405"),
+    Arms("arms", "Arme", "Arms", listOf("biceps", "triceps"), "0313"),
+    Legs("legs", "Beine", "Legs", listOf("quads", "hamstrings", "calves"), "0585"),
+    Glutes("glutes", "Po", "Glutes", listOf("glutes"), "3013"),
+    Core("core", "Bauch", "Core", listOf("abs"), "0276"),
+    ;
+
+    val label get() = L(de, en)
+
+    companion object {
+        fun of(key: String) = entries.firstOrNull { it.key == key }
+    }
+}
+
+/**
+ * Joints to spare. The coach leaves out exercises whose name contains one of [words] (lower case,
+ * as in the dataset), or that train one of [targets].
+ */
+enum class Limit(
+    val key: String, private val de: String, private val en: String, private val deBlurb: String, private val enBlurb: String,
+    val words: List<String>, val targets: Set<String> = emptySet(), val sample: String,
+) {
+    Knees("knees", "Knie", "Knees", "Keine Sprünge, Ausfallschritte oder Beinstrecker", "No jumps, lunges or leg extensions",
+        listOf("jump", "lunge", "leg extension", "pistol", "sissy", "split squat", "step-up", "burpee", "hop", "skater"), sample = "1460"),
+    LowerBack("back", "Unterer Rücken", "Lower back", "Kein Kreuzheben, Good Mornings oder Rückenstrecker", "No deadlifts, good mornings or back extensions",
+        listOf("deadlift", "good morning", "back extension", "hyperextension", "superman", "bent over"), setOf("spine"), "0032"),
+    Shoulders("shoulders", "Schultern", "Shoulders", "Kein Drücken über Kopf, Aufrechtes Rudern oder Dips", "No overhead pressing, upright rows or dips",
+        listOf("overhead", "military", "shoulder press", "upright row", "dip", "behind neck", "handstand", "arnold press", "push press", "jerk", "snatch"), sample = "0405"),
+    Wrists("wrists", "Handgelenke", "Wrists", "Keine Liegestütze oder Frontkniebeugen", "No push-ups or front squats",
+        listOf("push-up", "push up", "front squat", "handstand", "wrist", "clean", "burpee"), sample = "0662"),
+    ;
+
+    val label get() = L(de, en)
+    val blurb get() = L(deBlurb, enBlurb)
+
+    /** True when [e] would stress this joint. */
+    fun hits(e: Exercise): Boolean = e.target in targets || words.any { it in e.name } ||
+        // Pressing for the shoulders goes overhead even when the name does not say so.
+        (this == Shoulders && e.target == "delts" && "press" in e.name)
+
+    companion object {
+        fun of(key: String) = entries.firstOrNull { it.key == key }
+    }
+}

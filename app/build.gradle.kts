@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.coil.gif)
     implementation(libs.gifdecoder)
+    implementation(libs.health.connect)
 
     // Galaxy Watch sync over the Wear OS data layer.
     implementation(libs.wearable)

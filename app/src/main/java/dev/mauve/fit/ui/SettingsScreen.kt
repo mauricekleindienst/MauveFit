@@ -1,5 +1,10 @@
 package dev.mauve.fit.ui
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.rounded.Favorite
+import dev.mauve.fit.system.Recovery
+import androidx.health.connect.client.PermissionController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.border
 import androidx.compose.material.icons.rounded.Check
@@ -210,6 +215,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
             }
         }
 
+        item { RecoverySection() }
         item {
             Section(L("Training", "Training"), Icons.Rounded.AutoAwesome) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -440,5 +446,40 @@ private fun Toggle(title: String, sub: String, value: Boolean, onChange: (Boolea
                 uncheckedThumbColor = Ink.muted, uncheckedTrackColor = Ink.raised, uncheckedBorderColor = Ink.line,
             ),
         )
+    }
+}
+
+/** Connects Health Connect so sleep, resting pulse and HRV from the watch feed the readiness score. */
+@Composable
+private fun RecoverySection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var granted by remember { mutableStateOf<Boolean?>(null) }
+    val today by Recovery.today.collectAsState()
+    LaunchedEffect(Unit) { granted = Recovery.granted(context) }
+    val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
+        granted = got.containsAll(Recovery.permissions)
+        if (granted == true) { Haptics.success(); scope.launch { Recovery.refresh(context) } }
+    }
+    Section(L("Erholung von der Uhr", "Recovery from your watch"), Icons.Rounded.Favorite) {
+        Text(
+            L("Schlaf, Ruhepuls und HRV aus Health Connect ergeben jeden Morgen einen Erholungswert. Bei Samsung Health: Einstellungen, Health Connect, Daten teilen einschalten.",
+                "Sleep, resting heart rate and HRV from Health Connect make a readiness score every morning. In Samsung Health: Settings, Health Connect, turn on data sharing."),
+            color = Ink.muted, style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(12.dp))
+        when {
+            !Recovery.available(context) -> Text(L("Health Connect ist auf diesem Gerät nicht verfügbar.", "Health Connect is not available on this device."), color = Ink.faint)
+            granted == true -> {
+                Text(
+                    today?.let { L("Verbunden · heute ${it.score} von 100", "Connected · today ${it.score} of 100") }
+                        ?: L("Verbunden · noch keine Daten von letzter Nacht", "Connected · no data from last night yet"),
+                    color = Ink.accent, style = MaterialTheme.typography.titleSmall,
+                )
+                Spacer(Modifier.height(8.dp))
+                GhostButton(L("Jetzt aktualisieren", "Refresh now"), Modifier.fillMaxWidth()) { scope.launch { Recovery.refresh(context) } }
+            }
+            else -> PrimaryButton(L("Mit Health Connect verbinden", "Connect Health Connect"), Modifier.fillMaxWidth()) { ask.launch(Recovery.permissions) }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package dev.mauve.fit.data
 
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
@@ -218,7 +219,9 @@ object Coach {
             }.maxOfOrNull { it.e1rm }
             if (similar == null) 0.0 else similar / (1 + reps / 30.0) * 0.85
         }
-        if (deloadActive(d)) w *= 0.7
+        // A block's phase sets the load; outside a block the light week does.
+        val phase = blockWeek(d)?.phase
+        if (phase != null) w *= phase.load else if (deloadActive(d)) w *= 0.7
         return if (w <= 0) 0.0 else Stats.roundTo(w, step).coerceAtLeast(step)
     }
 
@@ -272,6 +275,7 @@ object Coach {
     sealed class Action(val label: String) {
         class StartDeload : Action(L("Leichte Woche starten", "Start a light week"))
         class EndDeload : Action(L("Leichte Woche beenden", "End the light week"))
+        class StartBlock : Action(L("Neuen Block starten", "Start a new block"))
         class AddExercise(val routineId: String, val exerciseId: String, routineName: String) :
             Action(L("Zu „$routineName“ hinzufügen", "Add to \"$routineName\""))
     }
@@ -351,7 +355,13 @@ object Coach {
                 Tone.Rest,
             )
         }
-        deloadTip(d)?.let { return it }
+        if (blockFinished(d)) return Tip(
+            L("Block geschafft", "Block complete"),
+            L("Alle Wochen sind durch. Ein neuer Block startet wieder mit der Grundlage, mit deinen neuen Gewichten.",
+                "Every week is done. A new block starts again from the base, with your new weights."),
+            Tone.Win, Action.StartBlock(),
+        )
+        if (blockWeek(d) == null) deloadTip(d)?.let { return it }
         imbalanceTip(d, repo)?.let { return it }
         balanceTip(d, repo)?.let { return it }
 
@@ -563,5 +573,51 @@ object Coach {
             gap.body + L(". Vorschlag: ${pick.title}.", ". Suggestion: ${pick.title}."),
             Tone.Push, Action.AddExercise(routine.id, pick.id, routine.name),
         )
+    }
+
+    // --- Training blocks ------------------------------------------------------------------
+
+    /**
+     * A week of a training block. Each phase shifts the plan a little: more reps and a bit lighter
+     * to lay the base, an extra set to build, fewer reps and heavier at the peak, then a light week.
+     */
+    enum class Phase(
+        private val de: String, private val en: String, private val deBlurb: String, private val enBlurb: String,
+        val extraSets: Int, val extraReps: Int, val load: Double,
+    ) {
+        Base("Grundlage", "Base", "Mehr Wiederholungen, etwas leichter: Technik und Volumen.", "More reps, a bit lighter: technique and volume.", 0, 2, 0.95),
+        Build("Aufbau", "Build", "Ein Satz mehr pro Übung bei gleichem Gewicht.", "One more set per exercise at the same weight.", 1, 0, 1.0),
+        Peak("Spitze", "Peak", "Weniger Wiederholungen, schwerer: zeig, was du aufgebaut hast.", "Fewer reps, heavier: show what you built.", 0, -2, 1.05),
+        Deload("Entlastung", "Deload", "Weniger Sätze bei 70 %: der Körper holt nach.", "Fewer sets at 70 %: your body catches up.", -1, 0, 0.7),
+        ;
+
+        val label get() = L(de, en)
+        val blurb get() = L(deBlurb, enBlurb)
+    }
+
+    /** Phase order: 4 weeks Base, Build, Peak, Deload; 6 weeks repeat Base and Build. */
+    fun phases(weeks: Int): List<Phase> =
+        if (weeks >= 6) listOf(Phase.Base, Phase.Base, Phase.Build, Phase.Build, Phase.Peak, Phase.Deload)
+        else listOf(Phase.Base, Phase.Build, Phase.Peak, Phase.Deload)
+
+    data class BlockWeek(val week: Int, val weeks: Int, val phase: Phase)
+
+    /** The current week of the running block, or null when there is none or it is over. */
+    fun blockWeek(d: AppData, now: Long = System.currentTimeMillis()): BlockWeek? {
+        val start = d.settings.blockStart.takeIf { it > 0 } ?: return null
+        val week = ((now - start) / (7 * Stats.DAY_MS)).toInt()
+        val plan = phases(d.settings.blockWeeks)
+        return plan.getOrNull(week)?.let { BlockWeek(week + 1, plan.size, it) }
+    }
+
+    /** Whether a block was started and has run its course. */
+    fun blockFinished(d: AppData) = d.settings.blockStart > 0 && blockWeek(d) == null
+
+    /** A plan entry as this week of the block wants it. */
+    fun applyBlock(d: AppData, p: PlanExercise): PlanExercise {
+        val phase = blockWeek(d)?.phase ?: return p
+        val sets = if (phase == Phase.Deload) (p.sets * 0.6).roundToInt().coerceAtLeast(1) else p.sets + phase.extraSets
+        val reps = (p.reps + phase.extraReps).coerceAtLeast(3)
+        return p.copy(sets = sets.coerceIn(1, 10), reps = reps)
     }
 }

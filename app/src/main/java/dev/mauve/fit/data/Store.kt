@@ -55,7 +55,7 @@ class Store(context: Context) {
     fun startWorkout(routine: Routine?, short: Boolean = false) = update { d ->
         if (d.active != null) return@update d
         val plan = routine?.let { if (short) Coach.shortVersion(it) else it }
-        val entries = plan?.exercises.orEmpty().map { p ->
+        val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps)
             ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset)
         }.withSupersetsCleaned()
@@ -84,6 +84,10 @@ class Store(context: Context) {
 
     fun startDeload() = updateSettings { it.copy(deloadUntil = System.currentTimeMillis() + 7 * Stats.DAY_MS) }
     fun endDeload() = updateSettings { it.copy(deloadUntil = 0) }
+
+    /** Starts a block today; a running light week ends, the block brings its own. */
+    fun startBlock(weeks: Int) = updateSettings { it.copy(blockStart = System.currentTimeMillis(), blockWeeks = weeks, deloadUntil = 0) }
+    fun endBlock() = updateSettings { it.copy(blockStart = 0) }
 
     fun updateActive(block: (Workout) -> Workout) = update { d -> d.active?.let { d.copy(active = block(it)) } ?: d }
 

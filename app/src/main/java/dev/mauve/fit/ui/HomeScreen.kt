@@ -1,5 +1,9 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.runtime.getValue
+
+import androidx.compose.runtime.collectAsState
+import dev.mauve.fit.system.Recovery
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,6 +66,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val thisWeek = Stats.workoutsThisWeek(history)
     val volume = Stats.weeklyVolume(history)
     val next = Stats.nextRoutine(data.routines, history, App.repo)
+    val recovery by Recovery.today.collectAsState()
     val tip = remember(data.history, data.settings, data.routines) { Coach.homeTip(data, App.repo) }
 
     fun start(r: Routine?) {
@@ -107,10 +112,14 @@ fun HomeScreen(data: AppData, nav: NavController) {
                 when (action) {
                     is Coach.Action.StartDeload -> App.store.startDeload()
                     is Coach.Action.EndDeload -> App.store.endDeload()
+                    is Coach.Action.StartBlock -> App.store.startBlock(data.settings.blockWeeks)
                     is Coach.Action.AddExercise -> App.store.addToRoutine(action.routineId, action.exerciseId)
                 }
             }
         }
+
+        recovery?.let { r -> item { ReadinessCard(r, onShort = next?.let { n -> { App.store.startWorkout(n, short = true); nav.navigate("workout") } }.takeIf { data.active == null && r.score < 50 }) } }
+        Coach.blockWeek(data)?.let { b -> item { BlockCard(b) } }
 
         if (data.active == null && next != null) item {
             NextWorkoutCard(next, onShort = {
@@ -238,3 +247,72 @@ private fun RecoveryCard(recovery: Map<String, Float>) {
 
 /** Rough duration: ~40 s per set plus the planned rest. */
 fun estMinutes(r: Routine): Int = (r.exercises.sumOf { it.sets * (40 + it.restSec) } / 60).coerceAtLeast(1)
+
+/** Where the running block stands: one segment per week, the current phase spelled out. */
+@Composable
+fun BlockCard(b: Coach.BlockWeek, modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                Eyebrow(L("Trainingsblock", "Training block"))
+                Text(b.phase.label, style = MaterialTheme.typography.headlineSmall)
+            }
+            Text(L("Woche ${b.week} von ${b.weeks}", "Week ${b.week} of ${b.weeks}"), color = Ink.muted, style = MaterialTheme.typography.labelLarge)
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Coach.phases(b.weeks).forEachIndexed { i, ph ->
+                val color = when {
+                    i + 1 < b.week -> Ink.accent.copy(alpha = 0.45f)
+                    i + 1 == b.week -> Ink.accent
+                    ph == Coach.Phase.Deload -> Ink.mauve.copy(alpha = 0.25f)
+                    else -> Ink.raised
+                }
+                Box(Modifier.weight(1f).height(8.dp).clip(Pill).background(color))
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Text(b.phase.blurb, color = Ink.muted, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** Today's readiness from the watch: score ring, the three inputs, one line of advice. */
+@Composable
+private fun ReadinessCard(r: Recovery.Today, onShort: (() -> Unit)?) {
+    val color = when { r.score >= 75 -> Ink.accent; r.score >= 50 -> Ink.mauve; else -> Ink.coral }
+    Card(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(76.dp), contentAlignment = Alignment.Center) {
+                Ring(r.score / 100f, Modifier.fillMaxSize(), stroke = 7.dp, color = color)
+                Text("${r.score}", style = MaterialTheme.typography.headlineMedium)
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Eyebrow(L("Erholung heute", "Readiness today"))
+                Text(r.advice, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Metric(r.sleepMinutes?.let { "${it / 60}:%02d".format(it % 60) } ?: "–", L("Schlaf", "Sleep"), null, Modifier.weight(1f))
+            Metric(r.restingHr?.let { "$it" } ?: "–", L("Ruhepuls", "Resting HR"), r.restingBase?.let { b -> r.restingHr?.let { it - b } }, Modifier.weight(1f), lowerIsBetter = true)
+            Metric(r.hrv?.let { "$it ms" } ?: "–", "HRV", r.hrvBase?.let { b -> r.hrv?.let { it - b } }, Modifier.weight(1f))
+        }
+        if (onShort != null) {
+            Spacer(Modifier.height(14.dp))
+            GhostButton(L("Kurzversion starten", "Start the short version"), Modifier.fillMaxWidth(), onClick = onShort)
+        }
+    }
+}
+
+@Composable
+private fun Metric(value: String, label: String, delta: Int?, modifier: Modifier, lowerIsBetter: Boolean = false) {
+    Column(modifier.clip(RowShape).background(Ink.raised).padding(12.dp)) {
+        Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+        Text(label, color = Ink.muted, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        if (delta != null && delta != 0) {
+            val good = if (lowerIsBetter) delta < 0 else delta > 0
+            Text((if (delta > 0) "+" else "") + delta + L(" zur Basis", " vs base"), color = if (good) Ink.accent else Ink.coral, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        }
+    }
+}

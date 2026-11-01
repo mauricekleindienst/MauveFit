@@ -179,6 +179,9 @@ data class Settings(
     val accent: String = "copper",
     /** While now < deloadUntil, suggested weights are lowered for a lighter week. */
     val deloadUntil: Long = 0,
+    /** Running training block: start (0 = none) and length in weeks (4 or 6). */
+    val blockStart: Long = 0,
+    val blockWeeks: Int = 4,
 )
 
 @Serializable

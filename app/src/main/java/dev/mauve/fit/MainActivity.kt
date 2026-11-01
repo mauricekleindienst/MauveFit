@@ -1,5 +1,8 @@
 package dev.mauve.fit
 
+import dev.mauve.fit.system.Recovery
+import kotlinx.coroutines.launch
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.Restaurant
 import android.Manifest
@@ -136,6 +139,8 @@ class MainActivity : ComponentActivity() {
         // A workout started from the watch in the background only got a stand-in notice; now that
         // the app is in front, the real foreground service may start.
         WorkoutService.start(this)
+        // Fresh watch data each time the app comes to the front.
+        lifecycleScope.launch { Recovery.refresh(this@MainActivity) }
     }
 
     override fun onStop() {

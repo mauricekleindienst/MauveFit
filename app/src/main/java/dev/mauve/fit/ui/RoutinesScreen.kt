@@ -58,6 +58,7 @@ import androidx.navigation.NavController
 import dev.mauve.fit.system.Haptics
 import dev.mauve.fit.App
 import dev.mauve.fit.data.AppData
+import dev.mauve.fit.data.Coach
 import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Labels
 import dev.mauve.fit.data.PlanExercise
@@ -87,6 +88,7 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
                 ShortcutTile(L("Übungen", "Exercises"), L("${App.repo.all.size} mit Animation", "${App.repo.all.size} animated"), Icons.Rounded.Search, Modifier.weight(1f)) { nav.navigate("library") }
             }
         }
+        item { BlockPlanner(data) }
         if (data.active == null) item {
             GhostButton(L("Freies Training starten", "Start a free workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow) {
                 App.store.startWorkout(null)
@@ -334,4 +336,33 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(L("Abbrechen", "Cancel")) } },
         containerColor = Ink.raised,
     )
+}
+
+/**
+ * Training block: plan the next weeks as phases instead of the same session every week. While a
+ * block runs, starting any plan applies the week's sets, reps and load.
+ */
+@Composable
+private fun BlockPlanner(data: AppData) {
+    val running = Coach.blockWeek(data)
+    if (running != null) {
+        BlockCard(running)
+        Spacer(Modifier.height(8.dp))
+        GhostButton(L("Block beenden", "End block"), Modifier.fillMaxWidth()) { Haptics.warn(); App.store.endBlock() }
+        return
+    }
+    Card(Modifier.fillMaxWidth()) {
+        Eyebrow(L("Trainingsblock", "Training block"))
+        Text(L("Plane die nächsten Wochen", "Plan the next weeks"), style = MaterialTheme.typography.titleLarge)
+        Text(
+            L("Grundlage, Aufbau, Spitze, Entlastung: deine Pläne passen sich jede Woche automatisch an.",
+                "Base, build, peak, deload: your plans adjust automatically each week."),
+            color = Ink.muted, style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(14.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PrimaryButton(L("4 Wochen", "4 weeks"), Modifier.weight(1f)) { Haptics.success(); App.store.startBlock(4) }
+            GhostButton(L("6 Wochen", "6 weeks"), Modifier.weight(1f)) { Haptics.success(); App.store.startBlock(6) }
+        }
+    }
 }

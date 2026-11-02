@@ -54,10 +54,20 @@ class CardioTest {
     }
 
     @Test fun importSkipsDuplicatesByStartTime() {
-        val known = listOf(CardioSession(at = 1_000_000L))
+        val known = listOf(CardioSession(at = 1_000_000L, source = "health"))
         val incoming = listOf(CardioSession(at = 1_030_000L), CardioSession(at = 5_000_000L), CardioSession(at = 5_010_000L))
         val fresh = Cardio.newSessions(known, incoming)
         assertEquals(listOf(5_000_000L), fresh.map { it.at })
+    }
+
+    @Test fun aRunLoggedByHandIsNotImportedAgain() {
+        // Logged by hand an hour after the run: stamped then, so the start times do not match.
+        val manual = CardioSession(at = now, kind = CardioKind.Run, minutes = 40)
+        val watch = CardioSession(at = now - 2 * 3_600_000L, kind = CardioKind.Run, minutes = 42, source = "health")
+        assertTrue(Cardio.newSessions(listOf(manual), listOf(watch)).isEmpty() || Stats.day(manual.at) != Stats.day(watch.at))
+        // A bike ride the same day is another session.
+        val ride = watch.copy(kind = CardioKind.Bike)
+        assertEquals(1, Cardio.newSessions(listOf(manual), listOf(ride)).size)
     }
 
     @Test fun weekMinutesLandOnTheirDay() {

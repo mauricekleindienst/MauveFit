@@ -40,11 +40,19 @@ object Cardio {
     /** End of the session, which is when recovery starts. */
     fun end(s: CardioSession) = s.at + s.minutes * 60_000L
 
-    /** Sessions from [incoming] that start more than a minute away from every known one (and each other). */
+    /**
+     * Sessions from [incoming] that are not already known: none starting within a minute of a known
+     * one, and none of the same kind on the same day as one logged by hand (that is stamped when it
+     * was logged, not when it was done, so the times rarely line up).
+     */
     fun newSessions(existing: List<CardioSession>, incoming: List<CardioSession>): List<CardioSession> {
-        val seen = existing.map { it.at }.toMutableList()
+        val seen = existing.toMutableList()
         return incoming.filter { s ->
-            if (seen.any { abs(it - s.at) < 60_000L }) false else { seen += s.at; true }
+            val dup = seen.any { o ->
+                abs(o.at - s.at) < 60_000L ||
+                    (o.source == "manual" && o.kind == s.kind && Stats.day(o.at) == Stats.day(s.at))
+            }
+            if (dup) false else { seen += s; true }
         }
     }
 

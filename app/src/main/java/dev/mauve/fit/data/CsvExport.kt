@@ -19,6 +19,10 @@ object CsvExport {
 
     /** [exercise] looks up names and muscles by id (the repo in the app, a stub in tests). */
     fun sets(d: AppData, exercise: (String) -> Exercise?): String = buildString {
+        // Excel reads UTF-8 only with a BOM (umlauts otherwise garble) and, in German, splits on ";"
+        // unless the separator is named; Sheets and Numbers ignore both.
+        append('\uFEFF')
+        appendLine("sep=,")
         appendLine(header.joinToString(","))
         // Oldest first reads naturally in a spreadsheet.
         d.history.sortedBy { it.startedAt }.forEach { w ->

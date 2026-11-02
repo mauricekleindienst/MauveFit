@@ -429,6 +429,8 @@ object Coach {
             ),
             Tone.Push,
         )
+        // A running light week is the one thing to know (and to end early); it goes before the rest.
+        if (deloadActive(d)) deloadTip(d)?.let { return it }
         val sinceLast = now - h.first().startedAt
         if (sinceLast > 7 * Stats.DAY_MS) return Tip(
             L("Willkommen zurück", "Welcome back"),
@@ -450,7 +452,8 @@ object Coach {
             return Tip(L("Neuer Rekord", "New record"), L("$name: $what. Genau so geht Fortschritt.", "$name: $what. That is what progress looks like."), Tone.Win)
         }
 
-        plateau(h, repo)?.let { return it }
+        // Lighter on purpose is no plateau.
+        if (!deloadActive(d) && blockWeek(d) == null) plateau(h, repo)?.let { return it }
 
         val done = Stats.workoutsThisWeek(h)
         val daysLeft = 7 - java.time.LocalDate.now().dayOfWeek.value + 1

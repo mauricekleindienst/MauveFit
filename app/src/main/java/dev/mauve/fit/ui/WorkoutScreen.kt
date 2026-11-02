@@ -406,7 +406,11 @@ private fun ExercisePage(
                 }
                 Spacer(Modifier.height(12.dp))
                 heard?.let { Text(L("Gehört: ", "Heard: ") + it, Modifier.padding(bottom = 8.dp, start = 4.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall) }
-                CoachLine(tip)
+                // In a light week the numbers are 70 %: say that instead of "one step up".
+                if (Coach.blockWeek(data) == null && Coach.deloadActive(data)) Text(
+                    L("Leichte Woche: 70 % deiner Gewichte, damit du dich erholst.", "Light week: 70 % of your weights, so you recover."),
+                    Modifier.padding(start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
+                ) else CoachLine(tip)
                 data.active?.takeIf { it.readinessCut > 0 }?.let { w -> Text(
                     L("Heute ${w.readinessCut} % leichter: Erholung ${w.readinessScore} von 100 laut Uhr.",
                         "${w.readinessCut} % lighter today: readiness ${w.readinessScore} of 100 from your watch."),

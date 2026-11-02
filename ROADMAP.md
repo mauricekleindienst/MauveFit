@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.11 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.12 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,12 @@ Stand: Version 1.19.11 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.12 (Fix-Runde 11)
+
+- Leichte Woche: der Trainingsbildschirm sagt "70 % deiner Gewichte" statt "eine Stufe höher"; auf "Heute" steht die laufende leichte Woche zuerst (mit "Beenden"), und es kommt kein Plateau-Tipp mehr während sie läuft
+- Von Hand eingetragener Lauf wird beim Import von der Uhr nicht doppelt gezählt
+- CSV-Export öffnet sich in Excel mit Umlauten und in Spalten (auch in deutschem Excel)
 
 ## Erledigt in 1.19.11 (Fix-Runde 10, Alltags-Durchlauf)
 
@@ -204,6 +210,8 @@ Stand: Version 1.19.11 (November 2026). Sortiert nach Nutzen für das Training, 
 - Serien-Erfolge mit eingefrorener Woche bleiben freigeschaltet; Einkaufsliste trennt gleiche Zutat mit anderer Einheit
 
 ## Als Nächstes
+
+- **Intervall-Timer im Hintergrund:** Piepen und Vibration laufen nur, solange die App offen ist. Braucht einen eigenen Vordergrunddienst wie der Pausentimer.
 
 - **Animationen lizenzrechtlich klären.** Die GIFs sind © Gym visual und nicht von der MIT-Lizenz des Datensatzes gedeckt. Vor einem Store-Release: Lizenz bei Gym visual oder Umstieg auf free-exercise-db (gemeinfrei, zwei Fotos pro Übung).
 

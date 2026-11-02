@@ -17,9 +17,11 @@ object Quests {
         val progress: Int,
         val target: Int,
         val xp: Int,
+        /** Formats an amount for the progress label, e.g. millilitres as litres. */
+        val unit: ((Int) -> String)? = null,
     ) {
         val done get() = progress >= target
-        val label get() = "${progress.coerceAtMost(target)}/$target"
+        val label get() = unit?.let { "${it(progress.coerceAtMost(target)).removeSuffix(" l")}/${it(target)}" } ?: "${progress.coerceAtMost(target)}/$target"
     }
 
     enum class Daily(val xp: Int) { Train(50), Sets(30), Record(60), Water(20), Protein(30), Rate(15), Rpe(20), NewExercise(40), Cardio(30), Weigh(15), Warmup(20), Superset(30) }
@@ -106,6 +108,10 @@ object Quests {
         return picks.take(3).map { quest(d, day, it, c) }
     }
 
+    /** 1500 -> "1,5 l" (German) or "1.5 l". */
+    fun litres(ml: Int): String =
+        String.format(java.util.Locale.ROOT, "%.2f", ml / 1000.0).trimEnd('0').trimEnd('.').let { if (I18n.german) it.replace('.', ',') else it } + " l"
+
     /** [n] distinct picks from [weights], each as likely as its weight. */
     private fun pick(weights: Map<Daily, Int>, rnd: Random, n: Int = 1): List<Daily> {
         val left = weights.filterValues { it > 0 }.toMutableMap()
@@ -135,8 +141,7 @@ object Quests {
             Daily.Water -> {
                 // A glass more than a usual day, between 1.5 and 2.5 l; 1.5 l to start with.
                 val goal = c.typicalWater?.let { ((it + 250) / 250 * 250).coerceIn(1500, 2500) } ?: 1500
-                of(L("${goal / 1000.0} l trinken".replace(".0 l", " l").replace('.', ','), "Drink ${goal / 1000.0} l".replace(".0 l", " l")),
-                    (d.water[day.toString()] ?: 0) / 250, goal / 250)
+                Quest(key, L("${litres(goal)} trinken", "Drink ${litres(goal)}"), d.water[day.toString()] ?: 0, goal, q.xp, ::litres)
             }
             Daily.Protein -> {
                 // A tenth over a usual day, never more than the target itself.

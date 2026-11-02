@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.22.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.22.2 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,14 @@ Stand: Version 1.22.1 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.22.2
+
+- Wasser-Quest zeigt den Fortschritt in Litern (0,5/1,5 l) statt in Gläsern
+- Wochenrückblick ohne Training zeigt einen Strich statt „0 Wdh.“
+- Lange Rezeptnamen trennen sauber statt mitten im Wort umzubrechen
+- Lange Übungs- und Trainingsnamen in Rekorden und Verlauf laufen durch statt abgeschnitten zu werden
+- Shop: „Quests neu würfeln“
 
 ## Erledigt in 1.22.1
 

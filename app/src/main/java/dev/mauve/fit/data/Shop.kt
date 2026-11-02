@@ -106,7 +106,7 @@ object Shop {
     const val BOOST_HOURS = 24
 
     fun items(): List<Item> = listOf(
-        Item("reroll", Kind.Reroll, L("Quest neu würfeln", "Reroll quests"), L("Drei neue Tagesquests", "Three new daily quests"), 40),
+        Item("reroll", Kind.Reroll, L("Quests neu würfeln", "Reroll quests"), L("Drei neue Tagesquests", "Three new daily quests"), 40),
         Item("boost", Kind.Boost, L("XP-Booster", "XP booster"), L("Doppelte Quest-XP für 24 Stunden", "Double quest XP for 24 hours"), 150, Rarity.Rare),
         Item("freeze", Kind.Freeze, L("Joker", "Streak freeze"), L("Rettet die Serie in einer verpassten Woche", "Saves your streak in a missed week"), 300, Rarity.Epic),
     ) + premiumAccents.mapIndexed { i, k ->

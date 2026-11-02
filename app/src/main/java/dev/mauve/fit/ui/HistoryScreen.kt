@@ -212,7 +212,7 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
             Card(Modifier.fillMaxWidth().animateContentSize(), onClick = { onExpand(if (open) null else w.id) }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(w.name, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(w.name, Modifier.marquee(), style = MaterialTheme.typography.titleLarge, maxLines = 1)
                         Text(
                             Stats.day(w.startedAt).format(dayFmt) + when (w.feel) { 1 -> L(" · Leicht", " · Easy"); 2 -> L(" · Gut", " · Good"); 3 -> L(" · Hart", " · Hard"); else -> "" },
                             color = Ink.muted, style = MaterialTheme.typography.bodySmall,
@@ -287,7 +287,7 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
                 Thumb(ex, 50.dp)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(ex?.title ?: r.exerciseId, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(ex?.title ?: r.exerciseId, Modifier.marquee(), style = MaterialTheme.typography.titleMedium, maxLines = 1)
                     Text(r.date.format(shortFmt), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
                 }
                 Spacer(Modifier.width(10.dp))

@@ -65,6 +65,8 @@ class QuestsTest {
         // Rerolls until the water quest shows up, then check its size: a glass over the usual 2 l.
         val q = (0..20).asSequence().map { r -> Quests.daily(AppData(water = water, rerollDay = day.toString(), rerollCount = r), day) }
             .flatten().first { it.key.endsWith(":Water") }
-        assertEquals(9, q.target)
+        assertEquals(2250, q.target)
+        I18n.apply("de")
+        assertEquals("0/2,25 l", q.label)
     }
 }

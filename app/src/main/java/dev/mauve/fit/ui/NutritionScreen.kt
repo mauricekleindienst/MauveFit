@@ -254,7 +254,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                     Card(Modifier.fillMaxWidth().animateContentSize(), onClick = { open = if (expanded) null else r.id }) {
                         // The tag sits on the title's first line, also when the title wraps.
                         Row(verticalAlignment = Alignment.Top) {
-                            Text(r.name, Modifier.weight(1f).padding(end = 10.dp), style = MaterialTheme.typography.titleLarge)
+                            Text(r.name, Modifier.weight(1f).padding(end = 10.dp), style = MaterialTheme.typography.titleLarge.copy(hyphens = androidx.compose.ui.text.style.Hyphens.Auto, lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph))
                             if (r.own) Tag(L("eigenes", "own"), Ink.mauve, Modifier.padding(top = 2.dp))
                             else if (goal in r.goals) Tag(L("passt", "fits"), Ink.accent, Modifier.padding(top = 2.dp))
                         }

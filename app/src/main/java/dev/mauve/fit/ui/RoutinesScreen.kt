@@ -238,7 +238,16 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
     fun save(block: (Routine) -> Routine) = App.store.saveRoutine(block(r).let { it.copy(exercises = it.exercises.withSupersetsCleaned()) })
     val groups = r.exercises.map { it.superset }
     fun setAt(i: Int, p: PlanExercise) = save { it.copy(exercises = it.exercises.toMutableList().also { l -> l[i] = p }) }
-    fun move(from: Int, to: Int) = save { it.copy(exercises = it.exercises.toMutableList().also { l -> l.add(to, l.removeAt(from)) }) }
+    fun move(from: Int, to: Int) {
+        // One step at a time would land inside a superset and break it apart: jump over the whole run.
+        val run = Supersets.members(groups, to)?.takeIf { from !in it }
+        val target = when { run == null -> to; to > from -> run.last; else -> run.first }
+        save { it.copy(exercises = it.exercises.toMutableList().also { l -> l.add(target, l.removeAt(from)) }) }
+    }
+    // "+" by mistake and straight back: no empty "New plan" card stays behind.
+    val untouched = r.exercises.isEmpty() && r.note.isBlank() && r.name == L("Neuer Plan", "New plan")
+    fun leave() { nav.popBackStack(); if (untouched) App.store.deleteRoutine(r.id) }
+    androidx.activity.compose.BackHandler(enabled = untouched) { leave() }
 
     LazyColumn(
         Modifier.statusBarsPadding(),
@@ -250,7 +259,7 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
                 Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
+                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { leave() }
                 Spacer(Modifier.weight(1f))
                 RoundButton(Icons.Rounded.DeleteOutline, L("Plan löschen", "Delete plan"), size = 44.dp) { confirmDelete = true }
             }

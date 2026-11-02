@@ -108,8 +108,10 @@ fun ExerciseScreen(id: String, data: AppData, nav: NavController, onBack: (() ->
             NoteCard(data.exerciseNotes[id].orEmpty()) { App.store.setExerciseNote(id, it) }
         }
 
-        if (sessions.isNotEmpty()) item { ProgressCard(sessions, e.bodyweight) }
-        if (sessions.isNotEmpty()) item { RecentSessions(sessions.takeLast(5).reversed(), e.bodyweight) }
+        // Logged without weight (bands, balls) it reads like body weight: reps, not "0 kg".
+        val unloaded = e.bodyweight || sessions.all { it.best.weight <= 0 }
+        if (sessions.isNotEmpty()) item { ProgressCard(sessions, unloaded) }
+        if (sessions.isNotEmpty()) item { RecentSessions(sessions.takeLast(5).reversed(), unloaded) }
 
         item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {

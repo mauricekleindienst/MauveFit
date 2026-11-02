@@ -522,7 +522,8 @@ object Insights {
         // Average over the weeks since the first session in the window, not over empty weeks before the app was used.
         val active = s.perWeek.dropWhile { it.second == 0 }.size
         val perWeek = s.count / active.toDouble().coerceAtLeast(1.0)
-        val freq = L("im Schnitt ${dec(perWeek)} Trainings pro Woche", "${dec(perWeek)} sessions a week on average")
+        val one = dec(perWeek) == "1"
+        val freq = L("im Schnitt ${dec(perWeek)} ${if (one) "Training" else "Trainings"} pro Woche", "${dec(perWeek)} ${if (one) "session" else "sessions"} a week on average")
         return when {
             volumeChange == null -> freq.replaceFirstChar { it.uppercase() } + "."
             abs(volumeChange) < 3 -> L("Dein Volumen ist in 4 Wochen stabil geblieben, $freq.", "Your volume held steady over 4 weeks, $freq.")

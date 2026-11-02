@@ -523,9 +523,14 @@ private fun LazyListScope.overview(data: AppData, nav: NavController, twoColumns
     cards(twoColumns, 10.dp, key = "overview") {
         item {
             Card(Modifier.fillMaxWidth()) {
-                Eyebrow(L("Volumen pro Woche", "Volume per week"))
+                // Weeks without any weight lifted: chart the reps instead of eight empty bars.
+                val byReps = volume.all { it.second <= 0 }
+                Eyebrow(if (byReps) L("Wiederholungen pro Woche", "Reps per week") else L("Volumen pro Woche", "Volume per week"))
                 Spacer(Modifier.height(14.dp))
-                Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
+                val values = if (byReps) volume.map { (wk, _) ->
+                    data.history.filter { Stats.weekStart(Stats.day(it.startedAt)) == wk }.sumOf { w -> w.doneSets.sumOf { it.second.reps } }.toFloat()
+                } else volume.map { it.second.toFloat() }
+                Bars(values, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
             }
         }
         item { Heatmap(Progress.heatmap(data.history, App.repo)) }
@@ -602,7 +607,8 @@ private fun MonthlyRecap(recaps: List<Progress.MonthRecap>) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 RecapCell(cur.workouts.toString(), L("Trainings", "Workouts"), cur.workouts.toDouble(), prev.workouts.toDouble(), false, Modifier.weight(1f))
-                RecapCell(Stats.fmtVolume(cur.volume), L("Volumen", "Volume"), cur.volume, prev.volume, true, Modifier.weight(1f))
+                if (cur.volume <= 0 && prev.volume <= 0) RecapCell(Stats.amount(0.0, cur.reps), L("Wiederholungen", "Reps"), cur.reps.toDouble(), prev.reps.toDouble(), true, Modifier.weight(1f))
+                else RecapCell(Stats.fmtVolume(cur.volume), L("Volumen", "Volume"), cur.volume, prev.volume, true, Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -731,7 +737,8 @@ private fun SavedSetsDialog(workoutId: String, index: Int, entry: dev.mauve.fit.
     val rows = remember(entry) { entry.sets.map { Row(it) } }
     fun parsedKg(r: Row) = if (r.kg.isBlank()) 0.0 else r.kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 }
     fun parsedReps(r: Row) = r.reps.trim().toIntOrNull()?.takeIf { it in 0..200 }
-    val valid = rows.filter { it.keep }.all { parsedKg(it) != null && parsedReps(it) != null }
+    // At least one working set stays: deleting the workout has its own button with a confirmation.
+    val valid = rows.filter { it.keep }.all { parsedKg(it) != null && parsedReps(it) != null } && rows.any { it.keep && !it.set.warmup }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(App.repo[entry.exerciseId]?.title ?: entry.exerciseId) },

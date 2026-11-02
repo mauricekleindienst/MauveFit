@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.14 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.15 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,15 @@ Stand: Version 1.19.14 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.15 (Fix-Runde 14)
+
+- Plan-Editor: Verschieben springt über Supersätze statt sie aufzubrechen; versehentlich angelegter leerer Plan verschwindet beim Zurückgehen
+- Übungen ohne Gewicht (Bänder, Bälle) zählen wie Körpergewicht: Wiederholungen statt "0 kg", Steigerung über Wiederholungen
+- Monatsrückblick und Wochendiagramm zeigen bei Körpergewichtstraining Wiederholungen
+- Analysen in der ersten Woche: "–" statt "0 %", "1 Training pro Woche"
+- Fertiges Training öffnet beim Zurückkehren die Abschlussseite
+- Korrekturen an Runde 13: alle Sätze entfernen löscht kein Training ohne Nachfrage, Übung nur mit Aufwärmsätzen fällt weg, Seitenwechsel ohne Hin-und-her, keine Sprünge nach dem Drehen, Zielgewicht aus dem Intro bleibt exakt
 
 ## Erledigt in 1.19.14 (Fix-Runde 13)
 

@@ -296,6 +296,7 @@ class Store(private val context: Context) {
             if (w.id != workoutId || index !in w.entries.indices) return@mapNotNull w
             val entries = w.entries.toMutableList()
             if (sets.isEmpty()) entries.removeAt(index) else entries[index] = entries[index].copy(sets = sets)
+            entries.removeAll { e -> e.sets.none { !it.warmup } }
             if (entries.none { e -> e.sets.any { !it.warmup } }) null else w.copy(entries = entries)
         })
     }

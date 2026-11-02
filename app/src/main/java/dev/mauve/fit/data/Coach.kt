@@ -371,7 +371,7 @@ object Coach {
      * "add a rep" advice shows in the numbers too.
      */
     fun startReps(d: AppData, repo: ExerciseRepo, exerciseId: String, planned: Int): Int {
-        if (repo[exerciseId]?.bodyweight != true) return planned
+        // Body weight, or anything logged without weight (bands, balls): progress by reps.
         // A light week or a comeback is no day to add reps.
         if (loadFactor(d) < 1.0 || longBreak(d, exerciseId)) return planned
         val last = Stats.lastSets(d.history, exerciseId).filter { !it.warmup }
@@ -654,8 +654,9 @@ object Coach {
             )
         }
         val allHit = last.all { it.reps >= targetReps }
+        val unloaded = bodyweight || last.all { it.weight <= 0 }
         return when {
-            bodyweight && allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft. Heute 1 bis 2 mehr pro Satz.", "You hit every rep last time. Add 1 to 2 per set today."), Tone.Push)
+            unloaded && allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft. Heute 1 bis 2 mehr pro Satz.", "You hit every rep last time. Add 1 to 2 per set today."), Tone.Push)
             allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft, daher ist das Gewicht heute eine Stufe höher.", "You hit every rep last time, so the weight is one step up today."), Tone.Push)
             else -> Tip(L("Festigen", "Consolidate"), L("Letztes Mal knapp. Gleiches Gewicht, Ziel sind alle Wiederholungen sauber.", "Close last time. Same weight, aim for every rep with good form."), Tone.Info)
         }

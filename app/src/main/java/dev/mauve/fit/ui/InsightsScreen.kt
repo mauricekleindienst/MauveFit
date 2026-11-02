@@ -197,7 +197,8 @@ private fun ConsistencyCard(r: Insights.Report) {
         Row {
             Figure(L("${r.streaks.current} Wo.", "${r.streaks.current} wk"), L("Aktuelle Serie", "Current streak"), Modifier.weight(1f), Ink.coral)
             Figure(L("${r.streaks.best} Wo.", "${r.streaks.best} wk"), L("Beste Serie", "Best streak"), Modifier.weight(1f))
-            Figure("${r.goalRate.pct} %", L("Ziel ${r.goal}× erreicht", "Goal ${r.goal}× met"), Modifier.weight(1f), Ink.accent)
+            // No finished week yet: "–", not a 0 % that reads like failure.
+            Figure(if (r.goalRate.of == 0) "–" else "${r.goalRate.pct} %", L("Ziel ${r.goal}× erreicht", "Goal ${r.goal}× met"), Modifier.weight(1f), Ink.accent)
         }
     }
 }

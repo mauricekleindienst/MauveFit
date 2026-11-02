@@ -153,11 +153,16 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
     // The page count must follow exercises added during the workout, so read it through state.
     val pageCount by rememberUpdatedState(w.entries.size + 1)
     // Opens where the workout stands, not on exercise 1.
-    val pager = rememberPagerState(initialPage = Supersets.current(w.entries).coerceAtLeast(0)) { pageCount }
+    val allDone = w.entries.isNotEmpty() && w.entries.all { e -> e.sets.all { it.done } }
+    val pager = rememberPagerState(initialPage = if (allDone) w.entries.size else Supersets.current(w.entries).coerceAtLeast(0)) { pageCount }
     // Sets ticked on the watch or in the notification: once the page on screen has nothing left,
     // move on to the exercise that is next.
     val current = Supersets.current(w.entries)
+    var lastCurrent by rememberSaveable { mutableStateOf(current) }
     LaunchedEffect(current) {
+        // Only when it changes: after a rotation the page someone was looking at stays.
+        if (current == lastCurrent) return@LaunchedEffect
+        lastCurrent = current
         val shown = w.entries.getOrNull(pager.currentPage) ?: return@LaunchedEffect
         if (current >= 0 && current != pager.currentPage && shown.sets.none { !it.done }) pager.animateScrollToPage(current)
     }
@@ -235,8 +240,12 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
                     onWarmup = { App.store.addWarmups(page) },
                     onAllDone = {
                         // Superset pages move on by themselves in onSetDone.
+                        // To the next exercise with open sets (the follow effect above may already be on its
+                        // way there); the finish page once everything is done.
                         if (Supersets.members(w.entries.map { it.superset }, page) == null) {
-                            scope.launch { delay(500); pager.animateScrollToPage(page + 1) }
+                            val entries = App.store.data.value.active?.entries ?: w.entries
+                            val next = entries.indexOfFirst { e -> e.sets.any { !it.done } }.takeIf { it >= 0 } ?: entries.size
+                            if (next != page) scope.launch { delay(500); if (pager.currentPage == page) pager.animateScrollToPage(next) }
                         }
                     },
                     onOpen = { nav.navigate("exercise/${w.entries[page].exerciseId}") },

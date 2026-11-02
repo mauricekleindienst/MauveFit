@@ -102,6 +102,8 @@ object Progress {
         val workouts: Int,
         val volume: Double,
         val timeMs: Long,
+        /** Working reps, for months of body-weight training. */
+        val reps: Int = 0,
         val records: Int,
         /** Target muscle with the most working sets, or null without workouts. */
         val topMuscle: String?,
@@ -123,7 +125,8 @@ object Progress {
             }
             MonthRecap(
                 month, list.size, list.sumOf { it.volume }, list.sumOf { it.durationMs },
-                records[month] ?: 0, muscles.maxByOrNull { it.value }?.key,
+                records = records[month] ?: 0, topMuscle = muscles.maxByOrNull { it.value }?.key,
+                reps = list.sumOf { w -> w.doneSets.sumOf { it.second.reps } },
             )
         }
     }

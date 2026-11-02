@@ -80,6 +80,7 @@ import dev.mauve.fit.data.Workout
 import java.time.format.DateTimeFormatter
 import dev.mauve.fit.data.I18n
 import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Quests
 
 // Getters, not vals: the language can change while the process lives.
 private val dayFmt get() = DateTimeFormatter.ofPattern(L("EEEE, d. MMMM", "EEEE, MMMM d"), I18n.locale)
@@ -323,6 +324,13 @@ private fun LazyListScope.achievements(data: AppData) {
             }
             ChallengeCard(c, data.challengesDone.size)
             FreezeCard(data)
+        }
+    }
+    item(key = "level") {
+        Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+            LevelRow(Quests.level(Quests.xp(data)))
+            Spacer(Modifier.height(8.dp))
+            Text(L("${data.questsDone} Quests erledigt", "${data.questsDone} quests done"), style = MaterialTheme.typography.bodySmall, color = Ink.muted)
         }
     }
     item {

@@ -89,6 +89,8 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
     val challengeWon = remember(id, challenge) {
         challenge.done && !Motivation.challenge(data.copy(history = data.history.filterNot { it.id == id }), App.repo).done
     }
+    // Finishing may complete today's quests ("finish a workout", "do 15 sets"): bank them here.
+    LaunchedEffect(id) { App.store.claimQuests() }
     LaunchedEffect(id) {
         if (records.isNotEmpty()) { kotlinx.coroutines.delay(350); Haptics.record() }
         if (challenge.done && App.store.completeChallenge(challenge.week)) {
@@ -164,6 +166,16 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                 Stat(Stats.fmtDuration(w.durationMs), L("Dauer", "Duration"), Modifier.weight(1f))
                 Stat("${w.doneSets.size}", if (w.doneSets.size == 1) L("Satz", "Set") else L("Sätze", "Sets"), Modifier.weight(1f))
                 Stat(Stats.headline(w), if (w.volume > 0) L("Volumen", "Volume") else L("Gesamt", "Total"), Modifier.weight(1f), Ink.accent)
+            }
+        }
+        item {
+            // What this workout was worth, and where that leaves the level.
+            val gained = dev.mauve.fit.data.Quests.workoutXp(w) + records.size * dev.mauve.fit.data.Quests.RECORD_XP
+            val rank = dev.mauve.fit.data.Quests.level(dev.mauve.fit.data.Quests.xp(data))
+            Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+                Text("+$gained XP", style = MaterialTheme.typography.headlineSmall, color = Ink.accent)
+                Spacer(Modifier.height(10.dp))
+                LevelRow(rank)
             }
         }
         item {

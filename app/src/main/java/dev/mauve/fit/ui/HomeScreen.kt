@@ -63,6 +63,10 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.IsoFields
 import dev.mauve.fit.data.I18n
 import dev.mauve.fit.data.L
+import dev.mauve.fit.system.Updater
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
+import androidx.compose.material.icons.rounded.CheckCircle
+import dev.mauve.fit.data.Quests
 
 private val dateFmt get() = DateTimeFormatter.ofPattern(L("EEEE, d. MMMM", "EEEE, MMMM d"), I18n.locale)
 
@@ -79,6 +83,10 @@ fun HomeScreen(data: AppData, nav: NavController) {
     // Follows the clock: back on Monday morning the date, week strip, tip and challenge move on.
     val today by rememberToday()
     val weekKey = Stats.weekKey(today)
+    // A quiet look at GitHub for a newer release, at most twice a day.
+    val update by Updater.state.collectAsState()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
     val tip = remember(data.history, data.settings, data.routines, data.cardio, weekKey) { Coach.homeTip(data, App.repo) }
     val challenge = remember(data.history, data.settings, data.profile, weekKey) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
@@ -86,6 +94,10 @@ fun HomeScreen(data: AppData, nav: NavController) {
 
     // A new week may have started while the app stayed open: book the one that ended.
     LaunchedEffect(weekKey) { App.store.settleStreak() }
+    // Quests finish from many places (water, food, a workout); bank their XP when Home sees them.
+    val quests = remember(data, today) { Quests.daily(data, today) }
+    val sideQuests = remember(data.history, data.settings, data.profile, weekKey) { Quests.weekly(data, App.repo, today) }
+    LaunchedEffect(quests.count { it.done }, sideQuests.count { it.done }) { if (App.store.claimQuests()) Haptics.success() }
     // Completed outside the summary (e.g. a goal change): count it and celebrate once here.
     LaunchedEffect(challenge.week, challenge.done) {
         if (challenge.done && App.store.completeChallenge(challenge.week)) Haptics.success()
@@ -113,6 +125,11 @@ fun HomeScreen(data: AppData, nav: NavController) {
 
         // On expanded windows the cards below pack into two columns; on phones each is its own row.
         cards(twoColumns, 14.dp, key = "cards") {
+
+            // A newer release on GitHub: shown only then (the section draws nothing otherwise).
+            if (update is Updater.State.Available || update is Updater.State.Downloading || update is Updater.State.Ready) item(key = "update") {
+                Card(Modifier.fillMaxWidth()) { UpdateSection(home = true) }
+            }
 
             // A running workout always comes first.
             data.active?.let { w ->
@@ -192,6 +209,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
             if (today.dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
                 ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal, weekKey) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
             }
+            item { QuestCard(Quests.level(Quests.xp(data)), quests, sideQuests) }
             item { ChallengeCard(challenge, data.challengesDone.size) }
 
             if (data.active == null) item {
@@ -215,6 +233,58 @@ private fun StreakStat(streak: Int, freezes: Int, modifier: Modifier) {
         Text("$streak", style = MaterialTheme.typography.headlineMedium, color = Ink.coral, maxLines = 1, softWrap = false)
         Text(L("Serie", "streak"), style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
         if (freezes > 0) Text(Motivation.freezeLabel(freezes), style = MaterialTheme.typography.labelSmall, color = Ink.accent, maxLines = 1)
+    }
+}
+
+/** Level with its XP bar, today's three quests and the week's two side quests. */
+@Composable
+fun QuestCard(rank: Quests.Rank, daily: List<Quests.Quest>, weekly: List<Quests.Quest>, modifier: Modifier = Modifier) {
+    Card(modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
+        LevelRow(rank)
+        Spacer(Modifier.height(16.dp))
+        Eyebrow(L("Quests heute", "Today's quests"), color = Ink.muted)
+        Spacer(Modifier.height(6.dp))
+        daily.forEach { QuestRow(it) }
+        if (weekly.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Eyebrow(L("Nebenquests der Woche", "Side quests this week"), color = Ink.muted)
+            Spacer(Modifier.height(6.dp))
+            weekly.forEach { QuestRow(it) }
+        }
+    }
+}
+
+/** "Level 4 · Athlete" with the bar to the next level. */
+@Composable
+fun LevelRow(rank: Quests.Rank) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(Pill).background(Ink.accent), contentAlignment = Alignment.Center) {
+            Text("${rank.level}", color = Ink.bg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(L("Level ${rank.level} · ${rank.title}", "Level ${rank.level} · ${rank.title}"), style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(6.dp))
+            Meter(rank.fraction, Modifier.fillMaxWidth())
+            Spacer(Modifier.height(4.dp))
+            Text(L("${rank.into} / ${rank.need} XP bis Level ${rank.level + 1}", "${rank.into} / ${rank.need} XP to level ${rank.level + 1}"),
+                style = MaterialTheme.typography.labelSmall, color = Ink.muted)
+        }
+    }
+}
+
+@Composable
+private fun QuestRow(q: Quests.Quest) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            if (q.done) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked, null,
+            tint = if (q.done) Ink.accent else Ink.faint, modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(q.title, Modifier.weight(1f), color = if (q.done) Ink.muted else Ink.text, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
+        if (!q.done && q.target > 1) Text(q.label, color = Ink.muted, style = MaterialTheme.typography.labelMedium)
+        Spacer(Modifier.width(8.dp))
+        Text("+${q.xp} XP", color = if (q.done) Ink.accent else Ink.muted, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 

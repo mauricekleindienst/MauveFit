@@ -259,6 +259,10 @@ data class AppData(
     /** Last week the freeze bookkeeping settled ("" = never) and the goal weeks in a row up to it. */
     val streakSettled: String = "",
     val streakRun: Int = 0,
+    /** Quest keys already paid out (recent ones only), XP banked from quests, quests done in all. */
+    val questsClaimed: List<String> = emptyList(),
+    val questXp: Int = 0,
+    val questsDone: Int = 0,
     /** Cardio sessions, logged by hand or taken over from the watch, newest first. */
     val cardio: List<CardioSession> = emptyList(),
 )

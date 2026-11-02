@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.17 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.20.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,15 @@ Stand: Version 1.19.17 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.20.0
+
+- XP und Level: jedes Training, jeder Satz, jeder Rekord, jede Challenge und jede Quest bringt XP; Level mit Titeln von Neuling bis Legende, Fortschrittsbalken auf "Heute", unter Erfolge und nach jedem Training ("+85 XP")
+- Tagesquests: jeden Tag drei neue aus zwölf Arten (Training, Sätze, Rekord, Wasser, Protein, RPE, neue Übung, Cardio, Wiegen, Aufwärmen, Supersatz, Bewerten)
+- Wochenquests: neben der Wochen-Challenge zwei Nebenquests
+- 10 neue Erfolge (Level 10 und 25, 50 Quests, 10 Challenges, erster Rekord, 250 Trainings, 2000 Sätze, 26 Wochen Serie, Wochenende, Cardio)
+- Updates direkt in der App: neue Versionen kommen als GitHub-Release, die App prüft zweimal täglich, zeigt sie auf "Heute" und installiert sie mit einem Tipp (Einstellungen: "App-Update")
+- Statistik-Kacheln verkleinern lange Werte ("1340 kg" lief über den Rand)
 
 ## Erledigt in 1.19.17 (Fix-Runde 16)
 

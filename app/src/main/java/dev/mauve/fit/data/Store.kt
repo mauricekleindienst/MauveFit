@@ -450,6 +450,13 @@ class Store(private val context: Context) {
         return added
     }
 
+    /** Banks the XP of quests just finished; true when something new was claimed. */
+    fun claimQuests(): Boolean {
+        var gained = false
+        update { d -> Quests.claim(d, App.repo).also { gained = it !== d } }
+        return gained
+    }
+
     /** Books every finished week since the last call: earns freezes, spends one on a missed week. */
     fun settleStreak() = update { d ->
         val s = Motivation.settle(d.history, d.settings.weeklyGoal, Motivation.FreezeState(d.freezes, d.frozenWeeks, d.streakSettled, d.streakRun))

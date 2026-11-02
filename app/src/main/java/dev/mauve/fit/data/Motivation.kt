@@ -33,7 +33,11 @@ object Motivation {
      * the same after a reinstall; the target follows the weekly goal and level. Progress counts
      * finished workouts of the week only.
      */
-    fun challenge(d: AppData, repo: ExerciseRepo, today: LocalDate = LocalDate.now()): Challenge {
+    fun challenge(d: AppData, repo: ExerciseRepo, today: LocalDate = LocalDate.now(), slot: Int = 0): Challenge =
+        challenge(d, { repo[it]?.target }, today, slot)
+
+    /** [targetOf] gives an exercise's target muscle by id (the repo in the app, a map in tests). */
+    fun challenge(d: AppData, targetOf: (String) -> String?, today: LocalDate = LocalDate.now(), slot: Int = 0): Challenge {
         val start = Stats.weekStart(today)
         val key = Stats.weekKey(start)
         val week = d.history.filter { val day = Stats.day(it.startedAt); !day.isBefore(start) && day.isBefore(start.plusDays(7)) }
@@ -41,7 +45,8 @@ object Motivation {
         val level = d.profile.level
         // Stride 5 over six kinds: neighbouring weeks never repeat, every kind comes round in six weeks.
         val n = start.get(IsoFields.WEEK_BASED_YEAR) * 53 + start.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
-        val kind = Kind.entries[Math.floorMod(n * 5, Kind.entries.size)]
+        // Side quests (slot 1, 2) take the kinds two and four further on: never the main one's.
+        val kind = Kind.entries[Math.floorMod(n * 5 + slot * 2, Kind.entries.size)]
         fun of(p: Int, t: Int) = L("${p.coerceAtMost(t)} von $t", "${p.coerceAtMost(t)} of $t")
 
         return when (kind) {
@@ -75,7 +80,7 @@ object Motivation {
             }
             Kind.Groups -> {
                 val groups = Progress.groups
-                val hit = groups.values.count { muscles -> week.any { w -> w.entries.any { e -> repo[e.exerciseId]?.target in muscles && e.sets.any { !it.warmup } } } }
+                val hit = groups.values.count { muscles -> week.any { w -> w.entries.any { e -> targetOf(e.exerciseId) in muscles && e.sets.any { !it.warmup } } } }
                 Challenge(key, kind, L("Jede große Muskelgruppe einmal", "Every major muscle group once"), groups.keys.joinToString(", "), hit, groups.size, of(hit, groups.size))
             }
             Kind.Superset -> {
@@ -85,7 +90,7 @@ object Motivation {
             }
             Kind.Legs -> {
                 val t = if (goal <= 1) 1 else 2
-                val p = week.count { w -> w.entries.any { e -> repo[e.exerciseId]?.target in legs && e.sets.any { !it.warmup } } }
+                val p = week.count { w -> w.entries.any { e -> targetOf(e.exerciseId) in legs && e.sets.any { !it.warmup } } }
                 Challenge(key, kind, if (t == 1) L("Einmal Beine", "Legs once") else L("Zwei Mal Beine", "Legs twice"),
                     L("Trainings mit mindestens einer Beinübung", "Workouts with at least one leg exercise"), p, t, of(p, t))
             }

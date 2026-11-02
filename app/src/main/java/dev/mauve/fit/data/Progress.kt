@@ -50,6 +50,7 @@ object Progress {
         val distinct = h.flatMap { w -> w.entries.map { it.exerciseId } }.distinct().size
         // Exercises with a record actually broken (an earlier best beaten), not every exercise done once.
         val records = Insights.prTimeline(h, Int.MAX_VALUE).map { it.exerciseId }.distinct().size
+        val level = Quests.level(Quests.xp(d)).level
         fun p(v: Number, goal: Number) = (v.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
         return listOf(
             Achievement(L("Erster Schritt", "First step"), L("Erstes Training abgeschlossen", "First workout completed"), p(h.size, 1)),
@@ -66,6 +67,17 @@ object Progress {
             Achievement(L("Vielseitig", "Versatile"), L("30 verschiedene Übungen", "30 different exercises"), p(distinct, 30)),
             Achievement(L("Rekordjäger", "Record hunter"), L("In 15 Übungen den eigenen Bestwert verbessert", "Beat your own best in 15 exercises"), p(records, 15)),
             Achievement(L("Ausdauer", "Endurance"), L("Ein Training über 90 Minuten", "A workout over 90 minutes"), p(h.maxOfOrNull { it.durationMs } ?: 0L, 90 * 60_000L)),
+            Achievement(L("Marathon", "Marathon"), L("250 Trainings", "250 workouts"), p(h.size, 250)),
+            Achievement(L("Satzmaschine", "Set machine"), L("2000 Sätze", "2000 sets"), p(sets, 2000)),
+            Achievement(L("Halbes Jahr", "Half a year"), L("26 Wochen in Folge das Wochenziel", "Weekly goal 26 weeks in a row"), p(bestStreak, 26)),
+            Achievement(L("Erster Rekord", "First record"), L("Einen eigenen Bestwert verbessert", "Beat one of your own bests"), p(records, 1)),
+            Achievement(L("Herausforderer", "Challenger"), L("10 Wochen-Challenges geschafft", "10 weekly challenges done"), p(d.challengesDone.size, 10)),
+            Achievement(L("Questjäger", "Quest hunter"), L("50 Quests erledigt", "50 quests done"), p(d.questsDone, 50)),
+            Achievement(L("Aufsteiger", "Climber"), L("Level 10 erreicht", "Reach level 10"), p(level, 10)),
+            Achievement(L("Veteran", "Veteran"), L("Level 25 erreicht", "Reach level 25"), p(level, 25)),
+            Achievement(L("Wochenendkrieger", "Weekend warrior"), L("10 Trainings am Wochenende", "10 workouts on a weekend"),
+                p(h.count { Stats.day(it.startedAt).dayOfWeek.value >= 6 }, 10)),
+            Achievement(L("Ausdauerläufer", "Cardio fan"), L("10 Cardio-Einheiten", "10 cardio sessions"), p(d.cardio.size, 10)),
         )
     }
 

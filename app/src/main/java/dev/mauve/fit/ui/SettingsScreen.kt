@@ -57,6 +57,7 @@ import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Upload
@@ -466,6 +467,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         }
 
         item {
+            Section(L("App-Update", "App update"), Icons.Rounded.SystemUpdate) { UpdateSection() }
             Section(L("Über", "About"), Icons.Rounded.Info) {
                 val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
                 Text("Mauve Fit ${version.orEmpty()}", style = MaterialTheme.typography.titleMedium)

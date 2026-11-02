@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Only the share pictures are exposed, nothing else from the cache. -->
+<!-- Only the share pictures and a downloaded update are exposed, nothing else from the cache. -->
 <paths>
     <cache-path name="share" path="share/" />
+    <cache-path name="updates" path="updates/" />
 </paths>

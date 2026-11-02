@@ -761,7 +761,7 @@ private fun ProgramPreview(profile: Profile, seed: Int, onShuffle: () -> Unit) {
                 Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Thumb(e, 40.dp)
                     Spacer(Modifier.width(12.dp))
-                    Text(e?.title ?: p.exerciseId, Modifier.weight(1f), maxLines = 1, style = MaterialTheme.typography.bodyMedium)
+                    Text(e?.title ?: p.exerciseId, Modifier.weight(1f).marquee(), maxLines = 1, style = MaterialTheme.typography.bodyMedium)
                     Text("${p.sets} × ${p.reps}", color = Ink.accent, fontWeight = FontWeight.SemiBold)
                 }
             }

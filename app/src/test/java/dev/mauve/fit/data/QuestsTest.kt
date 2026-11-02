@@ -48,4 +48,23 @@ class QuestsTest {
     }
 
     private fun stubRepo(): (String) -> String? = { "pectorals" }
+
+    private fun at(day: LocalDate) = day.atTime(10, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    @Test fun noTrainingQuestOnceTheWeeklyGoalIsMet() {
+        // Monday to Wednesday trained, goal 3: Thursday is a rest day.
+        val thu = LocalDate.of(2026, 11, 5)
+        val h = (1..3).map { k -> Workout(name = "W", startedAt = at(thu.minusDays(k.toLong())), finishedAt = at(thu.minusDays(k.toLong())) + 1) }
+        val keys = Quests.daily(AppData(history = h), thu).map { it.key.substringAfterLast(':') }
+        assertTrue(keys.none { it in setOf("Train", "Sets", "Record", "Rpe", "Warmup", "Superset", "NewExercise") })
+    }
+
+    @Test fun waterTargetFollowsTheUsualDay() {
+        val day = LocalDate.of(2026, 11, 5)
+        val water = (1..7L).associate { day.minusDays(it).toString() to 2000 }
+        // Rerolls until the water quest shows up, then check its size: a glass over the usual 2 l.
+        val q = (0..20).asSequence().map { r -> Quests.daily(AppData(water = water, rerollDay = day.toString(), rerollCount = r), day) }
+            .flatten().first { it.key.endsWith(":Water") }
+        assertEquals(9, q.target)
+    }
 }

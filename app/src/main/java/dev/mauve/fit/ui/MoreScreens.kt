@@ -204,7 +204,7 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                 Spacer(Modifier.height(8.dp))
                 records.forEach { (exId, s) ->
                     Row(Modifier.padding(vertical = 4.dp)) {
-                        Text(App.repo[exId]?.title ?: exId, Modifier.weight(1f), color = Ink.bg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(App.repo[exId]?.title ?: exId, Modifier.weight(1f).marquee(), color = Ink.bg, fontWeight = FontWeight.SemiBold, maxLines = 1)
                         Text(ShareImage.setText(s), color = Ink.bg)
                     }
                 }
@@ -312,7 +312,7 @@ fun QuickWorkoutScreen(data: AppData, nav: NavController) {
                         Thumb(e, 46.dp)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(e?.title ?: p.exerciseId, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+                            Text(e?.title ?: p.exerciseId, Modifier.marquee(), maxLines = 1, style = MaterialTheme.typography.titleMedium)
                             Text(e?.let { Labels.muscle(it.target) }.orEmpty(), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
                         }
                         Spacer(Modifier.width(12.dp))

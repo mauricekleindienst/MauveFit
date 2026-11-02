@@ -25,6 +25,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -443,3 +444,10 @@ fun OnResume(block: suspend () -> Unit) {
         onPauseOrDispose { job.cancel() }
     }
 }
+
+/**
+ * A single line that is too long scrolls slowly sideways instead of being cut off, so a long
+ * exercise name stays readable in a list row.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+fun Modifier.marquee(): Modifier = this.basicMarquee(iterations = Int.MAX_VALUE, repeatDelayMillis = 2_000, initialDelayMillis = 1_500)

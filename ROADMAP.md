@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.21.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.22.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,14 @@ Stand: Version 1.21.1 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.22.0
+
+- Tagesquests passen sich an: an Trainingstagen zwei Quests zum Training und eine zum Körper, an Ruhetagen (Wochenziel erreicht oder Pause dran) nur Erholung und Ernährung
+- Quests nur für das, was genutzt wird: Wasser, Protein, Cardio, RPE, Supersätze; Rekord- und Neue-Übung-Quests erst nach ein paar Trainings
+- Ziele aus den eigenen Werten: Sätze wie ein normales Training, Wasser ein Glas über dem üblichen Tag (1,5 bis 2,5 l), Protein 10 % über dem üblichen Tag, Cardio in der gewohnten Länge
+- Die Quests eines Tages bleiben den ganzen Tag gleich
+- Lange Übungsnamen laufen als Lauftext durch, statt abgeschnitten zu werden (Planvorschau, Verlauf, Analysen, Rekorde, Schnelltraining, Sammlungen)
 
 ## Erledigt in 1.21.1
 

@@ -109,7 +109,7 @@ fun ShopScreen(data: AppData, nav: NavController) {
                             Thumb(e, 44.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(e?.title ?: c.exerciseId, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(e?.title ?: c.exerciseId, Modifier.marquee(), style = MaterialTheme.typography.titleSmall, maxLines = 1)
                                 Spacer(Modifier.height(6.dp))
                                 Meter(c.fraction, Modifier.fillMaxWidth())
                                 Spacer(Modifier.height(4.dp))

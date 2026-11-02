@@ -325,7 +325,7 @@ private fun LiftRow(lift: Insights.Lift, onClick: () -> Unit) {
     Card(Modifier.fillMaxWidth(), onClick = onClick, color = Ink.raised, shape = RowShape, padding = PaddingValues(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(ex?.title ?: lift.exerciseId, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(ex?.title ?: lift.exerciseId, Modifier.marquee(), style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(
                     L("Bestwert ~${Stats.fmtKg(Stats.roundTo(lift.best, 0.5))} kg · ${lift.points.size} Trainings", "Best ~${Stats.fmtKg(Stats.roundTo(lift.best, 0.5))} kg · ${lift.points.size} sessions"),
                     style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 1,
@@ -440,7 +440,7 @@ private fun RecordsCard(r: Insights.Report, today: LocalDate, nav: NavController
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(ex?.title ?: pr.exerciseId, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(ex?.title ?: pr.exerciseId, Modifier.marquee(), style = MaterialTheme.typography.titleSmall, maxLines = 1)
                     Text(pr.date.format(shortFmt), style = MaterialTheme.typography.labelSmall, color = Ink.muted)
                 }
                 Column(horizontalAlignment = Alignment.End) {

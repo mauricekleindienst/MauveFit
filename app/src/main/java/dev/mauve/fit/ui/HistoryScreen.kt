@@ -234,7 +234,7 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
                             Thumb(ex, 44.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(ex?.title ?: e.exerciseId, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(ex?.title ?: e.exerciseId, Modifier.marquee(), fontWeight = FontWeight.SemiBold, maxLines = 1)
                                 Text(
                                     e.sets.filter { !it.warmup }.joinToString("   ") { Stats.setLabel(it, ex?.bodyweight == true) },
                                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,

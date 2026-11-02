@@ -28,49 +28,136 @@ object Quests {
 
     private fun targets(d: AppData) = d.bodyWeights.firstOrNull()?.kg?.let { Nutrition.targets(it, d.profile.goal) }
 
-    /** The three quests of [day]: a training one, a nutrition or body one, and one of either. */
+    /**
+     * What the days before [day] say about this person: whether today is a training day, which
+     * parts of the app they use, and their usual amounts. Only the past counts, so the day's
+     * quests stay the same from morning to night.
+     */
+    private class Context(d: AppData, day: LocalDate) {
+        val past = d.history.filter { Stats.day(it.startedAt).isBefore(day) }
+        private val weekStart = Stats.weekStart(day)
+        private val doneThisWeek = past.count { !Stats.day(it.startedAt).isBefore(weekStart) }
+        private val goal = d.settings.weeklyGoal.coerceIn(1, 7)
+        private val daysLeft = 8 - day.dayOfWeek.value
+        private val trainedYesterday = past.any { Stats.day(it.startedAt) == day.minusDays(1) }
+        /** The goal still needs sessions, and either every day left counts or yesterday was a rest day. */
+        val trainingDay = doneThisWeek < goal && (goal - doneThisWeek >= daysLeft || !trainedYesterday)
+        val workouts = past.size
+
+        private val from14 = day.minusDays(14).toString()
+        private val today = day.toString()
+        private val foodDays = d.food.filter { it.date >= from14 && it.date < today }.groupBy { it.date }.mapValues { (_, f) -> f.sumOf { it.protein } }
+        private val waterDays = d.water.filterKeys { it >= from14 && it < today }.filterValues { it > 0 }
+        private val recentCardio = d.cardio.filter { Stats.day(it.at).let { c -> c.isBefore(day) && !c.isBefore(day.minusDays(30)) } }
+
+        val usesFood = foodDays.isNotEmpty()
+        val usesWater = waterDays.isNotEmpty()
+        val usesCardio = recentCardio.isNotEmpty()
+        val weighs = d.settings.goalWeight > 0 || d.bodyWeights.any { !Stats.day(it.at).isBefore(day.minusDays(30)) }
+        val usesRpe = past.take(10).any { w -> w.entries.any { e -> e.sets.any { it.rpe > 0 } } }
+        val hasSupersets = d.routines.any { r -> r.exercises.any { it.superset != null } }
+
+        /** Usual amounts, so a quest asks for a little more than a normal day, not a fixed number. */
+        val typicalSets = past.take(5).map { it.doneSets.size }.filter { it > 0 }.takeIf { it.isNotEmpty() }?.average()
+        val typicalWater = waterDays.values.sorted().let { if (it.isEmpty()) null else it[it.size / 2] }
+        val typicalProtein = foodDays.values.takeIf { it.isNotEmpty() }?.average()
+        val typicalCardio = recentCardio.map { it.minutes }.sorted().let { if (it.isEmpty()) null else it[it.size / 2] }
+    }
+
+    /**
+     * The three quests of [day], fitted to the person: on a training day two about the workout
+     * and one about the body, on a rest day recovery and nutrition only; quests only for what is
+     * used (water, food, cardio, RPE, supersets), and targets from their own usual amounts.
+     */
     fun daily(d: AppData, day: LocalDate = LocalDate.now()): List<Quest> {
         // A reroll bought in the shop draws the day's quests anew.
         val rerolls = if (d.rerollDay == day.toString()) d.rerollCount else 0
         val rnd = Random(day.toEpochDay() * 7919 + rerolls)
-        val training = listOf(Daily.Train, Daily.Sets, Daily.Record, Daily.Rpe, Daily.NewExercise, Daily.Warmup, Daily.Superset, Daily.Rate)
-        val body = listOfNotNull(Daily.Water, if (targets(d) != null) Daily.Protein else null, Daily.Cardio, Daily.Weigh)
-        val first = training.random(rnd)
-        val second = body.random(rnd)
-        val third = (training + body).filter { it != first && it != second }.random(rnd)
-        return listOf(first, second, third).map { quest(d, day, it) }
+        val c = Context(d, day)
+        val hasTargets = targets(d) != null
+
+        val body = buildMap {
+            put(Daily.Water, if (c.usesWater) 3 else 1)
+            if (c.usesFood && hasTargets) put(Daily.Protein, 3)
+            // Less likely when not part of their habits, but there to try.
+            put(Daily.Weigh, if (c.weighs) 2 else 1)
+            put(Daily.Cardio, if (c.usesCardio) 2 else 1)
+        }
+        val picks = mutableListOf<Daily>()
+        if (c.trainingDay) {
+            val training = buildMap {
+                put(Daily.Sets, 3)
+                if (c.workouts >= 3) put(Daily.Record, 2)
+                put(Daily.Rate, 1)
+                if (c.usesRpe) put(Daily.Rpe, 2) else if (c.workouts >= 5) put(Daily.Rpe, 1)
+                if (c.workouts >= 5) put(Daily.NewExercise, 1)
+                if (c.workouts >= 2) put(Daily.Warmup, 1)
+                if (c.hasSupersets) put(Daily.Superset, 1)
+            }
+            // The workout itself always, one more about it, one about the body.
+            picks += Daily.Train
+            picks += pick(training, rnd)
+            picks += pick(body, rnd)
+        } else {
+            picks += pick(body, rnd, 3)
+        }
+        // Fill up should a pool run short (a new user on a rest day).
+        for (spare in listOf(Daily.Water, Daily.Weigh, Daily.Cardio, Daily.Rate)) if (picks.size < 3 && spare !in picks) picks += spare
+        return picks.take(3).map { quest(d, day, it, c) }
     }
 
-    private fun quest(d: AppData, day: LocalDate, q: Daily): Quest {
+    /** [n] distinct picks from [weights], each as likely as its weight. */
+    private fun pick(weights: Map<Daily, Int>, rnd: Random, n: Int = 1): List<Daily> {
+        val left = weights.filterValues { it > 0 }.toMutableMap()
+        return List(minOf(n, left.size)) {
+            var r = rnd.nextInt(left.values.sum())
+            val chosen = left.entries.first { (_, w) -> (r < w).also { r -= w } }.key
+            left.remove(chosen)
+            chosen
+        }
+    }
+
+    private fun quest(d: AppData, day: LocalDate, q: Daily, c: Context): Quest {
         val done = workoutsOn(d, day) + listOfNotNull(d.active?.takeIf { Stats.day(it.startedAt) == day })
         val sets = done.flatMap { w -> w.entries.flatMap { it.sets } }.filter { it.done }
         val key = "d:$day:${q.name}"
-        val sets10 = if (d.profile.level == Level.Beginner) 10 else 15
         fun of(title: String, p: Int, t: Int) = Quest(key, title, p, t, q.xp)
         return when (q) {
             Daily.Train -> of(L("Ein Training abschließen", "Finish a workout"), workoutsOn(d, day).size, 1)
-            Daily.Sets -> of(L("$sets10 Sätze schaffen", "Do $sets10 sets"), sets.count { !it.warmup }, sets10)
+            Daily.Sets -> {
+                // About a normal workout's sets, rounded to 5.
+                val t = c.typicalSets?.let { (it / 5).toInt().coerceAtLeast(1) * 5 }?.coerceIn(8, 30)
+                    ?: if (d.profile.level == Level.Beginner) 10 else 15
+                of(L("$t Sätze schaffen", "Do $t sets"), sets.count { !it.warmup }, t)
+            }
             Daily.Record -> of(L("Einen Rekord brechen", "Break a record"),
                 Insights.prTimeline(d.history, Int.MAX_VALUE).count { it.date == day }, 1)
             Daily.Water -> {
-                val goal = targets(d)?.waterMl ?: 2000
+                // A glass more than a usual day, between 1.5 and 2.5 l; 1.5 l to start with.
+                val goal = c.typicalWater?.let { ((it + 250) / 250 * 250).coerceIn(1500, 2500) } ?: 1500
                 of(L("${goal / 1000.0} l trinken".replace(".0 l", " l").replace('.', ','), "Drink ${goal / 1000.0} l".replace(".0 l", " l")),
                     (d.water[day.toString()] ?: 0) / 250, goal / 250)
             }
             Daily.Protein -> {
-                val goal = targets(d)?.protein ?: 100
-                of(L("Proteinziel erreichen ($goal g)", "Hit your protein goal ($goal g)"),
+                // A tenth over a usual day, never more than the target itself.
+                val target = targets(d)?.protein ?: 100
+                val goal = (c.typicalProtein?.let { minOf(it * 1.1, target.toDouble()) } ?: (target * 0.75)).let { (it / 10).toInt() * 10 }.coerceAtLeast(40)
+                of(L("$goal g Protein essen", "Eat $goal g of protein"),
                     d.food.filter { it.date == day.toString() }.sumOf { it.protein }, goal)
             }
             Daily.Rate -> of(L("Ein Training bewerten", "Rate a workout"), workoutsOn(d, day).count { it.feel > 0 }, 1)
             Daily.Rpe -> of(L("3 Sätze mit RPE bewerten", "Rate 3 sets with RPE"), sets.count { it.rpe > 0 }, 3)
             Daily.NewExercise -> {
-                val before = d.history.filter { Stats.day(it.startedAt).isBefore(day) }.flatMap { w -> w.entries.map { it.exerciseId } }.toSet()
+                val before = c.past.flatMap { w -> w.entries.map { it.exerciseId } }.toSet()
                 val new = done.flatMap { w -> w.entries.filter { e -> e.sets.any { it.done && !it.warmup } }.map { it.exerciseId } }.count { it !in before }
                 of(L("Eine neue Übung ausprobieren", "Try a new exercise"), new.coerceAtMost(1), 1)
             }
-            Daily.Cardio -> of(L("20 Minuten Cardio", "20 minutes of cardio"),
-                d.cardio.filter { Stats.day(it.at) == day }.sumOf { it.minutes }, 20)
+            Daily.Cardio -> {
+                // The usual session length; on a rest day without cardio habits an easy 20 minutes.
+                val t = c.typicalCardio?.let { (it / 5 * 5).coerceIn(15, 45) } ?: 20
+                of(if (c.usesCardio) L("$t Minuten Cardio", "$t minutes of cardio") else L("$t Minuten locker bewegen", "$t minutes of easy movement"),
+                    d.cardio.filter { Stats.day(it.at) == day }.sumOf { it.minutes }, t)
+            }
             Daily.Weigh -> of(L("Körpergewicht eintragen", "Log your body weight"),
                 d.bodyWeights.count { Stats.day(it.at) == day }.coerceAtMost(1), 1)
             Daily.Warmup -> of(L("Mit Aufwärmsätzen starten", "Start with warm-up sets"), sets.count { it.warmup }.coerceAtMost(2), 2)

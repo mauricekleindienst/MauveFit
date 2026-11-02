@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.15 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.16 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,17 @@ Stand: Version 1.19.15 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.16 (Fix-Runde 15)
+
+- Uhr: kein doppeltes Vibrieren und keine "Pause vorbei"-Karte über "Satz erledigt", solange die Uhr-App offen ist
+- Körpergewicht: der Coach sagt "Steigern" statt "Letztes Mal knapp", wenn alle Wiederholungen geschafft waren
+- Backup aus den Einstellungen übernimmt sofort Sprache und Design
+- "Neue Woche planen" fragt vor dem Leeren des Essensplans
+- Freier Eintrag ohne Proteinangabe möglich; 0 kcal wird rot markiert
+- Mengen wie "0,25 Stk" statt "0,3 Stk"
+- Analysen: Rekordzahl der letzten 30 Tage nicht mehr bei 10 gedeckelt; eine stagnierende Übung wird nicht gleichzeitig als Aufsteiger genannt; Erfolg "Rekordjäger" zählt nur echte Rekorde
+- Korrekturen an Runde 14: ganze Übung aus einem gespeicherten Training entfernen geht wieder, Weiterblättern springt nicht zurück zu übersprungenen Übungen, letzte Übung außer der Reihe führt zur Abschlussseite
 
 ## Erledigt in 1.19.15 (Fix-Runde 14)
 

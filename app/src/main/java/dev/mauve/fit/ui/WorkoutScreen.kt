@@ -163,6 +163,8 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
         // Only when it changes: after a rotation the page someone was looking at stays.
         if (current == lastCurrent) return@LaunchedEffect
         lastCurrent = current
+        // Everything done: the finish page is onAllDone's to show, not the last exercise.
+        if (w.entries.all { e -> e.sets.all { it.done } }) return@LaunchedEffect
         val shown = w.entries.getOrNull(pager.currentPage) ?: return@LaunchedEffect
         if (current >= 0 && current != pager.currentPage && shown.sets.none { !it.done }) pager.animateScrollToPage(current)
     }
@@ -244,7 +246,9 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
                         // way there); the finish page once everything is done.
                         if (Supersets.members(w.entries.map { it.superset }, page) == null) {
                             val entries = App.store.data.value.active?.entries ?: w.entries
-                            val next = entries.indexOfFirst { e -> e.sets.any { !it.done } }.takeIf { it >= 0 } ?: entries.size
+                            // Forward first: an exercise skipped earlier comes after the ones still ahead.
+                            val open = { j: Int -> entries[j].sets.any { !it.done } }
+                            val next = (page + 1 until entries.size).firstOrNull(open) ?: entries.indices.firstOrNull(open) ?: entries.size
                             if (next != page) scope.launch { delay(500); if (pager.currentPage == page) pager.animateScrollToPage(next) }
                         }
                     },
@@ -304,7 +308,9 @@ private fun ExercisePage(
     val e = App.repo[entry.exerciseId]
     val bodyweight = e?.bodyweight == true
     val last = remember(history, entry.exerciseId) { Stats.lastSets(history, entry.exerciseId) }
-    val targetReps = entry.sets.firstOrNull { !it.warmup }?.reps ?: 10
+    // The plan's target, not the prefilled reps: those run one ahead after a body-weight set was
+    // fully done, and every hit would read as "close last time".
+    val targetReps = entry.sets.firstOrNull { !it.warmup }?.let { if (it.target > 0) it.target else it.reps } ?: 10
     val tip = remember(history, entry.exerciseId) { Coach.exerciseTip(history, entry.exerciseId, targetReps, bodyweight) }
     var editing by remember { mutableStateOf<Int?>(null) }
     var swapping by remember { mutableStateOf(false) }

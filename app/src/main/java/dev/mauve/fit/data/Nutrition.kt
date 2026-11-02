@@ -839,7 +839,8 @@ object Nutrition {
             item.unit == "g" && v >= 1000 -> return String.format(java.util.Locale.ROOT, "%.1f kg", v / 1000).replace('.', if (I18n.german) ',' else '.')
             item.unit == "ml" && v >= 1000 -> return String.format(java.util.Locale.ROOT, "%.1f l", v / 1000).replace('.', if (I18n.german) ',' else '.')
             v % 1.0 == 0.0 -> v.toInt().toString()
-            else -> String.format(java.util.Locale.ROOT, "%.1f", v).replace('.', if (I18n.german) ',' else '.')
+            // Two decimals, trimmed: a quarter lemon is "0,25", not "0,3".
+            else -> String.format(java.util.Locale.ROOT, "%.2f", v).trimEnd('0').trimEnd('.').replace('.', if (I18n.german) ',' else '.')
         }
         return "$n $unit"
     }

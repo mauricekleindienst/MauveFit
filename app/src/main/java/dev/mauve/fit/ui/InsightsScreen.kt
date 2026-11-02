@@ -424,7 +424,8 @@ private fun RecordsCard(r: Insights.Report, today: LocalDate, nav: NavController
         }
         val dot = Ink.accent
         val rail = Ink.line
-        r.prs.forEachIndexed { i, pr ->
+        val shown = r.prs.take(10)
+        shown.forEachIndexed { i, pr ->
             val ex = App.repo[pr.exerciseId]
             Row(
                 Modifier.fillMaxWidth().clip(RowShape).pressable { Haptics.click(); nav.navigate("exercise/${pr.exerciseId}") },
@@ -434,7 +435,7 @@ private fun RecordsCard(r: Insights.Report, today: LocalDate, nav: NavController
                 Canvas(Modifier.width(18.dp).height(48.dp)) {
                     val cx = size.width / 2
                     if (i > 0) drawLine(rail, Offset(cx, 0f), Offset(cx, size.height / 2), 2.dp.toPx())
-                    if (i < r.prs.lastIndex) drawLine(rail, Offset(cx, size.height / 2), Offset(cx, size.height), 2.dp.toPx())
+                    if (i < shown.lastIndex) drawLine(rail, Offset(cx, size.height / 2), Offset(cx, size.height), 2.dp.toPx())
                     drawCircle(dot, 5.dp.toPx(), Offset(cx, size.height / 2))
                 }
                 Spacer(Modifier.width(10.dp))

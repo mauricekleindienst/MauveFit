@@ -48,7 +48,8 @@ object Progress {
         val zone = ZoneId.systemDefault()
         val hours = h.map { Instant.ofEpochMilli(it.startedAt).atZone(zone).hour }
         val distinct = h.flatMap { w -> w.entries.map { it.exerciseId } }.distinct().size
-        val records = Stats.records(h).size
+        // Exercises with a record actually broken (an earlier best beaten), not every exercise done once.
+        val records = Insights.prTimeline(h, Int.MAX_VALUE).map { it.exerciseId }.distinct().size
         fun p(v: Number, goal: Number) = (v.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
         return listOf(
             Achievement(L("Erster Schritt", "First step"), L("Erstes Training abgeschlossen", "First workout completed"), p(h.size, 1)),

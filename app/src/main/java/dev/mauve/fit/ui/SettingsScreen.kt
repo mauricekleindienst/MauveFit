@@ -145,6 +145,13 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         io.launch {
             val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readBackup(context, uri)?.let(App.store::import) == true }
             message = if (ok) L("Backup wiederhergestellt", "Backup restored") else L("Das ist kein Mauve-Fit-Backup", "This is not a Mauve Fit backup")
+            // The backup's language, theme and accent apply now, as after a restore in the intro.
+            if (ok) {
+                I18n.apply(App.store.data.value.settings.language)
+                App.store.relocalizePlans()
+                dev.mauve.fit.system.createChannels(context)
+                (context as? android.app.Activity)?.recreate()
+            }
         }
     }
     fun set(block: (dev.mauve.fit.data.Settings) -> dev.mauve.fit.data.Settings) = App.store.updateSettings(block)

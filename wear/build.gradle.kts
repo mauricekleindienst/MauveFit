@@ -13,8 +13,8 @@ android {
         applicationId = "dev.mauve.fit"
         minSdk = 30
         targetSdk = 36
-        versionCode = 41
-        versionName = "1.19.15"
+        versionCode = 42
+        versionName = "1.19.16"
     }
 
     buildTypes {
@@ -50,6 +50,8 @@ dependencies {
     implementation(libs.wear.compose.foundation)
 
     implementation(libs.androidx.core.ktx)
+    // Keeps the phone's "rest over" alert off the wrist while the watch app buzzes itself.
+    implementation("androidx.wear:wear-phone-interactions:1.1.0")
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 

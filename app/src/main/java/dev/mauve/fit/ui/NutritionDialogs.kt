@@ -108,9 +108,10 @@ fun FoodEntryDialog(onSave: (name: String, kcal: Int, protein: Int, carbs: Int, 
     var carbs by remember { mutableStateOf("") }
     var fat by remember { mutableStateOf("") }
     val values = listOf(kcal, protein, carbs, fat).map(::parseInt)
-    val valid = name.isNotBlank() && kcal.isNotBlank() && protein.isNotBlank() && values.all { it != null } && (values[0] ?: 0) in 1..5000
+    // Protein may stay empty (counts as 0); a banana's protein is rarely known.
+    val valid = name.isNotBlank() && kcal.isNotBlank() && values.all { it != null } && (values[0] ?: 0) in 1..5000
     // Show which field blocks "Log it" instead of a silently grey button.
-    val bad = values.map { it == null }.toMutableList().also { it[0] = it[0] || (values[0] ?: 0) > 5000 }
+    val bad = values.map { it == null }.toMutableList().also { it[0] = kcal.isNotBlank() && (values[0] == null || values[0] !in 1..5000) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(L("Freier Eintrag", "Custom entry")) },

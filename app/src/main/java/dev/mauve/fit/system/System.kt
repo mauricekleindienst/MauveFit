@@ -274,6 +274,8 @@ class WorkoutService : Service() {
             // A timer: Android treats it like one (do-not-disturb rules, lock screen, the watch).
             .setCategory(Notification.CATEGORY_ALARM)
             .setColor(0xFFDB9062.toInt())
+            // Tagged so an open watch app, which buzzes by itself, can keep it off the wrist.
+            .extend(Notification.WearableExtender().setBridgeTag("mauvefit_rest"))
             .build()
         getSystemService(NotificationManager::class.java).notify(ID_REST, n)
     }

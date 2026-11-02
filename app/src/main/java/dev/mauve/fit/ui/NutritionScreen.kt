@@ -359,7 +359,11 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                     }
                 }
                 if (planned > 0) item {
-                    GhostButton(L("Neue Woche planen", "Plan a new week"), Modifier.fillMaxWidth()) { Haptics.warn(); App.store.clearMealPlan() }
+                    // Two taps: it empties the whole plan and every tick, right under the last row.
+                    var armed by remember { mutableStateOf(false) }
+                    GhostButton(if (armed) L("Ganzen Plan wirklich leeren?", "Really clear the whole plan?") else L("Neue Woche planen", "Plan a new week"), Modifier.fillMaxWidth()) {
+                        if (armed) { Haptics.warn(); App.store.clearMealPlan(); armed = false } else { Haptics.tick(); armed = true }
+                    }
                 }
             }
         }

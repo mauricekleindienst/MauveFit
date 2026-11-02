@@ -738,7 +738,12 @@ private fun SavedSetsDialog(workoutId: String, index: Int, entry: dev.mauve.fit.
     fun parsedKg(r: Row) = if (r.kg.isBlank()) 0.0 else r.kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 }
     fun parsedReps(r: Row) = r.reps.trim().toIntOrNull()?.takeIf { it in 0..200 }
     // At least one working set stays: deleting the workout has its own button with a confirmation.
-    val valid = rows.filter { it.keep }.all { parsedKg(it) != null && parsedReps(it) != null } && rows.any { it.keep && !it.set.warmup }
+    // Removing a whole exercise is fine; removing the last working set of the workout is not
+    // (deleting the workout has its own button with a confirmation).
+    val othersHaveWork = App.store.data.value.history.firstOrNull { it.id == workoutId }?.entries
+        ?.withIndex()?.any { (j, e) -> j != index && e.sets.any { !it.warmup } } == true
+    val valid = rows.filter { it.keep }.all { parsedKg(it) != null && parsedReps(it) != null } &&
+        (othersHaveWork || rows.any { it.keep && !it.set.warmup })
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(App.repo[entry.exerciseId]?.title ?: entry.exerciseId) },

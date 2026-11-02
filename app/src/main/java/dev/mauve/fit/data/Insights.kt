@@ -461,7 +461,8 @@ object Insights {
             calendar(h, today), streaks(h, goal, today, d.frozenWeeks), goalRate(h, goal, today), goal,
             favouriteDay(h), favouriteTime(h),
             lastWeekSets(h, lookup, today), weeklyGroupSets(h, lookup, today),
-            topLifts(h, today), sessions(h, today), volumeChange(h, today), prTimeline(h),
+            // The whole timeline: the card shows the newest ten, the 30-day count needs them all.
+            topLifts(h, today), sessions(h, today), volumeChange(h, today), prTimeline(h, Int.MAX_VALUE),
             food(d.food, d.water, targets, today), weight(d.bodyWeights), readinessLink(h), effort(h, today),
         )
     }
@@ -503,7 +504,8 @@ object Insights {
     fun strengthLine(lifts: List<Lift>, lookup: Lookup): String {
         fun name(id: String) = lookup(id)?.title ?: id
         val stuck = lifts.filter { it.plateau }
-        val best = lifts.filter { it.change != null }.maxByOrNull { it.change!! }
+        // A lift that stalled is not also named as the one going up.
+        val best = lifts.filter { it.change != null && !it.plateau }.maxByOrNull { it.change!! }
         val gain = best?.takeIf { it.change!! >= 0.5 }?.let {
             L("${name(it.exerciseId)} legt in 8 Wochen ${pct(it.change!!)} zu", "${name(it.exerciseId)} is up ${pct(it.change!!)} in 8 weeks")
         }

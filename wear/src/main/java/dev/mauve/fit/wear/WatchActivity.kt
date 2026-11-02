@@ -105,6 +105,9 @@ private val colors = Colors(
 )
 
 /** Ambient (always-on) flag plus a tick the system sends about once a minute while dimmed. */
+/** Bridge tag of the phone's "rest over" notification (System.kt). */
+private const val REST_TAG = "mauvefit_rest"
+
 class Ambient {
     var on by mutableStateOf(false)
     var tick by mutableLongStateOf(0L)
@@ -169,9 +172,20 @@ class WatchActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         link.connect()
+        // The app buzzes at rest end itself; the phone's bridged "rest over" card would buzz again
+        // and cover "Set done". Closed, the bridged alert is welcome (tile-only use).
+        runCatching {
+            androidx.wear.phone.interactions.notifications.BridgingManager.fromContext(this).setConfig(
+                androidx.wear.phone.interactions.notifications.BridgingConfig.Builder(this, true).addExcludedTag(REST_TAG).build(),
+            )
+        }
     }
 
     override fun onStop() {
+        runCatching {
+            androidx.wear.phone.interactions.notifications.BridgingManager.fromContext(this)
+                .setConfig(androidx.wear.phone.interactions.notifications.BridgingConfig.Builder(this, true).build())
+        }
         link.disconnect()
         super.onStop()
     }

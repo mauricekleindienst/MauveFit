@@ -11,6 +11,7 @@ import androidx.health.connect.client.units.Mass
 import dev.mauve.fit.App
 import dev.mauve.fit.data.HealthExport
 import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Stats
 import dev.mauve.fit.data.Workout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -113,7 +114,9 @@ object HealthSync {
         val start = Instant.ofEpochMilli(w.startedAt)
         val end = Instant.ofEpochMilli(w.finishedAt ?: w.startedAt)
         val sets = w.doneSets.size
-        val summary = L("$sets Sätze · ${w.volume.toInt()} kg Volumen", "$sets sets · ${w.volume.toInt()} kg volume")
+        // Reps for body-weight sessions, not "0 kg volume".
+        val summary = if (w.volume > 0) L("$sets Sätze · ${w.volume.toInt()} kg Volumen", "$sets sets · ${w.volume.toInt()} kg volume")
+        else L("$sets Sätze · ${Stats.headline(w)}", "$sets sets · ${Stats.headline(w)}")
         return ExerciseSessionRecord(
             startTime = start, startZoneOffset = offset(start),
             endTime = end, endZoneOffset = offset(end),

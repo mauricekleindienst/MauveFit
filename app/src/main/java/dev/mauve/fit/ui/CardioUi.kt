@@ -144,7 +144,8 @@ fun CardioCard(data: AppData) {
 /** "Cardio this week: 95 min" with a bar per day, today in the accent. */
 @Composable
 fun CardioWeek(cardio: List<CardioSession>) {
-    val today = LocalDate.now()
+    // Follows the clock: back on Monday the week starts over without a data change.
+    val today by rememberToday()
     val minutes = Cardio.weekMinutes(cardio, today)
     val total = minutes.sum()
     Eyebrow(L("Cardio diese Woche", "Cardio this week"))

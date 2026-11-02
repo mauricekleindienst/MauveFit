@@ -59,6 +59,8 @@ private val RESCHEDULE = setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIMEZ
 /** True while an activity of the app is on screen; alerts are skipped then (the screen buzzes itself). */
 object Foreground {
     @Volatile var visible = false
+    /** The workout screen is composed; only then does the screen itself buzz at the end of a rest. */
+    @Volatile var workoutShown = false
 }
 
 fun createChannels(context: Context) {
@@ -172,7 +174,10 @@ class WorkoutService : Service() {
                     getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(after))
                     // No alarm for a rest that ended long ago (service restarted later) or after the last set.
                     val complete = Live.status(after, { null }, { false })?.complete == true
-                    if (!Foreground.visible && !complete && System.currentTimeMillis() - end < 30_000) restOver(after)
+                    // Alert unless the workout screen is on screen and buzzes itself: on another screen of
+                    // the app (exercise details, Home) the rest would otherwise end in silence.
+                    val screenBuzzes = Foreground.visible && Foreground.workoutShown
+                    if (!screenBuzzes && !complete && System.currentTimeMillis() - end < 30_000) restOver(after)
                     // The widgets count the rest down on their own; at zero they switch to the next set.
                     dev.mauve.fit.widget.Widgets.restOver(this@WorkoutService)
                     if (wake.isHeld) wake.release()

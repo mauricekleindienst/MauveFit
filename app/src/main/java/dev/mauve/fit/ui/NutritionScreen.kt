@@ -554,14 +554,18 @@ private fun WeightDialog(onDone: () -> Unit) {
         onDismissRequest = onDone,
         title = { Text(L("Körpergewicht", "Body weight")) },
         text = {
+            // Out of range: say so instead of closing on nothing with a success buzz.
+            val bad = kg.isNotBlank() && kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it in 25.0..350.0 } == null
             androidx.compose.material3.OutlinedTextField(
-                kg, { kg = it }, label = { Text("kg") }, singleLine = true,
+                kg, { kg = it }, label = { Text("kg") }, singleLine = true, isError = bad,
+                supportingText = if (bad) { { Text(L("Zahl zwischen 25 und 350", "A number from 25 to 350")) } } else null,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
             )
         },
         confirmButton = {
-            TextButton(onClick = {
-                kg.replace(',', '.').toDoubleOrNull()?.takeIf { it in 25.0..350.0 }?.let(App.store::addBodyWeight)
+            val v = kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it in 25.0..350.0 }
+            TextButton(enabled = v != null, onClick = {
+                v?.let(App.store::addBodyWeight)
                 Haptics.success()
                 onDone()
             }) { Text(L("Speichern", "Save")) }

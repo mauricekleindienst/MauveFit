@@ -64,7 +64,7 @@ object Progress {
             Achievement(L("Frühaufsteher", "Early bird"), L("Training vor 8 Uhr", "Workout before 8 am"), p(hours.count { it < 8 }, 1)),
             Achievement(L("Nachteule", "Night owl"), L("Training nach 21 Uhr", "Workout after 9 pm"), p(hours.count { it >= 21 }, 1)),
             Achievement(L("Vielseitig", "Versatile"), L("30 verschiedene Übungen", "30 different exercises"), p(distinct, 30)),
-            Achievement(L("Rekordjäger", "Record hunter"), L("Bestwerte in 15 Übungen", "Records in 15 exercises"), p(records, 15)),
+            Achievement(L("Rekordjäger", "Record hunter"), L("In 15 Übungen den eigenen Bestwert verbessert", "Beat your own best in 15 exercises"), p(records, 15)),
             Achievement(L("Ausdauer", "Endurance"), L("Ein Training über 90 Minuten", "A workout over 90 minutes"), p(h.maxOfOrNull { it.durationMs } ?: 0L, 90 * 60_000L)),
         )
     }

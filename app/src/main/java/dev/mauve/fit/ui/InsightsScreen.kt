@@ -90,7 +90,7 @@ fun InsightsTile(data: AppData, onClick: () -> Unit) {
             HeadCell(L("${h.streak} Wo.", "${h.streak} wk"), L("Serie", "Streak"), Ink.coral, Modifier.weight(1f))
             HeadCell(if (h.rate.of > 0) "${h.rate.pct} %" else "–", L("Ziel erreicht", "Goal met"), Ink.text, Modifier.weight(1f))
             HeadCell(
-                h.volume?.let { (if (it >= 0) "+" else "−") + "${kotlin.math.abs(it).roundToInt()} %" } ?: "–",
+                h.volume?.let { (if (it.roundToInt() >= 0) "+" else "−") + "${kotlin.math.abs(it).roundToInt()} %" } ?: "–",
                 L("Volumen 4 Wo.", "Volume 4 wk"), if ((h.volume ?: 0.0) >= 0) Ink.accent else Ink.muted, Modifier.weight(1f),
             )
         }
@@ -334,7 +334,7 @@ private fun LiftRow(lift: Insights.Lift, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 val c = lift.change
                 Text(
-                    c?.let { (if (it >= 0) "+" else "−") + "${kotlin.math.abs(it).roundToInt()} %" } ?: "–",
+                    c?.let { (if (it.roundToInt() >= 0) "+" else "−") + "${kotlin.math.abs(it).roundToInt()} %" } ?: "–",
                     style = MaterialTheme.typography.titleLarge,
                     color = when { c == null -> Ink.faint; c >= 0.5 -> Ink.accent; c <= -0.5 -> Ink.coral; else -> Ink.text },
                 )

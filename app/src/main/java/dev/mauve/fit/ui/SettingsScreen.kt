@@ -103,7 +103,12 @@ fun SettingsScreen(data: AppData, nav: NavController) {
     val s = data.settings
     val p = data.profile
     val context = LocalContext.current
-    var message by remember { mutableStateOf<String?>(null) }
+    // Saveable: a restored backup recreates the activity, and its confirmation must survive that.
+    var message by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
+    // The data buttons sit far below the title where the message shows: a toast reaches the user.
+    androidx.compose.runtime.LaunchedEffect(message) {
+        message?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show() }
+    }
     var confirmReset by remember { mutableStateOf(false) }
     var confirmClear by remember { mutableStateOf(false) }
     var watch by remember { mutableStateOf<String?>(null) }

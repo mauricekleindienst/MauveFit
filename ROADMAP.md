@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.16 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.17 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,16 @@ Stand: Version 1.19.16 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.17 (Fix-Runde 16)
+
+- "Pause vorbei" kommt auch, wenn man während der Pause in der App auf eine andere Seite geht (z. B. die Übungsanleitung)
+- Übung im Auswahlbildschirm doppelt angetippt: wird nur einmal hinzugefügt, das Training bleibt offen
+- Meldungen zu Backup, CSV und Wiederherstellen erscheinen als Hinweis, auch wenn man weit unten in den Einstellungen ist
+- Cardio-Woche springt montags um; Körpergewicht im Ernährungsbereich markiert ungültige Werte
+- Health Connect: Körpergewichtstrainings mit Wiederholungen statt "0 kg Volumen"
+- Kleinigkeiten: Erfolg "Rekordjäger" erklärt, was zählt; "1 challenge" im Singular; kein "−0 %"
+- Korrektur an Runde 15: Bestätigung nach dem Wiederherstellen bleibt sichtbar
 
 ## Erledigt in 1.19.16 (Fix-Runde 15)
 

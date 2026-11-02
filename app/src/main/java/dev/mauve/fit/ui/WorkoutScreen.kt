@@ -150,6 +150,11 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
         App.store.endRest(end)
     }
 
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        dev.mauve.fit.system.Foreground.workoutShown = true
+        onDispose { dev.mauve.fit.system.Foreground.workoutShown = false }
+    }
+
     // The page count must follow exercises added during the workout, so read it through state.
     val pageCount by rememberUpdatedState(w.entries.size + 1)
     // Opens where the workout stands, not on exercise 1.

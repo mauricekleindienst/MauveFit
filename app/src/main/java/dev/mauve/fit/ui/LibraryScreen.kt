@@ -73,7 +73,10 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?, onOpen: (
         }.sortedBy { it.title.lowercase() }.sortedByDescending { it.id in data.favorites }
     }
 
+    // A double tap while the screen animates out would add the exercise twice and pop one screen too many.
+    var picked by remember { mutableStateOf(false) }
     fun pick(e: Exercise) {
+        if (pickFor != null) { if (picked) return; picked = true }
         when (pickFor) {
             null -> if (onOpen != null) onOpen(e.id) else nav.navigate("exercise/${e.id}")
             "workout" -> { App.store.addToActive(e.id); nav.popBackStack() }

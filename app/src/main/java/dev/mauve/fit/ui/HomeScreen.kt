@@ -232,7 +232,7 @@ fun ChallengeCard(c: Motivation.Challenge, completed: Int, modifier: Modifier = 
         Meter(c.fraction, Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         Text(
-            if (c.done) L("Stark. Das ist deine ${completed.coerceAtLeast(1)}. geschaffte Challenge.", "Nice work. That makes ${completed.coerceAtLeast(1)} challenges done.")
+            if (c.done) L("Stark. Das ist deine ${completed.coerceAtLeast(1)}. geschaffte Challenge.", "Nice work. That makes ${completed.coerceAtLeast(1)} ${if (completed <= 1) "challenge" else "challenges"} done.")
             else c.detail,
             style = MaterialTheme.typography.bodySmall, color = if (c.done) Ink.text else Ink.muted,
         )

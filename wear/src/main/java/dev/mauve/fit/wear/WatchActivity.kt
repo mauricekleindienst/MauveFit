@@ -104,10 +104,10 @@ private val colors = Colors(
     error = Ink.red, onError = Ink.bg,
 )
 
-/** Ambient (always-on) flag plus a tick the system sends about once a minute while dimmed. */
 /** Bridge tag of the phone's "rest over" notification (System.kt). */
 private const val REST_TAG = "mauvefit_rest"
 
+/** Ambient (always-on) flag plus a tick the system sends about once a minute while dimmed. */
 class Ambient {
     var on by mutableStateOf(false)
     var tick by mutableLongStateOf(0L)

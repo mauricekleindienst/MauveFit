@@ -2,6 +2,8 @@ package dev.mauve.fit.ui
 
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -215,7 +217,8 @@ fun Stat(value: String, label: String, modifier: Modifier = Modifier, accent: Co
         // The wide face runs out of room fast in a third of the screen; long values step down a size.
         val style = if (value.length > 5) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium
         Text(value, style = style, color = accent, maxLines = 1, softWrap = false)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1)
+        // Two lines: with large system text "diese Woche" was cut to "diese".
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -330,7 +333,11 @@ fun Bars(values: List<Float>, labels: List<String>, modifier: Modifier = Modifie
                     )
                 }
                 Spacer(Modifier.height(6.dp))
-                Text(labels[i], style = MaterialTheme.typography.labelSmall, color = Ink.faint, maxLines = 1)
+                // Shrinks instead of cutting: with large system text "KW44" lost its last digit.
+                Text(
+                    labels[i], style = MaterialTheme.typography.labelSmall, color = Ink.faint, maxLines = 1, softWrap = false,
+                    autoSize = TextAutoSize.StepBased(minFontSize = 7.sp, maxFontSize = MaterialTheme.typography.labelSmall.fontSize),
+                )
             }
         }
     }

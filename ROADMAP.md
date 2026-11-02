@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -89,6 +89,11 @@ Stand: Version 1.19.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Alle 1.324 Übungsnamen auf Deutsch ("Bankdrücken mit Langhantel"), auch auf Uhr, Widget und in der Benachrichtigung
 - Bibliothekssuche findet deutsche und englische Namen, Liste alphabetisch nach Anzeigename
 
+## Erledigt in 1.19.1
+
+- Große Systemschrift (130 %) geprüft: Wochenbeschriftungen im Volumen-Diagramm schrumpfen statt abgeschnitten zu werden ("KW44" wurde zu "KW4"), Statistik-Kacheln und Werkzeug-Untertitel dürfen zwei Zeilen haben
+- TalkBack: alle klickbaren Elemente auf Heute und Fortschritt haben eine Beschriftung
+
 ## Als Nächstes
 
 - **Animationen lizenzrechtlich klären.** Die GIFs sind © Gym visual und nicht von der MIT-Lizenz des Datensatzes gedeckt. Vor einem Store-Release: Lizenz bei Gym visual oder Umstieg auf free-exercise-db (gemeinfrei, zwei Fotos pro Übung).
@@ -113,7 +118,7 @@ Stand: Version 1.19.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Design und Bedienung
 
 - **Animierte Übergänge** zwischen Liste und Übungsdetail (Shared Element).
-- **Barrierefreiheit:** TalkBack-Beschriftungen prüfen, große Schrift testen, Kontrast im hellen Modus messen.
+- **Barrierefreiheit:** Kontrast im hellen Modus messen.
 - **Weitere Sprachen:** Der Datensatz hat Anleitungen in 10 Sprachen; Spanisch, Französisch, Italienisch, Polnisch und Türkisch lassen sich übernehmen.
 
 ## Technik

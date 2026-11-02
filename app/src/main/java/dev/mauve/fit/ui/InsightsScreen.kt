@@ -99,7 +99,7 @@ fun InsightsTile(data: AppData, onClick: () -> Unit) {
 private fun HeadCell(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
     Column(modifier.clip(RowShape).background(Ink.surface).padding(horizontal = 12.dp, vertical = 10.dp)) {
         Text(value, style = MaterialTheme.typography.titleLarge, color = color, maxLines = 1, softWrap = false)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 

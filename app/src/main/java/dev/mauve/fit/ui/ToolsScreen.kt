@@ -103,7 +103,7 @@ fun ToolsTile(modifier: Modifier = Modifier, onClick: () -> Unit) {
             Column(Modifier.weight(1f)) {
                 Text(L("Werkzeuge", "Tools"), style = MaterialTheme.typography.titleMedium, maxLines = 1)
                 Text(L("Intervall-Timer, 1RM, Scheiben, Aufwärmen", "Interval timer, 1RM, plates, warm-up"),
-                    style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 1)
+                    style = MaterialTheme.typography.bodySmall, color = Ink.muted, maxLines = 2)
             }
             Icon(Icons.Rounded.ChevronRight, null, tint = Ink.faint)
         }

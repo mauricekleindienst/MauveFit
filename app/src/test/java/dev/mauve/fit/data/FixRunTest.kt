@@ -30,4 +30,11 @@ class FixRunTest {
         val unstoppable = Progress.achievements(d).first { it.detail.contains("12") }
         assertTrue(unstoppable.unlocked)
     }
+
+    @Test fun aWeightedSetBeatsManyRepsWithoutWeight() {
+        fun w(at: Long, kg: Double, reps: Int) = Workout(name = "W", startedAt = at, finishedAt = at + 1,
+            entries = listOf(ExerciseEntry("bench", sets = listOf(SetEntry(kg, reps, done = true)))))
+        val r = Stats.records(listOf(w(2_000_000_000, 0.0, 30), w(1_000_000_000, 20.0, 8))).single()
+        assertEquals(20.0, r.best.weight, 0.0)
+    }
 }

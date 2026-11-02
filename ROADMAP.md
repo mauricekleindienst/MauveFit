@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.3 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.4 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,12 @@ Stand: Version 1.19.3 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.4 (Fix-Run 2, Durchlauf auf dem Emulator)
+
+- Rekorde: ein Satz mit Gewicht schlägt immer einen ohne; vorher konnte 0 kg × 30 einen echten 20-kg-Rekord verdrängen
+- Freier Eintrag markiert ungültige Felder rot und sagt, warum "Eintragen" gesperrt ist
+- Geprüft: Training beenden und bewerten, Rekorde, Tauschen mit erledigten Sätzen, ungültiges Backup wird abgelehnt und lässt die Daten stehen
 
 ## Erledigt in 1.19.3 (Fix-Run 1, Code-Review)
 

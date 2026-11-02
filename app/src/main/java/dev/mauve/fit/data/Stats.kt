@@ -117,16 +117,20 @@ object Stats {
 
     data class Record(val exerciseId: String, val best: SetEntry, val e1rm: Double, val date: LocalDate)
 
+    /**
+     * Weighted sets rank by estimated 1RM, sets without weight by reps, and any weighted set beats
+     * one without: 0 kg x 30 is not a better bench press than 20 kg x 8.
+     */
+    private fun recordScore(s: SetEntry): Double = if (s.weight > 0) 1_000_000 + e1rm(s) else s.reps.toDouble()
+
     /** Best set ever for every exercise, most recently set records first. */
     fun records(history: List<Workout>): List<Record> {
         val best = mutableMapOf<String, Record>()
         history.reversed().forEach { w ->
             w.entries.forEach { e ->
-                e.sets.filter { !it.warmup }.forEach { s ->
-                    val score = if (s.weight > 0) e1rm(s) else s.reps.toDouble()
+                e.sets.filter { !it.warmup && it.done }.forEach { s ->
                     val cur = best[e.exerciseId]
-                    val curScore = cur?.let { if (it.best.weight > 0) it.e1rm else it.best.reps.toDouble() } ?: -1.0
-                    if (score > curScore) best[e.exerciseId] = Record(e.exerciseId, s, e1rm(s), day(w.startedAt))
+                    if (cur == null || recordScore(s) > recordScore(cur.best)) best[e.exerciseId] = Record(e.exerciseId, s, e1rm(s), day(w.startedAt))
                 }
             }
         }

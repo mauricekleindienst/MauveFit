@@ -109,6 +109,8 @@ fun FoodEntryDialog(onSave: (name: String, kcal: Int, protein: Int, carbs: Int, 
     var fat by remember { mutableStateOf("") }
     val values = listOf(kcal, protein, carbs, fat).map(::parseInt)
     val valid = name.isNotBlank() && kcal.isNotBlank() && protein.isNotBlank() && values.all { it != null } && (values[0] ?: 0) in 1..5000
+    // Show which field blocks "Log it" instead of a silently grey button.
+    val bad = values.map { it == null }.toMutableList().also { it[0] = it[0] || (values[0] ?: 0) > 5000 }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(L("Freier Eintrag", "Custom entry")) },
@@ -116,14 +118,18 @@ fun FoodEntryDialog(onSave: (name: String, kcal: Int, protein: Int, carbs: Int, 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text(L("Was?", "What?")) }, singleLine = true, keyboardOptions = textKeys)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(kcal, { kcal = it }, Modifier.weight(1f), label = { Text("kcal") }, singleLine = true, keyboardOptions = numberKeys)
-                    OutlinedTextField(protein, { protein = it }, Modifier.weight(1f), label = { Text(L("Protein g", "Protein g")) }, singleLine = true, keyboardOptions = numberKeys)
+                    OutlinedTextField(kcal, { kcal = it }, Modifier.weight(1f), label = { Text("kcal") }, singleLine = true, keyboardOptions = numberKeys, isError = bad[0])
+                    OutlinedTextField(protein, { protein = it }, Modifier.weight(1f), label = { Text(L("Protein g", "Protein g")) }, singleLine = true, keyboardOptions = numberKeys, isError = bad[1])
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(carbs, { carbs = it }, Modifier.weight(1f), label = { Text(L("KH g", "Carbs g")) }, singleLine = true, keyboardOptions = numberKeys)
-                    OutlinedTextField(fat, { fat = it }, Modifier.weight(1f), label = { Text(L("Fett g", "Fat g")) }, singleLine = true, keyboardOptions = numberKeys)
+                    OutlinedTextField(carbs, { carbs = it }, Modifier.weight(1f), label = { Text(L("KH g", "Carbs g")) }, singleLine = true, keyboardOptions = numberKeys, isError = bad[2])
+                    OutlinedTextField(fat, { fat = it }, Modifier.weight(1f), label = { Text(L("Fett g", "Fat g")) }, singleLine = true, keyboardOptions = numberKeys, isError = bad[3])
                 }
-                Text(L("Kohlenhydrate und Fett sind optional.", "Carbs and fat are optional."), color = Ink.faint, style = MaterialTheme.typography.bodySmall)
+                if (bad.any { it }) Text(
+                    L("Nur Zahlen ab 0, Kalorien bis 5000.", "Numbers from 0 only, calories up to 5000."),
+                    color = Ink.red, style = MaterialTheme.typography.bodySmall,
+                )
+                else Text(L("Kohlenhydrate und Fett sind optional.", "Carbs and fat are optional."), color = Ink.faint, style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {

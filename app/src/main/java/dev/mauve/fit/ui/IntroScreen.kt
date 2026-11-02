@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.data.Kit
+
 import android.Manifest
 import android.app.Activity
 import android.os.Build
@@ -198,7 +200,11 @@ fun IntroScreen(initial: Profile, redo: Boolean = false, onDone: () -> Unit) {
                     DAYS -> DaysStep(profile(), days, minutes, { days = it }, { minutes = it })
                     PLACE -> Question(L("Wo trainierst du?", "Where do you train?"), L("Der Coach wählt nur Übungen, die du mit deiner Ausstattung machen kannst.", "The coach only picks exercises you can do with your equipment.")) {
                         Setup.entries.forEach { option ->
-                            val count = remember(option) { App.repo.all.count { option.allows(it.equipment) } }
+                            // The chosen place also counts the equipment switched off below.
+                            val only = if (option == setup) kit else emptySet()
+                            val count = remember(option, only) {
+                                App.repo.all.count { option.allows(it.equipment) && (only.isEmpty() || Kit.of(it.equipment)?.key in only) }
+                            }
                             Option(option.label, option.blurb, setup == option, L("$count Übungen stehen zur Wahl", "$count exercises to choose from")) { setup = option }
                         }
                         Spacer(Modifier.height(18.dp))

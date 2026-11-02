@@ -390,8 +390,8 @@ fun SettingsScreen(data: AppData, nav: NavController) {
             Section(L("Daten", "Data"), Icons.Rounded.Download) {
                 Text(
                     L(
-                        "${data.history.size} Trainings, ${data.routines.size} Pläne, ${data.bodyWeights.size} Gewichtseinträge. Alles bleibt auf diesem Gerät.",
-                        "${data.history.size} workouts, ${data.routines.size} plans, ${data.bodyWeights.size} weight entries. Everything stays on this device.",
+                        "${data.history.size} ${if (data.history.size == 1) "Training" else "Trainings"}, ${data.routines.size} ${if (data.routines.size == 1) "Plan" else "Pläne"}, ${data.bodyWeights.size} ${if (data.bodyWeights.size == 1) "Gewichtseintrag" else "Gewichtseinträge"}. Alles bleibt auf diesem Gerät.",
+                        "${data.history.size} ${if (data.history.size == 1) "workout" else "workouts"}, ${data.routines.size} ${if (data.routines.size == 1) "plan" else "plans"}, ${data.bodyWeights.size} ${if (data.bodyWeights.size == 1) "weight entry" else "weight entries"}. Everything stays on this device.",
                     ),
                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,
                 )

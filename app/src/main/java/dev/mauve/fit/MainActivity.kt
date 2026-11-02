@@ -1,5 +1,7 @@
 package dev.mauve.fit
 
+import androidx.compose.ui.semantics.clearAndSetSemantics
+
 import dev.mauve.fit.system.Recovery
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
@@ -231,7 +233,8 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
         CompositionLocalProvider(LocalWidth provides width) {
             Box(Modifier.fillMaxSize()) {
                 // The host stays at the same place in both layouts, so switching keeps every screen's state.
-                Row(Modifier.fillMaxSize()) {
+                // Under the first-run intro it is hidden from TalkBack, which would otherwise read Home behind it.
+                Row(Modifier.fillMaxSize().then(if (data.profile.onboarded) Modifier else Modifier.clearAndSetSemantics {})) {
                     if (width.wide) SideBar(route, nav, showNav)
                     Box(
                         Modifier.weight(1f).fillMaxHeight()

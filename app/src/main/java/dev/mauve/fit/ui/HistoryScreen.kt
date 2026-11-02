@@ -105,7 +105,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            ScreenTitle(L("${data.history.size} Trainings", "${data.history.size} workouts"), L("Fortschritt", "Progress"))
+            ScreenTitle(L("${data.history.size} ${if (data.history.size == 1) "Training" else "Trainings"}", "${data.history.size} ${if (data.history.size == 1) "workout" else "workouts"}"), L("Fortschritt", "Progress"))
         }
         stickyHeader {
             Box(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp)) {

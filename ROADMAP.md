@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.12.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.13.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -39,6 +39,13 @@ Stand: Version 1.12.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Analysen: Kalender-Heatmap, Sätze pro Muskel gegen 10–20-Bereich, Kraftkurven mit Plateau-Erkennung, Einheiten, Rekorde, Ernährung, Körper, Anstrengung
 - Wochenbericht montags als Benachrichtigung und Karte (80 Unit-Tests)
 
+## Erledigt in 1.13
+
+- Tablet- und Foldable-Layout: Navigationsleiste links, Startseite und Analysen zweispaltig, Übungen als Liste mit Detail, Training mit Animation daneben
+- Live-Update unter Android 16 mit Fortschrittsbalken (Übungen, Pause)
+- Absturzberichte lokal speichern, teilen oder löschen
+- Barrierefreiheit: TalkBack-Beschriftungen für Sätze, Werte und Karten; getestet mit 130 % Schriftgröße
+
 ## Als Nächstes
 
 - **Uhr-App auf echter Galaxy Watch testen.** Bisher nur gebaut, nicht auf einem Gerät oder Wear-Emulator gelaufen.
@@ -55,10 +62,8 @@ Stand: Version 1.12.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Plattform
 
 - **Health Connect:** Trainings und Gewicht synchronisieren, Herzfrequenz der Uhr speichern.
-- **Pause-Timer als Live-Update** (Android 16 Progress-Benachrichtigung).
 - **Tile und Complication für die Uhr:** Wochenziel und Schnellstart direkt vom Zifferblatt.
 - **Cloud-Backup optional** (Google Drive), weiterhin ohne Konto in der App.
-- **Tablet- und Foldable-Layout** mit zwei Spalten.
 
 ## Design und Bedienung
 
@@ -70,4 +75,3 @@ Stand: Version 1.12.0 (November 2026). Sortiert nach Nutzen für das Training, n
 
 - **Tests:** Unit-Tests für Coach, Statistik und Ernährung; UI-Tests für den Trainingsablauf.
 - **Play-Store-Vorbereitung:** eigener Release-Key, Datenschutzerklärung, Store-Grafiken, Lizenz der Animationen bei Gym visual klären.
-- **Absturzberichte** lokal sammeln und optional exportieren.

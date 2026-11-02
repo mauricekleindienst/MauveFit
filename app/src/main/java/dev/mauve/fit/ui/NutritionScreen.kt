@@ -398,7 +398,9 @@ private fun DayTotals(eaten: List<FoodEntry>, t: Nutrition.Targets?, kg: Double?
 private fun MacroMeter(label: String, grams: Int, target: Int?, modifier: Modifier) {
     Column(modifier.clip(RoundedCornerShape(16.dp)).background(Ink.raised).padding(12.dp)) {
         Text("$grams g", style = MaterialTheme.typography.titleLarge, maxLines = 1)
-        Text(if (target != null) L("$label · von $target", "$label · of $target") else label, color = Ink.muted, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        // Label and target on their own lines: "Protein · of 164" did not fit a third of a phone.
+        Text(label, color = Ink.muted, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+        if (target != null) Text(L("von $target g", "of $target g"), color = Ink.faint, style = MaterialTheme.typography.bodySmall, maxLines = 1)
         if (target != null) {
             Spacer(Modifier.height(8.dp))
             Meter(grams.toFloat() / target, Modifier.fillMaxWidth(), color = Ink.accent)

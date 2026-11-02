@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.14.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.14.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -49,6 +49,13 @@ Stand: Version 1.14.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.14
 
 - Trainings und Körpergewicht in Health Connect schreiben (optional, letzte 90 Tage, Änderungen und Löschungen werden übernommen)
+
+## Erledigt in 1.14.1
+
+- Fehlerjagd: Leichte Woche, Blockphase und schlechte Erholung bleiben nicht mehr im nächsten Training hängen
+- Datendatei wird bei einem Lesefehler aus der letzten guten Kopie wiederhergestellt statt geleert
+- Widgets springen um Mitternacht auf den neuen Tag, Erinnerungen folgen Zeitzonenwechseln
+- Uhr nutzt dieselbe Pausenregel wie das Handy, Cardio-Distanz ohne Doppelzählung
 
 ## Als Nächstes
 

@@ -50,6 +50,11 @@ data class ExerciseEntry(
     val sets: List<SetEntry> = listOf(SetEntry()),
     /** Superset group taken over from the plan, see [PlanExercise.superset]. */
     val superset: String? = null,
+    /**
+     * Factor the suggested weight was scaled with (light week, block phase, readiness), so the
+     * next suggestion can progress from the unscaled weight instead of keeping the cut.
+     */
+    val load: Double = 1.0,
 )
 
 /** A workout in progress (AppData.active) or finished (AppData.history). */

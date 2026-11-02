@@ -50,6 +50,10 @@ private const val ID_WORKOUT = 1
 private const val ID_REST = 2
 private const val ID_REMIND = 3
 private const val ID_REPORT = 4
+private const val ID_CLOSED = 5
+
+/** After a restart or a change of time zone or clock, alarms set for a local time are set again. */
+private val RESCHEDULE = setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED)
 
 /** True while an activity of the app is on screen; alerts are skipped then (the screen buzzes itself). */
 object Foreground {
@@ -123,7 +127,16 @@ class WorkoutService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.getStringExtra("cmd")?.let(WatchSync::handle)
-        startForeground(ID_WORKOUT, build(App.store.data.value), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        // A sticky restart in the background may not go foreground (Android 12+): show the plain
+        // notice instead and stop, rather than crash. Opening the app starts the service again.
+        try {
+            startForeground(ID_WORKOUT, build(App.store.data.value), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } catch (e: Exception) {
+            if (e !is IllegalStateException && e !is SecurityException) throw e
+            postStarted(this, App.store.data.value)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (restJob == null) {
             App.store.data.onEach { d ->
                 if (d.active == null) { stopSelf(); return@onEach }
@@ -284,7 +297,7 @@ class WorkoutService : Service() {
                 .setAutoCancel(true)
                 .setColor(0xFFDB9062.toInt())
                 .build()
-            runCatching { context.getSystemService(NotificationManager::class.java).notify(ID_REMIND, n) }
+            runCatching { context.getSystemService(NotificationManager::class.java).notify(ID_CLOSED, n) }
         }
 
         private fun postStarted(context: Context, d: AppData) {
@@ -331,7 +344,7 @@ object Reminders {
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) { Reminders.schedule(context); return }
+        if (intent.action in RESCHEDULE) { Reminders.schedule(context); return }
         val d = App.store.data.value
         val trainedToday = d.history.any { Stats.day(it.startedAt) == LocalDate.now() }
         if (!trainedToday && d.active == null) {
@@ -373,7 +386,7 @@ object WeeklyReports {
 
 class WeeklyReportReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) { WeeklyReports.schedule(context); return }
+        if (intent.action in RESCHEDULE) { WeeklyReports.schedule(context); return }
         val d = App.store.data.value
         // Nobody wants a report about nothing: only once the app has been used for training.
         if (d.settings.weeklyReport && d.history.isNotEmpty()) {

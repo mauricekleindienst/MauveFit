@@ -6,6 +6,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import dev.mauve.fit.data.CardioKind
@@ -72,7 +73,8 @@ object CardioSync {
                 val range = TimeRangeFilter.between(r.startTime, r.endTime)
                 val km = if (HealthPermission.getReadPermission(DistanceRecord::class) !in have) null
                 else runCatching {
-                    client.readRecords(ReadRecordsRequest(DistanceRecord::class, range)).records.sumOf { it.distance.inKilometers }
+                    // The aggregate removes duplicates when phone and watch both recorded the run.
+                    client.aggregate(AggregateRequest(setOf(DistanceRecord.DISTANCE_TOTAL), range))[DistanceRecord.DISTANCE_TOTAL]?.inKilometers ?: 0.0
                 }.getOrNull()?.takeIf { it > 0.05 }
                 val hr = if (HealthPermission.getReadPermission(HeartRateRecord::class) !in have) null
                 else runCatching {

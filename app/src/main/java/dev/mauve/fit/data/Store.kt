@@ -23,19 +23,42 @@ import java.io.File
 @OptIn(FlowPreview::class)
 class Store(context: Context) {
     private val file = File(context.filesDir, "data.json")
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    // Unknown keys and enum values from another app version fall back to defaults instead of failing.
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; coerceInputValues = true }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /** Set when the data file could not be read and an older copy stood in. */
+    private var recovered = false
     private val _data = MutableStateFlow(load())
     val data: StateFlow<AppData> = _data
 
     init {
         _data.drop(1).debounce(300).onEach(::save).launchIn(scope)
+        // Writes the recovered state back at once, so the broken file is not read again.
+        if (recovered) flush()
     }
 
     fun update(block: (AppData) -> AppData) = _data.update(block)
 
-    private fun load(): AppData = runCatching { json.decodeFromString<AppData>(file.readText()) }.getOrElse { AppData() }
+    /**
+     * Reads the data file, falling back to the copy from the last start and the half-written temp
+     * file. A file that cannot be read is moved aside, never overwritten, so nothing is lost for good.
+     */
+    private fun load(): AppData {
+        val dir = file.parentFile
+        val prev = File(dir, "data.prev.json")
+        fun read(f: File) = if (!f.exists()) null else runCatching { json.decodeFromString<AppData>(f.readText()) }.getOrNull()
+        read(file)?.let { d ->
+            // A known-good copy for the next start, in case this file breaks later.
+            runCatching { file.copyTo(prev, overwrite = true) }
+            return d
+        }
+        if (!file.exists() && !prev.exists()) return AppData()
+        if (file.exists()) runCatching { file.copyTo(File(dir, "data.broken-${System.currentTimeMillis()}.json")) }
+        val older = read(File(dir, "data.json.tmp")) ?: read(prev) ?: return AppData()
+        recovered = true
+        return older
+    }
 
     /** Writes immediately; called when the app goes to the background so a quick kill loses nothing. */
     fun flush() = scope.launch { save(_data.value) }
@@ -45,7 +68,7 @@ class Store(context: Context) {
         // Write beside and rename so a crash mid-write never leaves a truncated file.
         val tmp = File(file.parentFile, "data.json.tmp")
         tmp.writeText(json.encodeToString(AppData.serializer(), d))
-        tmp.renameTo(file)
+        if (!tmp.renameTo(file)) { file.delete(); tmp.renameTo(file) }
     }
 
     // --- Workout flow ------------------------------------------------------------
@@ -62,7 +85,7 @@ class Store(context: Context) {
         val load = if (d.settings.autoRegulate) Coach.readinessLoad(score) else 1.0
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
-            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset)
+            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset, load = Coach.loadFactor(d) * load)
         }.withSupersetsCleaned()
         d.copy(active = Workout(
             name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries,
@@ -138,7 +161,7 @@ class Store(context: Context) {
             else {
                 val reps = e.sets.firstOrNull { !it.warmup }?.let { if (it.target > 0) it.target else it.reps } ?: 10
                 val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
-                e.copy(exerciseId = exerciseId, sets = e.sets.filter { !it.warmup }.map { SetEntry(weight, reps, target = reps) })
+                e.copy(exerciseId = exerciseId, sets = e.sets.filter { !it.warmup }.map { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d))
             }
         })
     }
@@ -193,7 +216,7 @@ class Store(context: Context) {
         val d = data.value
         val reps = Stats.lastSets(d.history, exerciseId).firstOrNull()?.reps ?: 10
         val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
-        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }))
+        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d)))
     }
 
     // --- Plans -------------------------------------------------------------------

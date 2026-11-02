@@ -215,7 +215,9 @@ class NextWidget : GlanceAppWidget() {
     companion object {
         val SMALL = DpSize(100.dp, 40.dp)
         val MEDIUM = DpSize(170.dp, 100.dp)
-        val LARGE = DpSize(240.dp, 190.dp)
+        // Head, challenge and the week strip need about 250 dp; a 3x2 widget on a phone is around
+        // 210 dp high and cut the strip off, so it gets the medium layout.
+        val LARGE = DpSize(240.dp, 250.dp)
 
         /** Kept for App.onCreate: follows the store for every widget of the app. */
         fun follow(context: Context) = Widgets.follow(context)

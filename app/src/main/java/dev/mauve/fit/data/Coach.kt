@@ -1,5 +1,6 @@
 package dev.mauve.fit.data
 
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -249,10 +250,25 @@ object Coach {
         else -> 1.0
     }
 
+    /** Load of the running block phase, or of the light week outside a block; 1.0 otherwise. */
+    fun loadFactor(d: AppData): Double = blockWeek(d)?.phase?.load ?: if (deloadActive(d)) 0.7 else 1.0
+
+    /**
+     * Last working sets of an exercise at full load: a session started lighter (light week, block
+     * phase, poor recovery) is scaled back up, so the cut does not carry over into the next one.
+     */
+    fun lastFullSets(d: AppData, exerciseId: String): List<SetEntry> {
+        val prev = d.history.firstNotNullOfOrNull { w -> w.entries.firstOrNull { it.exerciseId == exerciseId } } ?: return emptyList()
+        val sets = prev.sets.filter { !it.warmup }
+        val f = prev.load
+        if (f <= 0 || abs(f - 1.0) < 1e-6) return sets
+        return sets.map { it.copy(weight = Stats.roundTo(it.weight / f, d.settings.weightStep)) }
+    }
+
     /** [load] scales the suggestion, e.g. for readiness; 1.0 leaves it as progression decided. */
     fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0): Double {
         val step = d.settings.weightStep
-        val last = Stats.lastSets(d.history, exerciseId)
+        val last = lastFullSets(d, exerciseId)
         var w = if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
             val e = repo[exerciseId]
             val similar = Stats.records(d.history).filter { r ->
@@ -262,9 +278,7 @@ object Coach {
             if (similar == null) 0.0 else similar / (1 + reps / 30.0) * 0.85
         }
         // A block's phase sets the load; outside a block the light week does.
-        val phase = blockWeek(d)?.phase
-        if (phase != null) w *= phase.load else if (deloadActive(d)) w *= 0.7
-        w *= load
+        w *= loadFactor(d) * load
         return if (w <= 0) 0.0 else Stats.roundTo(w, step).coerceAtLeast(step)
     }
 

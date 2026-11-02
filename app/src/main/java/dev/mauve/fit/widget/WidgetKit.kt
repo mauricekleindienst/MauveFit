@@ -1,5 +1,8 @@
 package dev.mauve.fit.widget
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -38,6 +41,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import java.time.LocalDate
+import java.time.ZoneId
+import kotlinx.coroutines.launch
 
 // Every widget wears the dark copper look, whatever theme the app uses.
 internal val Bg = Color(0xFF111315)
@@ -113,6 +118,31 @@ object Widgets {
             .debounce(1000)
             .onEach { updateAll(app) }
             .launchIn(CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        scheduleMidnight(app)
+    }
+
+    /**
+     * Wakes the widgets just after midnight: "today" (food, water) and on Mondays the week change
+     * then, but nothing in the store does. Not a wake-up alarm, a sleeping screen shows nothing anyway.
+     */
+    fun scheduleMidnight(context: Context) {
+        val am = context.getSystemService(AlarmManager::class.java)
+        val pi = PendingIntent.getBroadcast(context, 2, Intent(context, MidnightReceiver::class.java), PendingIntent.FLAG_IMMUTABLE)
+        val at = LocalDate.now().plusDays(1).atTime(0, 1).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        am.setWindow(AlarmManager.RTC, at, 10 * 60_000L, pi)
+    }
+}
+
+/** Redraws the widgets for the new day, then sets itself up for the next midnight. */
+class MidnightReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            try { Widgets.updateAll(context) } finally {
+                Widgets.scheduleMidnight(context)
+                pending.finish()
+            }
+        }
     }
 }
 

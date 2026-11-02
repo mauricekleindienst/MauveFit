@@ -1,5 +1,6 @@
 package dev.mauve.fit.watch
 
+import dev.mauve.fit.data.Coach
 import android.content.Context
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.PutDataMapRequest
@@ -132,7 +133,8 @@ object WatchSync {
                     // Inside a superset the partner follows straight away; the rest comes after the round.
                     val next = if (s.warmup) null else Supersets.afterSet(updated.entries, i)
                     if (next != null && !next.rest) return@updateActive updated.copy(restEndsAt = null)
-                    val rest = if (s.warmup) 45 else entry.restSec
+                    // Same rule as on the phone: shorter after warm-ups, longer after a set well short of target.
+                    val rest = Coach.restFor(entry, s.copy(done = true))
                     updated.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)
                 } else updated
             }

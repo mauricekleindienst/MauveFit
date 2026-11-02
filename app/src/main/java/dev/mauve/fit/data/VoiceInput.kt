@@ -12,6 +12,12 @@ object VoiceInput {
 
     private val weightUnits = setOf("kg", "kilo", "kilos", "kilogramm", "kilogram", "kilograms")
     private val repUnits = setOf("wdh", "wiederholung", "wiederholungen", "rep", "reps", "repetitions", "times", "mal", "x")
+    /** Words between weight and reps: "60 x 8", "60 mal 8", "60 times 8". */
+    private val times = setOf("x", "mal", "times")
+
+    private fun nextNumber(tokens: List<String>, from: Int): Int? =
+        (from + 1 until tokens.size).firstOrNull { k -> tokens[k].toDoubleOrNull() != null || words[tokens[k]] != null }
+
     private val doneWords = setOf("fertig", "erledigt", "geschafft", "done", "finished", "check")
 
     private val words = mapOf(
@@ -39,13 +45,14 @@ object VoiceInput {
             val prev = tokens.getOrNull(i - 1)
             when {
                 next in weightUnits || prev == "at" || prev == "mit" -> weight = n
-                next in repUnits && next != "x" && next != "mal" -> reps = n.toInt()
+                next in repUnits && next !in times -> reps = n.toInt()
                 // "60 x 8" / "60 mal 8": the number before x is the weight, the one after it the reps.
-                // ...but only when a number follows: "acht mal" alone is reps, not 8 kg.
-                (next == "x" || next == "mal") && tokens.drop(i + 2).any { it.toDoubleOrNull() != null || words[it] != null } ->
+                // ...but only when a number follows, and not when that number names its own kilos:
+                // "acht mal" is reps, "8 x 60 kg" is 8 reps at 60.
+                next in times && nextNumber(tokens, i)?.let { k -> tokens.getOrNull(k + 1) !in weightUnits } == true ->
                     if (weight == null && !bodyweight) weight = n else loose += n
-                next == "x" || next == "mal" -> reps = n.toInt()
-                prev == "x" || prev == "mal" -> reps = n.toInt()
+                next in times -> reps = n.toInt()
+                prev in times && tokens.getOrNull(i + 1) !in weightUnits -> reps = n.toInt()
                 else -> loose += n
             }
         }

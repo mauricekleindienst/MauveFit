@@ -14,6 +14,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.LocalSize
+import androidx.compose.ui.unit.DpSize
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
@@ -41,7 +43,8 @@ import java.time.LocalDate
 
 /** 2x2: weeks in a row that met the goal (freezes honoured), freezes in stock and today's readiness. */
 class StreakWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Single
+    // Below about 180 dp the bars do not fit next to the readiness panel; the compact one drops them.
+    override val sizeMode = SizeMode.Responsive(setOf(DpSize(110.dp, 100.dp), DpSize(110.dp, 180.dp)))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Readiness is only read when the app comes to the front; try once if the process is fresh.
@@ -71,8 +74,10 @@ class StreakWidget : GlanceAppWidget() {
             }
             if (d.freezes > 0) Text(Motivation.freezeLabel(d.freezes), style = style(Mauve, 12.sp, FontWeight.Medium), maxLines = 1)
             Spacer(GlanceModifier.defaultWeight())
-            Weeks(d)
-            Spacer(GlanceModifier.defaultWeight())
+            if (LocalSize.current.height >= 180.dp) {
+                Weeks(d)
+                Spacer(GlanceModifier.defaultWeight())
+            }
             if (readiness != null) {
                 Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(14.dp).padding(horizontal = 10.dp, vertical = 8.dp)) {
                     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

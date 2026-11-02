@@ -205,7 +205,8 @@ class MidnightReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            try { Widgets.updateAll(context) } finally {
+            // The watch's week count turns over at Monday midnight too, with nothing changed in the store.
+            try { Widgets.updateAll(context); WatchSync.publish(context) } finally {
                 Widgets.scheduleMidnight(context)
                 pending.finish()
             }

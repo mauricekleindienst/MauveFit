@@ -559,8 +559,10 @@ private fun ExercisePage(
             confirmButton = {
                 TextButton(onClick = {
                     // Only what was changed carries down: editing the kg must not copy this set's reps too.
-                    val newKg = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0)?.takeIf { kotlin.math.abs(it - s.weight) > 1e-6 }
-                    val newReps = reps.toIntOrNull()?.coerceAtLeast(0)?.takeIf { it != s.reps }
+                    // With "apply to the following sets" on, both values go down as shown.
+                    val push = toAll && hasFollowing
+                    val newKg = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0)?.takeIf { push || kotlin.math.abs(it - s.weight) > 1e-6 }
+                    val newReps = reps.toIntOrNull()?.coerceAtLeast(0)?.takeIf { push || it != s.reps }
                     edit(i, weight = newKg, reps = newReps, all = toAll)
                     editing = null
                 }) { Text(L("Übernehmen", "Apply")) }

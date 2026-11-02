@@ -220,7 +220,7 @@ object Coach {
         if (workWeight <= bar) return emptyList()
         return listOf(0.5 to 8, 0.7 to 5, 0.85 to 3).map { (f, reps) ->
             SetEntry(weight = Stats.roundTo(workWeight * f, step).coerceAtLeast(bar), reps = reps, warmup = true)
-        }.distinctBy { it.weight }
+        }.distinctBy { it.weight }.filter { it.weight < workWeight - 1e-6 }
     }
 
     private val plateSizes = listOf(25.0, 20.0, 15.0, 10.0, 5.0, 2.5, 1.25)
@@ -310,8 +310,10 @@ object Coach {
     /** [load] scales the suggestion, e.g. for readiness; 1.0 leaves it as progression decided. */
     fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0): Double {
         val step = d.settings.weightStep
-        val last = lastFullSets(d, exerciseId)
-        var w = if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
+        // Drop and failure sets end a session on purpose; the straight sets say whether to go up.
+        val last = lastFullSets(d, exerciseId).let { all -> all.filter { it.type == SetType.Normal }.ifEmpty { all } }
+        var w = if (last.isNotEmpty() && longBreak(d, exerciseId)) last.maxOf { it.weight } * 0.8
+        else if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
             val e = repo[exerciseId]
             val similar = Stats.records(d.history).filter { r ->
                 val o = repo[r.exerciseId]
@@ -325,12 +327,22 @@ object Coach {
         return if (w <= 0) 0.0 else Stats.roundTo(w, step).coerceAtLeast(step)
     }
 
+    /**
+     * No training at all for over a week: start at about 80 %, as the welcome-back tip says. Not
+     * per exercise, or anything trained once a week would never progress.
+     */
+    fun longBreak(d: AppData, @Suppress("UNUSED_PARAMETER") exerciseId: String, now: Long = System.currentTimeMillis()): Boolean =
+        d.history.firstOrNull()?.let { now - it.startedAt > 7 * Stats.DAY_MS } == true
+
     /** Fewer exercises and sets, shorter rests: for days with little time. */
     fun shortVersion(r: Routine): Routine {
         val keep = ((r.exercises.size + 1) * 0.6).toInt().coerceAtLeast(minOf(3, r.exercises.size))
         return r.copy(
             name = L("${r.name} · kurz", "${r.name} · short"),
-            exercises = r.exercises.take(keep).map { it.copy(sets = (it.sets - 1).coerceAtLeast(2), restSec = (it.restSec * 3 / 4).coerceAtLeast(45)) },
+            // Never more than the plan: a 1-set exercise or a 30 s rest stays as it is.
+            exercises = r.exercises.take(keep).map {
+                it.copy(sets = minOf(it.sets, (it.sets - 1).coerceAtLeast(2)), restSec = minOf(it.restSec, (it.restSec * 3 / 4).coerceAtLeast(45)))
+            },
         )
     }
 
@@ -349,7 +361,7 @@ object Coach {
      * Suggests a change for the sets still to come.
      */
     fun setAdvice(entry: ExerciseEntry, step: Double): SetAdvice? {
-        val done = entry.sets.lastOrNull { it.done && !it.warmup } ?: return null
+        val done = entry.sets.lastOrNull { it.done && !it.warmup && it.type == SetType.Normal } ?: return null
         if (entry.sets.none { !it.done && !it.warmup } || done.weight <= 0) return null
         rpeAdvice(done, step)?.let { return it }
         if (done.target <= 0) return null
@@ -456,7 +468,8 @@ object Coach {
                 Tone.Rest,
             )
         }
-        if (blockFinished(d)) return Tip(
+        val blockEnd = d.settings.blockStart + d.settings.blockWeeks * 7 * Stats.DAY_MS
+        if (blockFinished(d) && now < blockEnd + 7 * Stats.DAY_MS) return Tip(
             L("Block geschafft", "Block complete"),
             L("Alle Wochen sind durch. Ein neuer Block startet wieder mit der Grundlage, mit deinen neuen Gewichten.",
                 "Every week is done. A new block starts again from the base, with your new weights."),
@@ -514,7 +527,7 @@ object Coach {
         if (max < 12 || sets * 4 > max) return null
         val muscles = Progress.groups[group].orEmpty()
         val routine = Stats.nextRoutine(d.routines, d.history, repo) ?: return null
-        val pick = repo.all.filter { it.target in muscles && d.profile.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
+        val pick = repo.all.filter { it.target in muscles && d.profile.allows(it.equipment) && spares(it, d.profile.limits) && routine.exercises.none { p -> p.exerciseId == it.id } }
             .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
         return Tip(
             L("$group kommt zu kurz", "$group is falling behind"),
@@ -564,6 +577,11 @@ object Coach {
                 "Plateau", L("Bleib beim Gewicht und hol dir 1 bis 2 Wiederholungen mehr pro Satz.", "Keep the weight and add 1 to 2 reps per set."), Tone.Info,
             )
         }
+        val lastAt = h.firstOrNull()?.startedAt ?: 0L
+        if (!bodyweight && System.currentTimeMillis() - lastAt > 7 * Stats.DAY_MS) return Tip(
+            L("Wieder einsteigen", "Easing back in"),
+            L("Über eine Woche Trainingspause: heute etwa 80 % vom letzten Mal.", "Over a week without training: about 80 % of last time today."), Tone.Info,
+        )
         val allHit = last.all { it.reps >= targetReps }
         return when {
             bodyweight && allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft. Heute 1 bis 2 mehr pro Satz.", "You hit every rep last time. Add 1 to 2 per set today."), Tone.Push)
@@ -675,7 +693,7 @@ object Coach {
             .maxByOrNull { r -> r.exercises.count { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
             ?.takeIf { r -> r.exercises.any { p -> repo[p.exerciseId]?.let(gap.fits) == true } }
             ?: Stats.nextRoutine(d.routines, d.history, repo) ?: return null
-        val pick = repo.all.filter { it.target in gap.muscles && gap.fits(it) && d.profile.allows(it.equipment) && routine.exercises.none { p -> p.exerciseId == it.id } }
+        val pick = repo.all.filter { it.target in gap.muscles && gap.fits(it) && d.profile.allows(it.equipment) && spares(it, d.profile.limits) && routine.exercises.none { p -> p.exerciseId == it.id } }
             .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
         return Tip(
             gap.title,

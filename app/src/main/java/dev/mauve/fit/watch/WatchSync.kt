@@ -51,6 +51,8 @@ data class WatchState(
     val last: String = "",
     /** Every ticked set, warm-ups included; "done:<ticked>" from the watch only counts once. */
     val ticked: Int = 0,
+    /** No set left to do (all ticked, or no exercise yet): only finishing on the phone remains. */
+    val complete: Boolean = false,
     /** This week's workouts against the weekly goal, for the tile. */
     val week: Int = 0,
     val goal: Int = 0,
@@ -71,7 +73,8 @@ object WatchSync {
         )
         val idx = Supersets.current(w.entries)
         val entry = w.entries.getOrNull(idx)
-        val setIdx = entry?.sets?.indexOfFirst { !it.done }?.takeIf { it >= 0 } ?: 0
+        val open = entry?.sets?.indexOfFirst { !it.done } ?: -1
+        val setIdx = open.coerceAtLeast(0)
         val set = entry?.sets?.getOrNull(setIdx)
         val ex = entry?.let { App.repo[it.exerciseId] }
         return WatchState(
@@ -91,8 +94,20 @@ object WatchSync {
             restTotalSec = w.restTotalSec,
             doneSets = w.doneSets.size,
             ticked = w.entries.sumOf { e -> e.sets.count { it.done } },
+            complete = open < 0,
             last = Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })?.last.orEmpty(),
         )
+    }
+
+    /** Sends the current state now, e.g. at midnight when only the week count changed. */
+    suspend fun publish(context: Context, s: WatchState = state(App.store.data.value)) {
+        runCatching {
+            val req = PutDataMapRequest.create(PATH_STATE).apply {
+                dataMap.putString("json", json.encodeToString(WatchState.serializer(), s))
+                dataMap.putLong("t", System.currentTimeMillis())
+            }.asPutDataRequest().setUrgent()
+            Wearable.getDataClient(context).putDataItem(req).await()
+        }
     }
 
     /** Publishes the state whenever it changes; harmless when no watch is paired. */

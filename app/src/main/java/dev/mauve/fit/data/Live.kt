@@ -51,16 +51,15 @@ object Live {
      */
     fun manualLoad(old: Workout, new: Workout): List<ExerciseEntry> = new.entries.mapIndexed { i, e ->
         val before = old.entries.getOrNull(i)?.takeIf { it.exerciseId == e.exerciseId } ?: return@mapIndexed e
-        if (abs(e.load - 1.0) < 1e-9) return@mapIndexed e
-        // The load moves with the change: 70 -> 72.5 kg in a 70 % week is about 72.5 %, typing the
-        // full 100 kg is 100 %. Resetting it on any step would carry the light week into the next.
-        val j = e.sets.indices.firstOrNull { j ->
-            val was = before.sets.getOrNull(j)
-            !e.sets[j].warmup && was != null && !was.warmup && abs(was.weight - e.sets[j].weight) > 1e-6
-        } ?: return@mapIndexed e
-        val was = before.sets[j].weight
-        val load = if (was <= 0) 1.0 else (before.load * e.sets[j].weight / was).coerceIn(0.1, 1.0)
-        e.copy(load = load)
+        if (abs(e.load - 1.0) < 1e-9 && e.fullTop <= 0) return@mapIndexed e
+        fun working(x: ExerciseEntry) = x.sets.filter { !it.warmup }.map { it.weight }
+        // Only a change of the working weights counts; warm-ups added in front shift nothing.
+        if (working(before).sorted() == working(e).sorted()) return@mapIndexed e
+        // The load is the heaviest working set against the full-load top, measured once: a back-off
+        // set, a 0 typed by mistake or a typo fixed again cannot pile up into a wrong load.
+        val ref = e.fullTop.takeIf { it > 0 } ?: working(before).maxOrNull()?.takeIf { it > 0 }?.let { it / before.load } ?: return@mapIndexed e
+        val top = working(e).maxOrNull()?.takeIf { it > 0 } ?: return@mapIndexed e
+        e.copy(load = (top / ref).coerceIn(0.1, 1.0), fullTop = ref)
     }
 
     /** False once [last] was unticked again (or its exercise removed), so it is no longer shown as done. */

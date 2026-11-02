@@ -111,6 +111,16 @@ class MauveTileService : TileService() {
         val top = if (resting) tileText("Pause bis ${time(s.restEndsAt)}", "Rest until ${time(s.restEndsAt)}")
         else if (s.exerciseCount > 1) tileText("Übung ${s.exerciseIndex + 1} von ${s.exerciseCount}", "Exercise ${s.exerciseIndex + 1} of ${s.exerciseCount}")
         else s.workout.ifBlank { "Mauve Fit" }
+        if (s.complete) return PrimaryLayout.Builder(device)
+            .setPrimaryLabelTextContent(label(s.workout.ifBlank { "Mauve Fit" }, TileInk.MUTED))
+            .setContent(column(
+                text(if (s.exerciseCount == 0) tileText("Noch keine Übung", "No exercise yet") else tileText("Alle Sätze erledigt", "All sets done"),
+                    Typography.TYPOGRAPHY_TITLE3, TileInk.TEXT, maxLines = 2),
+                gap(2f),
+                text(tileText("Am Handy beenden", "Finish on your phone"), Typography.TYPOGRAPHY_CAPTION1, TileInk.MUTED),
+            ))
+            .setPrimaryChipContent(chip(tileText("Öffnen", "Open"), openApp(), device))
+            .build()
         val set = if (s.warmup) tileText("Aufwärmen", "Warm-up")
         else tileText("Satz ${s.setNumber} von ${s.setCount}", "Set ${s.setNumber} of ${s.setCount}")
         val content = column(
@@ -134,14 +144,18 @@ class MauveTileService : TileService() {
             gap(2f),
             text(s.suggestion, Typography.TYPOGRAPHY_TITLE2, TileInk.TEXT, maxLines = 2),
             gap(4f),
-            text(tileText("Diese Woche ${s.week}/${s.goal}", "This week ${s.week}/${s.goal}"), Typography.TYPOGRAPHY_CAPTION1, if (s.goal > 0 && s.week >= s.goal) TileInk.COPPER else TileInk.MUTED),
+            text(tileText("Diese Woche ${s.week}/${s.goal.coerceAtLeast(1)}", "This week ${s.week}/${s.goal.coerceAtLeast(1)}"), Typography.TYPOGRAPHY_CAPTION1, if (s.goal > 0 && s.week >= s.goal) TileInk.COPPER else TileInk.MUTED),
         ) else column(
             text(tileText("Kein Training läuft", "No workout running"), Typography.TYPOGRAPHY_TITLE3, TileInk.TEXT, maxLines = 2),
         )
         return PrimaryLayout.Builder(device)
             .setPrimaryLabelTextContent(label("Mauve Fit", TileInk.COPPER))
             .setContent(content)
-            .setPrimaryChipContent(chip(tileText("Starten", "Start"), command("start"), device))
+            // Without a plan "start" would make an empty workout on the phone; open the app instead.
+            .setPrimaryChipContent(
+                if (s.suggestion.isNotBlank()) chip(tileText("Starten", "Start"), command("start"), device)
+                else chip(tileText("Öffnen", "Open"), openApp(), device),
+            )
             .build()
     }
 
@@ -200,8 +214,11 @@ class MauveTileService : TileService() {
 
     private fun time(ms: Long): String = DateFormat.getTimeFormat(this).format(Date(ms))
 
-    private fun load(s: WatchState): String =
-        if (s.bodyweight) tileText("${s.reps} Wdh.", "${s.reps} reps") else "${weight(s.weight)} kg x ${s.reps}"
+    private fun load(s: WatchState): String = when {
+        s.bodyweight && s.weight == 0.0 -> tileText("${s.reps} Wdh.", "${s.reps} reps")
+        s.bodyweight -> "+${weight(s.weight)} kg x ${s.reps}"
+        else -> "${weight(s.weight)} kg x ${s.reps}"
+    }
 
     /** Up to two decimals without trailing zeros; comma in German, dot otherwise. */
     private fun weight(v: Double): String {

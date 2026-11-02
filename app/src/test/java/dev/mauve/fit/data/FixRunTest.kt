@@ -73,4 +73,29 @@ class FixRunTest {
         assertEquals(60.0, both.weight!!, 0.0)
         assertEquals(8, both.reps)
     }
+
+    @Test fun loadIsAnchoredSoEditsDoNotPileUp() {
+        val e = ExerciseEntry("bench", load = 0.7, sets = List(3) { SetEntry(70.0, 8) })
+        val w0 = Workout(name = "W", entries = listOf(e))
+        // Back-off set lowered: the top set still says 70 %.
+        val backOff = w0.copy(entries = listOf(e.copy(sets = listOf(SetEntry(70.0, 8), SetEntry(70.0, 8), SetEntry(60.0, 8)))))
+        assertEquals(0.7, Live.manualLoad(w0, backOff).single().load, 0.001)
+        // A typo and its fix end where they started.
+        val typo = w0.copy(entries = Live.manualLoad(w0, w0.copy(entries = listOf(e.copy(sets = listOf(SetEntry(700.0, 8)) + e.sets.drop(1))))))
+        val fixed = typo.copy(entries = listOf(typo.entries.single().copy(sets = e.sets)))
+        assertEquals(0.7, Live.manualLoad(typo, fixed).single().load, 0.001)
+    }
+
+    @Test fun warmupsStayBelowTheWork() {
+        assertTrue(Coach.warmups(7.5, 2.5, 2.5).all { it.weight < 7.5 })
+    }
+
+    @Test fun eightTimesSixtyKiloIsEightReps() {
+        val p = VoiceInput.parse("8 x 60 kg")
+        assertEquals(60.0, p.weight!!, 0.0)
+        assertEquals(8, p.reps)
+        val t = VoiceInput.parse("60 times 8")
+        assertEquals(60.0, t.weight!!, 0.0)
+        assertEquals(8, t.reps)
+    }
 }

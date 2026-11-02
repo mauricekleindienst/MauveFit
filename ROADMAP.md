@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.7 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.8 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,19 @@ Stand: Version 1.19.7 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.8 (Fix-Runde 7)
+
+- Coach: nach über einer Woche Trainingspause starten die Gewichte bei etwa 80 %, passend zum Willkommen-Tipp
+- Drop- und Bis-zum-Versagen-Sätze bremsen die Steigerung nicht mehr; Satz-Hinweise nur nach normalen Sätzen
+- Vorschläge "Übung hinzufügen" beachten die Gelenk-Einschränkungen (kein Kreuzheben bei Rücken)
+- Übung im laufenden Training hinzufügen nimmt die geplanten, nicht die verfehlten Wiederholungen
+- Erholungswert von gestern senkt heute keine Gewichte mehr
+- "Block geschafft" nur eine Woche lang, danach kommen die anderen Tipps wieder
+- Kurzversion macht ein Training nie länger
+- Uhr: "Alle Sätze erledigt" statt eines alten Satzes; "+10 kg" bei Dips mit Zusatzgewicht; Kachel ohne Plan öffnet die App statt ein leeres Training zu starten; deinstallierte Handy-App hinterlässt keinen Geister-Stand; Wochenzahl springt montags um
+- Serien-Widget: kompakte Ansicht für kleine Größen
+- Korrekturen an Runde 6: Last an festem Bezug statt aufaddiert, Aufwärmsatz nie gleich dem Arbeitsgewicht, "8 x 60 kg" und "60 times 8" richtig, "Für folgende Sätze übernehmen" überträgt wieder, Rezept-Editor erkennt auch Zeit und Tags als Änderung
 
 ## Erledigt in 1.19.7 (Fix-Runde 6)
 

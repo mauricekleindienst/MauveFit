@@ -45,6 +45,8 @@ data class WatchState(
     val last: String = "",
     /** Every ticked set, warm-ups included; "done:<ticked>" from the watch only counts once. */
     val ticked: Int = 0,
+    /** No set left to do (all ticked, or no exercise yet): only finishing on the phone remains. */
+    val complete: Boolean = false,
     val week: Int = 0,
     val goal: Int = 0,
 )
@@ -103,6 +105,13 @@ class PhoneLink(context: Context) : DataClient.OnDataChangedListener {
     }
 
     override fun onDataChanged(events: DataEventBuffer) {
+        // The phone app was removed: no stale workout, and say where it went.
+        if (events.any { it.type == DataEvent.TYPE_DELETED && it.dataItem.uri.path == PATH_STATE }) {
+            _state.value = WatchState()
+            phoneNode = null
+            _link.value = Link.NoApp
+            TileCache.clear(app)
+        }
         events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == PATH_STATE }.forEach { apply(it.dataItem) }
     }
 

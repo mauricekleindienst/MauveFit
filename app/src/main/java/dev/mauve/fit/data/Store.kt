@@ -85,7 +85,7 @@ class Store(context: Context) {
         if (d.active != null) return@update d
         val plan = routine?.let { if (short) Coach.shortVersion(it) else it }
         // Auto-regulation: on a poorly recovered day every starting weight comes down a little.
-        val score = Recovery.today.value?.score
+        val score = Recovery.today.value?.takeIf { it.day == java.time.LocalDate.now() }?.score
         val load = if (d.settings.autoRegulate) Coach.readinessLoad(score) else 1.0
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
@@ -277,7 +277,7 @@ class Store(context: Context) {
 
     fun addToActive(exerciseId: String) = updateActive { w ->
         val d = data.value
-        val reps = Stats.lastSets(d.history, exerciseId).firstOrNull()?.reps ?: 10
+        val reps = Stats.lastSets(d.history, exerciseId).firstOrNull()?.let { if (it.target > 0) it.target else it.reps } ?: 10
         val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
         w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d)))
     }

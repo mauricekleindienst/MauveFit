@@ -353,6 +353,18 @@ private fun ScalingLazyListScope.active(
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
         }
     }
+    // Nothing left to tick: say so instead of showing a done set and a button that does nothing.
+    if (s.complete) {
+        item {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(if (s.exerciseCount == 0) L("Noch keine Übung", "No exercise yet") else L("Alle Sätze erledigt", "All sets done"),
+                    color = if (ambient) Ink.muted else Ink.copper, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                Text(L("Am Handy beenden", "Finish on your phone"), color = Ink.muted, fontSize = 12.sp, textAlign = TextAlign.Center)
+                if (offline) Text(L("Handy getrennt", "Phone disconnected"), color = Ink.red, fontSize = 11.sp)
+            }
+        }
+        return
+    }
     item {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -373,7 +385,8 @@ private fun ScalingLazyListScope.active(
             modifier = Modifier.fillMaxWidth(),
         )
     }
-    if (!s.bodyweight) item {
+    // Body-weight exercises get the weight stepper once extra weight is on, as for weighted dips.
+    if (!s.bodyweight || s.weight > 0) item {
         Stepper(L("Gewicht", "Weight"), "${fmt(s.weight)} kg", { send("w-", HapticFeedbackConstants.CLOCK_TICK) }, { send("w+", HapticFeedbackConstants.CLOCK_TICK) })
     }
     item {
@@ -454,7 +467,11 @@ private fun RoundButton(icon: ImageVector, label: String, size: Dp, onClick: () 
 /** German or English, following the watch language. */
 private fun L(de: String, en: String) = if (java.util.Locale.getDefault().language == "de") de else en
 
-private fun load(s: WatchState) = if (s.bodyweight) L("${s.reps} Wdh.", "${s.reps} reps") else "${fmt(s.weight)} kg x ${s.reps}"
+private fun load(s: WatchState) = when {
+    s.bodyweight && s.weight == 0.0 -> L("${s.reps} Wdh.", "${s.reps} reps")
+    s.bodyweight -> "+${fmt(s.weight)} kg x ${s.reps}"
+    else -> "${fmt(s.weight)} kg x ${s.reps}"
+}
 
 /** Up to two decimals without trailing zeros; comma in German, dot otherwise. */
 private fun fmt(v: Double): String {

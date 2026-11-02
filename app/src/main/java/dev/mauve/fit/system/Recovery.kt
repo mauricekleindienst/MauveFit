@@ -35,6 +35,8 @@ object Recovery {
         val hrv: Int?,
         val hrvBase: Int?,
         val score: Int,
+        /** The day it was measured for; a value from yesterday must not cut today's weights. */
+        val day: java.time.LocalDate = java.time.LocalDate.now(),
     ) {
         val advice: String get() = when {
             score >= 75 -> L("Gut erholt. Heute darf es schwer werden.", "Well recovered. Today can be a hard one.")

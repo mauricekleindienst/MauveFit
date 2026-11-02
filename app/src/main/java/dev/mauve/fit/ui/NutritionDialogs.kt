@@ -193,8 +193,8 @@ fun RecipeEditor(initial: Nutrition.Recipe?, onSave: (Nutrition.Recipe) -> Unit,
 
     // Back or Close on a draft with changes asks first: a second Back press after hiding the
     // keyboard used to throw away every ingredient and step.
-    val original = remember { listOf(name, kcal, protein, carbs, fat) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text } }
-    val dirty = (listOf(name, kcal, protein, carbs, fat) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text }) != original
+    val original = remember { listOf(name, kcal, protein, carbs, fat, "$minutes", "$keeps", tags.toString()) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text } }
+    val dirty = (listOf(name, kcal, protein, carbs, fat, "$minutes", "$keeps", tags.toString()) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text }) != original
     var askClose by remember { mutableStateOf(false) }
     val close = { if (dirty) askClose = true else onDismiss() }
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false)) {

@@ -42,6 +42,12 @@ object TileCache {
     /** Node id of the phone that published the state, so commands go straight there. */
     fun node(context: Context): String? = prefs(context).getString(KEY_NODE, null)
 
+    /** Forgets the cached state, when the phone app removed it (uninstalled or data cleared). */
+    fun clear(context: Context) {
+        prefs(context).edit().clear().apply()
+        requestTileUpdate(context)
+    }
+
     fun requestTileUpdate(context: Context) {
         runCatching { TileService.getUpdater(context.applicationContext).requestUpdate(MauveTileService::class.java) }
     }
@@ -50,6 +56,7 @@ object TileCache {
 /** Receives the phone's state while the watch app is closed and refreshes the tile. */
 class StateListenerService : WearableListenerService() {
     override fun onDataChanged(events: DataEventBuffer) {
+        if (events.any { it.type == DataEvent.TYPE_DELETED && it.dataItem.uri.path == "/mauvefit/state" }) TileCache.clear(this)
         events.filter { it.type == DataEvent.TYPE_CHANGED && it.dataItem.uri.path == "/mauvefit/state" }.forEach { e ->
             val raw = DataMapItem.fromDataItem(e.dataItem).dataMap.getString("json") ?: return@forEach
             TileCache.save(this, raw, e.dataItem.uri.host)

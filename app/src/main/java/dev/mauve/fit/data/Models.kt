@@ -59,6 +59,8 @@ data class ExerciseEntry(
      * next suggestion can progress from the unscaled weight instead of keeping the cut.
      */
     val load: Double = 1.0,
+    /** Top working weight at full load, fixed when the entry is first edited; anchors [load]. */
+    val fullTop: Double = 0.0,
 )
 
 /** A workout in progress (AppData.active) or finished (AppData.history). */

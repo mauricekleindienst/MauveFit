@@ -231,7 +231,8 @@ fun Stat(value: String, label: String, modifier: Modifier = Modifier, accent: Co
 fun Chip(text: String, selected: Boolean = false, onClick: (() -> Unit)? = null) {
     Box(
         Modifier.clip(Pill)
-            .background(if (selected) Ink.accent else Ink.surface)
+            // Raised, not surface: on a card an unselected chip was invisible and read as plain text.
+            .background(if (selected) Ink.accent else Ink.raised)
             .then(if (onClick != null) Modifier.clickable { Haptics.tick(); onClick() } else Modifier)
             .padding(horizontal = 16.dp, vertical = 9.dp)
     ) {
@@ -404,10 +405,14 @@ fun KitPicker(setup: dev.mauve.fit.data.Setup, kit: Set<String>, onChange: (Set<
  * edge; the list's own bounds clip it at the screen edges.
  */
 fun Modifier.stickyScrim(): Modifier = drawBehind {
+    // Solid behind the header itself, then a short fade below it: content scrolling under the
+    // back button used to show half covered through the gradient.
     val out = 24.dp.toPx()
+    val fade = 16.dp.toPx()
+    drawRect(Ink.bg, topLeft = Offset(-out, 0f), size = Size(size.width + 2 * out, size.height))
     drawRect(
-        Brush.verticalGradient(0f to Ink.bg, 0.72f to Ink.bg, 1f to Ink.bg.copy(alpha = 0f)),
-        topLeft = Offset(-out, 0f), size = Size(size.width + 2 * out, size.height),
+        Brush.verticalGradient(0f to Ink.bg, 1f to Ink.bg.copy(alpha = 0f), startY = size.height, endY = size.height + fade),
+        topLeft = Offset(-out, size.height), size = Size(size.width + 2 * out, fade),
     )
 }
 

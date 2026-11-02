@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.21.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.21.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,12 @@ Stand: Version 1.21.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.21.1
+
+- Einstellungen und alle Seiten mit Zurück-Knopf: Inhalt scrollt nicht mehr halb verdeckt unter dem Kopf durch
+- Nicht ausgewählte Auswahlknöpfe (z. B. "Körpergewicht") sind auf Karten wieder als Knopf erkennbar
+- "System / Dunkel / Hell" in derselben Schriftgröße wie die Sprachauswahl
 
 ## Erledigt in 1.21.0
 

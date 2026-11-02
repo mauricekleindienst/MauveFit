@@ -240,7 +240,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                                     }
                                 }.padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center,
-                        ) { Text(label, color = if (on) Ink.bg else Ink.text, fontWeight = FontWeight.SemiBold) }
+                        ) { Text(label, color = if (on) Ink.bg else Ink.text, style = MaterialTheme.typography.labelLarge) }
                     }
                 }
                 Spacer(Modifier.height(14.dp))

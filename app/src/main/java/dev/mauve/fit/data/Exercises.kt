@@ -20,7 +20,9 @@ data class Exercise(
     val gif: String = "",
     val image: String = "",
 ) {
-    val title: String get() = name.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
+    /** Display name in the app's language; [name] stays the English key the coach matches words in. */
+    val title: String get() = (if (I18n.german) ExerciseRepo.namesDe[id] else null) ?: titleEn
+    val titleEn: String get() = name.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
     /** Original animation and still, served by the jsDelivr CDN straight from the GitHub repository. */
     val gifUrl: String get() = MEDIA_BASE + gif
     val imageUrl: String get() = MEDIA_BASE + image
@@ -65,7 +67,22 @@ class ExerciseRepo(private val context: Context) {
     /** Loads everything up front, off the main thread. */
     fun warm() {
         all.size
+        loadNames()
         if (I18n.german) stepsDe.size
+    }
+
+    private fun loadNames() {
+        if (namesDe.isNotEmpty()) return
+        namesDe = runCatching {
+            context.assets.open("exercise_names_de.json").bufferedReader().use { json.decodeFromString<Map<String, String>>(it.readText()) }
+        }.getOrDefault(emptyMap())
+    }
+
+    companion object {
+        /** German display names by id (our own translation), read once by [warm]. */
+        @Volatile
+        var namesDe: Map<String, String> = emptyMap()
+            private set
     }
 
     val categories: List<String> by lazy { all.map { it.category }.distinct().sortedBy { Labels.category(it) } }

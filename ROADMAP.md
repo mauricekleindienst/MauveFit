@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.18.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -83,6 +83,11 @@ Stand: Version 1.18.0 (November 2026). Sortiert nach Nutzen für das Training, n
 
 - Ausführungsanleitungen ("So geht's") aller 1.324 Übungen auf Deutsch; Englisch bleibt für englische Sprache
 - Lizenzhinweise genau wie gefordert: "© Gym visual — https://gymvisual.com/" und MIT-Copyright des Datensatzes
+
+## Erledigt in 1.19
+
+- Alle 1.324 Übungsnamen auf Deutsch ("Bankdrücken mit Langhantel"), auch auf Uhr, Widget und in der Benachrichtigung
+- Bibliothekssuche findet deutsche und englische Namen, Liste alphabetisch nach Anzeigename
 
 ## Als Nächstes
 

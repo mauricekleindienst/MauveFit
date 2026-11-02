@@ -65,12 +65,12 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?, onOpen: (
     val results = remember(query, category, equipment, favoritesOnly, data.favorites) {
         val terms = query.trim().lowercase().split(' ').filter { it.isNotBlank() }
         repo.all.filter { e ->
-            val haystack = (e.name + " " + e.muscles.joinToString(" ") { "$it ${Labels.muscle(it)}" } + " " + Labels.equipment(e.equipment)).lowercase()
+            val haystack = (e.name + " " + e.title + " " + e.muscles.joinToString(" ") { "$it ${Labels.muscle(it)}" } + " " + Labels.equipment(e.equipment)).lowercase()
             terms.all { it in haystack } &&
                 (category == null || e.category == category) &&
                 (equipment == null || e.equipment == equipment) &&
                 (!favoritesOnly || e.id in data.favorites)
-        }.sortedByDescending { it.id in data.favorites }
+        }.sortedBy { it.title.lowercase() }.sortedByDescending { it.id in data.favorites }
     }
 
     fun pick(e: Exercise) {

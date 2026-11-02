@@ -68,7 +68,8 @@ object Motivation {
                 val perWorkout = when (level) { Level.Beginner -> 2.0; Level.Intermediate -> 3.5; Level.Advanced -> 5.0 }
                 val tons = (goal * perWorkout).roundToInt().coerceAtLeast(3)
                 val kg = week.sumOf { it.volume }
-                val shown = Stats.fmtKg(Stats.roundTo((kg / 1000).coerceAtMost(tons.toDouble()), 0.1))
+                // Rounded down: 2,950 kg is "2.9 of 3 t", not a "3 of 3" that is not done yet.
+                val shown = Stats.fmtKg((kotlin.math.floor(kg / 100) / 10).coerceAtMost(tons.toDouble()))
                 Challenge(key, kind, L("$tons Tonnen Volumen", "$tons tons of volume"), L("Gewicht mal Wiederholungen, über alle Trainings", "Weight times reps, across all workouts"),
                     kg.roundToInt(), tons * 1000, L("$shown von $tons t", "$shown of $tons t"))
             }

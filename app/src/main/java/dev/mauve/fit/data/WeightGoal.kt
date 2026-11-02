@@ -17,6 +17,8 @@ object WeightGoal {
         /** Date the goal is reached at the current pace; null when the pace points the other way or is flat. */
         val eta: LocalDate?,
         val reached: Boolean,
+        /** Moving less than 0.05 kg a week either way. */
+        val flat: Boolean = false,
         /** True when the pace is faster than about 1 % of body weight per week (losing) or 0.5 % (gaining). */
         val tooFast: Boolean,
         /** 0..1 from the first logged weight to the goal. */
@@ -24,10 +26,12 @@ object WeightGoal {
     )
 
     /** [entries] are (time, kg) newest first, as stored. */
-    fun outlook(entries: List<Pair<Long, Double>>, goal: Double, now: Long = System.currentTimeMillis()): Outlook? {
+    fun outlook(entries: List<Pair<Long, Double>>, goal: Double, now: Long = System.currentTimeMillis(), since: Long = 0): Outlook? {
         if (goal <= 0 || entries.isEmpty()) return null
         val latest = entries.first().second
-        val start = entries.last().second
+        // The weight when the goal was set, not the oldest entry ever: 70 kg years ago, 90 kg now
+        // and a goal of 80 is a goal to lose, not one already reached.
+        val start = (if (since > 0) entries.firstOrNull { it.first <= since }?.second else null) ?: entries.last().second
         val remaining = goal - latest
         val reached = abs(remaining) < 0.25 || (start > goal && latest <= goal) || (start < goal && latest >= goal)
         val pace = pace(entries, now)
@@ -36,7 +40,8 @@ object WeightGoal {
         val limit = if (remaining < 0) 0.01 * latest else 0.005 * latest
         val total = goal - start
         val progress = if (abs(total) < 1e-6) 1f else ((latest - start) / total).toFloat().coerceIn(0f, 1f)
-        return Outlook(latest, remaining, pace, eta, reached, pace != null && towards && abs(pace) > limit, if (reached) 1f else progress)
+        return Outlook(latest, remaining, pace, eta, reached, flat = pace != null && abs(pace) < 0.05,
+            tooFast = pace != null && towards && abs(pace) > limit, progress = if (reached) 1f else progress)
     }
 
     /** Slope of a least-squares line over the last 28 days, in kg per week; needs 3 entries over 7+ days. */

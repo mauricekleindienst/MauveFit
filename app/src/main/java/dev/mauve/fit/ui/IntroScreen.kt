@@ -338,10 +338,9 @@ private fun IconDisc(icon: ImageVector) {
 private fun RestoreLink(onDone: () -> Unit) {
     val context = LocalContext.current
     var failed by remember { mutableStateOf(false) }
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        val text = runCatching { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
-        if (text != null && App.store.import(text)) {
+    val io = rememberCoroutineScope()
+    fun restored(ok: Boolean) {
+        if (ok) {
             // A backup from before the intro was finished still counts as set up.
             if (!App.store.data.value.profile.onboarded) {
                 App.store.update { it.copy(profile = it.profile.copy(onboarded = true)) }
@@ -354,6 +353,13 @@ private fun RestoreLink(onDone: () -> Unit) {
         } else {
             failed = true
             Haptics.warn()
+        }
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        // Read and decode off the main thread: a backup on a cloud drive may download first.
+        io.launch {
+            restored(kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readBackup(context, uri)?.let(App.store::import) == true })
         }
     }
     Spacer(Modifier.height(6.dp))

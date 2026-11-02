@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.8 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.9 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,17 @@ Stand: Version 1.19.8 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.9 (Fix-Runde 8)
+
+- Zielgewicht zählt ab dem Tag, an dem es gesetzt wurde: kein falsches "Ziel erreicht" mehr; ein flaches Tempo heißt "Gewicht hält sich" statt "andere Richtung"
+- Wochen-Challenge zeigt "3 von 3 t" erst, wenn sie geschafft ist
+- Montags um Mitternacht wird ein Freeze vor dem Widget-Update angewendet
+- Tipp und Challenge auf "Heute" wechseln mit der Woche, auch wenn die App über Nacht offen bleibt
+- Wochenbericht zählt auch Wiederholungsrekorde; Körpergewichts-Wochen zeigen Wiederholungen statt "0 kg"
+- Backup laden und speichern läuft im Hintergrund (Cloud-Dateien froren die App ein); zu große Dateien werden abgelehnt
+- Riesige Zahl im Satz-Dialog friert die App nicht mehr ein; Link ohne Browser stürzt nicht ab; Animationsspeicher wird im Hintergrund geleert
+- Korrekturen an Runde 7: Tauschen setzt die Lastbasis zurück; die 80 % nach einer Pause übertragen sich nicht auf die Wochen danach
 
 ## Erledigt in 1.19.8 (Fix-Runde 7)
 

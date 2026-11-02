@@ -98,4 +98,13 @@ class FixRunTest {
         assertEquals(60.0, t.weight!!, 0.0)
         assertEquals(8, t.reps)
     }
+
+    @Test fun aGoalCountsFromTheWeightWhenItWasSet() {
+        val day = 86_400_000L
+        val now = 2_000_000_000_000L
+        // 70 kg long ago, 90 kg now, goal 80 set today: a goal to lose, not reached.
+        val entries = listOf(now to 90.0, now - 400 * day to 70.0)
+        val o = WeightGoal.outlook(entries, 80.0, now, since = now)!!
+        assertTrue(!o.reached)
+    }
 }

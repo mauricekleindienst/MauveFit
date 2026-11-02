@@ -546,7 +546,7 @@ private fun ExercisePage(
                     OutlinedTextField(reps, { reps = it }, Modifier.weight(1f).then(if (bodyweight) Modifier.focusRequester(focus) else Modifier), label = { Text(L("Wdh.", "Reps")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
-                if (Coach.usesBarbell(e)) PlateView(kg.replace(',', '.').toDoubleOrNull() ?: 0.0, data.settings.barWeight)
+                if (Coach.usesBarbell(e)) PlateView(kg.replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 } ?: 0.0, data.settings.barWeight)
                 if (hasFollowing) Row(
                     Modifier.padding(top = 14.dp).fillMaxWidth().clip(RowShape).clickable { Haptics.tick(); toAll = !toAll }.padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -561,7 +561,8 @@ private fun ExercisePage(
                     // Only what was changed carries down: editing the kg must not copy this set's reps too.
                     // With "apply to the following sets" on, both values go down as shown.
                     val push = toAll && hasFollowing
-                    val newKg = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0)?.takeIf { push || kotlin.math.abs(it - s.weight) > 1e-6 }
+                    // NaN, Infinity or a 9-digit typo are not weights.
+                    val newKg = kg.replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 }?.takeIf { push || kotlin.math.abs(it - s.weight) > 1e-6 }
                     val newReps = reps.toIntOrNull()?.coerceAtLeast(0)?.takeIf { push || it != s.reps }
                     edit(i, weight = newKg, reps = newReps, all = toAll)
                     editing = null

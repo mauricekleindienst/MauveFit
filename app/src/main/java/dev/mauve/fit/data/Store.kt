@@ -89,7 +89,7 @@ class Store(context: Context) {
         val load = if (d.settings.autoRegulate) Coach.readinessLoad(score) else 1.0
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
-            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset, load = Coach.loadFactor(d) * load)
+            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset, load = Coach.loadFactor(d) * load * Coach.breakLoad(d, p.exerciseId))
         }.withSupersetsCleaned()
         d.copy(active = Workout(
             name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries,
@@ -184,7 +184,8 @@ class Store(context: Context) {
                 val reps = e.sets.firstOrNull { !it.warmup }?.let { if (it.target > 0) it.target else it.reps } ?: 10
                 val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
                 val open = e.sets.count { !it.done && !it.warmup }.coerceAtLeast(1)
-                val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d))
+                // A new exercise starts its own load: the old one's full-load anchor does not apply.
+                val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId), fullTop = 0.0)
                 listOf(fresh) + tail
             }
         })
@@ -279,7 +280,7 @@ class Store(context: Context) {
         val d = data.value
         val reps = Stats.lastSets(d.history, exerciseId).firstOrNull()?.let { if (it.target > 0) it.target else it.reps } ?: 10
         val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
-        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d)))
+        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId)))
     }
 
     // --- Plans -------------------------------------------------------------------

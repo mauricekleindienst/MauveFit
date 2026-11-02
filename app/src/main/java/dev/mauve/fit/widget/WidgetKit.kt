@@ -206,7 +206,8 @@ class MidnightReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             // The watch's week count turns over at Monday midnight too, with nothing changed in the store.
-            try { Widgets.updateAll(context); WatchSync.publish(context) } finally {
+            // A freeze covering last week is applied first, or the widget shows a broken streak.
+            try { App.store.settleStreak(); Widgets.updateAll(context); WatchSync.publish(context) } finally {
                 Widgets.scheduleMidnight(context)
                 pending.finish()
             }

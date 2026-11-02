@@ -227,7 +227,8 @@ object Coach {
 
     /** Plates per side for a barbell load; null if the load is below the bar. */
     fun plates(total: Double, bar: Double): List<Double>? {
-        if (total < bar) return null
+        // Bounded: a typed 100000000 kg would otherwise loop millions of times on every keystroke.
+        if (total < bar || !total.isFinite() || total > 1000) return null
         // Nearest load the smallest plate allows, up or down: 102 kg is 102.5, not 100.
         var side = Math.round((total - bar) / 2 / 1.25) * 1.25
         val out = mutableListOf<Double>()
@@ -333,6 +334,13 @@ object Coach {
      */
     fun longBreak(d: AppData, @Suppress("UNUSED_PARAMETER") exerciseId: String, now: Long = System.currentTimeMillis()): Boolean =
         d.history.firstOrNull()?.let { now - it.startedAt > 7 * Stats.DAY_MS } == true
+
+    /**
+     * The comeback cut as a load factor, recorded on the entry like a light week, so the next
+     * session progresses from the full weight again, not from the 80 %.
+     */
+    fun breakLoad(d: AppData, exerciseId: String): Double =
+        if (longBreak(d, exerciseId) && lastFullSets(d, exerciseId).isNotEmpty()) 0.8 else 1.0
 
     /** Fewer exercises and sets, shorter rests: for days with little time. */
     fun shortVersion(r: Routine): Routine {
@@ -571,17 +579,17 @@ object Coach {
                 "Start light. The weight is right if you could do 2 to 3 more reps after the set.",
             ),
         )
+        val lastAt = h.firstOrNull()?.startedAt ?: 0L
+        if (!bodyweight && System.currentTimeMillis() - lastAt > 7 * Stats.DAY_MS) return Tip(
+            L("Wieder einsteigen", "Easing back in"),
+            L("Über eine Woche Trainingspause: heute etwa 80 % vom letzten Mal.", "Over a week without training: about 80 % of last time today."), Tone.Info,
+        )
         if (sessions.size >= 4 && !bodyweight) {
             val before = sessions.dropLast(3).maxOf { it.e1rm }
             if (sessions.takeLast(3).all { it.e1rm <= before + 0.01 }) return Tip(
                 "Plateau", L("Bleib beim Gewicht und hol dir 1 bis 2 Wiederholungen mehr pro Satz.", "Keep the weight and add 1 to 2 reps per set."), Tone.Info,
             )
         }
-        val lastAt = h.firstOrNull()?.startedAt ?: 0L
-        if (!bodyweight && System.currentTimeMillis() - lastAt > 7 * Stats.DAY_MS) return Tip(
-            L("Wieder einsteigen", "Easing back in"),
-            L("Über eine Woche Trainingspause: heute etwa 80 % vom letzten Mal.", "Over a week without training: about 80 % of last time today."), Tone.Info,
-        )
         val allHit = last.all { it.reps >= targetReps }
         return when {
             bodyweight && allHit -> Tip(L("Steigern", "Progress"), L("Letztes Mal alle Wiederholungen geschafft. Heute 1 bis 2 mehr pro Satz.", "You hit every rep last time. Add 1 to 2 per set today."), Tone.Push)

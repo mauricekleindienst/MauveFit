@@ -42,8 +42,10 @@ object WeeklyReport {
         // A record: a set beating the best e1RM of that exercise from everything before this week.
         val earlier = d.history.filter { Stats.day(it.startedAt).isBefore(weekStart) }
         val records = week.flatMap { it.entries }.groupBy { it.exerciseId }.count { (id, entries) ->
-            val best = entries.flatMap { it.sets }.filter { it.done && !it.warmup && it.weight > 0 }.maxOfOrNull { Stats.e1rm(it) } ?: return@count false
-            val old = Stats.sessions(earlier, id).maxOfOrNull { it.e1rm } ?: return@count false
+            // Scored like every other record list: weighted beats unweighted, reps count without weight.
+            val best = entries.flatMap { it.sets }.filter { it.done && !it.warmup }.maxOfOrNull { Stats.recordScore(it) } ?: return@count false
+            val old = earlier.flatMap { w -> w.entries.filter { it.exerciseId == id }.flatMap { it.sets } }
+                .filter { it.done && !it.warmup }.maxOfOrNull { Stats.recordScore(it) } ?: return@count false
             best > old + 0.01
         }
         val muscles = week.flatMap { it.entries }.groupingBy { repo(it.exerciseId)?.target ?: "" }

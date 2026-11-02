@@ -75,8 +75,10 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val next = Stats.nextRoutine(data.routines, history, App.repo)
     val recovery by Recovery.today.collectAsState()
     val cycle by App.store.cycle.collectAsState()
-    val tip = remember(data.history, data.settings, data.routines, data.cardio) { Coach.homeTip(data, App.repo) }
-    val challenge = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
+    // Keyed by the week too: kept in memory over Sunday night they would show last week's.
+    val weekKey = Stats.weekKey(java.time.LocalDate.now())
+    val tip = remember(data.history, data.settings, data.routines, data.cardio, weekKey) { Coach.homeTip(data, App.repo) }
+    val challenge = remember(data.history, data.settings, data.profile, weekKey) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
     val twoColumns = LocalWidth.current.expanded
 
@@ -176,7 +178,11 @@ fun HomeScreen(data: AppData, nav: NavController) {
                 Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f).fillMaxHeight(), if (thisWeek >= goal) Ink.accent else Ink.text)
                     StreakStat(streak, data.freezes, Modifier.weight(1f).fillMaxHeight())
-                    Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
+                    // A week of push-ups and pull-ups is reps, not "0 kg".
+                    val weekReps = history.filter { Stats.weekStart(Stats.day(it.startedAt)) == Stats.weekStart(java.time.LocalDate.now()) }
+                        .sumOf { w -> w.doneSets.sumOf { it.second.reps } }
+                    if (volume.last().second <= 0 && weekReps > 0) Stat("$weekReps", L("Wiederholungen", "reps"), Modifier.weight(1f).fillMaxHeight())
+                    else Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
                 }
             }
 

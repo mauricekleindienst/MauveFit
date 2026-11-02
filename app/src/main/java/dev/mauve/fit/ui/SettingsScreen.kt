@@ -121,22 +121,31 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         notificationsAllowed = NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
+    // Files go through the IO thread: a backup on Google Drive may first have to download, and on
+    // the main thread that freezes the app.
+    val io = rememberCoroutineScope()
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        message = runCatching {
-            context.contentResolver.openOutputStream(uri)!!.use { it.write(App.store.export().toByteArray()) }
-        }.fold({ L("Backup gespeichert", "Backup saved") }, { L("Backup fehlgeschlagen", "Backup failed") })
+        io.launch {
+            message = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { context.contentResolver.openOutputStream(uri)!!.use { it.write(App.store.export().toByteArray()) } }
+            }.fold({ L("Backup gespeichert", "Backup saved") }, { L("Backup fehlgeschlagen", "Backup failed") })
+        }
     }
     val csv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        message = runCatching {
-            context.contentResolver.openOutputStream(uri)!!.use { it.write(CsvExport.sets(App.store.data.value, App.repo::get).toByteArray()) }
-        }.fold({ L("CSV gespeichert", "CSV saved") }, { L("CSV-Export fehlgeschlagen", "CSV export failed") })
+        io.launch {
+            message = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                runCatching { context.contentResolver.openOutputStream(uri)!!.use { it.write(CsvExport.sets(App.store.data.value, App.repo::get).toByteArray()) } }
+            }.fold({ L("CSV gespeichert", "CSV saved") }, { L("CSV-Export fehlgeschlagen", "CSV export failed") })
+        }
     }
     val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        val text = runCatching { context.contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrNull()
-        message = if (text != null && App.store.import(text)) L("Backup wiederhergestellt", "Backup restored") else L("Das ist kein Mauve-Fit-Backup", "This is not a Mauve Fit backup")
+        io.launch {
+            val ok = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readBackup(context, uri)?.let(App.store::import) == true }
+            message = if (ok) L("Backup wiederhergestellt", "Backup restored") else L("Das ist kein Mauve-Fit-Backup", "This is not a Mauve Fit backup")
+        }
     }
     fun set(block: (dev.mauve.fit.data.Settings) -> dev.mauve.fit.data.Settings) = App.store.updateSettings(block)
 
@@ -352,7 +361,9 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 }
                 // Recomputed whenever a download finishes or the cache is cleared.
                 var cleared by remember { mutableStateOf(0) }
-                val size = remember(progress == null, cleared) { Media.cacheSize(context) }
+                val size by androidx.compose.runtime.produceState(0L, progress == null, cleared) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Media.cacheSize(context) }
+                }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(L("Gespeichert: ${"%.1f".format(size / 1_048_576.0).replace('.', ',')} MB", "Stored: ${"%.1f".format(size / 1_048_576.0)} MB"), Modifier.weight(1f), color = Ink.muted)
@@ -366,7 +377,11 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                     title = { Text(L("Animationen löschen?", "Delete animations?")) },
                     text = { Text(L("Alle gespeicherten Animationen werden entfernt und bei Bedarf neu aus GitHub geladen. Deine Trainingsdaten bleiben.", "All stored animations are removed and reloaded from GitHub when needed. Your training data stays.")) },
                     confirmButton = {
-                        TextButton(onClick = { Haptics.warn(); Media.clear(context); cleared++; confirmClear = false }) { Text(L("Löschen", "Delete"), color = Ink.red) }
+                        TextButton(onClick = {
+                            Haptics.warn(); confirmClear = false
+                            // Deleting a few hundred MB is disk work, not something for the UI thread.
+                            io.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Media.clear(context) }; cleared++ }
+                        }) { Text(L("Löschen", "Delete"), color = Ink.red) }
                     },
                     dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(L("Abbrechen", "Cancel")) } },
                     containerColor = Ink.raised,
@@ -455,7 +470,8 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Text(
                     L("Datensatz auf GitHub", "Dataset on GitHub"), color = Ink.accent,
                     modifier = Modifier.clickable {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/hasaneyldrm/exercises-dataset")))
+                        // No browser installed or enabled must not crash the settings.
+                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/hasaneyldrm/exercises-dataset"))) }
                     },
                 )
             }
@@ -722,3 +738,21 @@ private fun CycleSection() {
         containerColor = Ink.raised,
     )
 }
+
+/** Reads a picked backup file; null if it cannot be read or is far too big to be one (a video, say). */
+internal fun readBackup(context: android.content.Context, uri: Uri): String? = runCatching {
+    // Read in chunks with a cap (readNBytes needs Android 13; the app runs from Android 10).
+    context.contentResolver.openInputStream(uri)!!.use { input ->
+        val out = java.io.ByteArrayOutputStream()
+        val buf = ByteArray(64 * 1024)
+        while (true) {
+            val n = input.read(buf)
+            if (n < 0) break
+            out.write(buf, 0, n)
+            if (out.size() > MAX_BACKUP) return@use null
+        }
+        out.toByteArray().decodeToString()
+    }
+}.getOrNull()
+
+private const val MAX_BACKUP = 50 * 1024 * 1024

@@ -216,6 +216,8 @@ data class Settings(
     val autoRegulate: Boolean = true,
     /** Target body weight in kg; 0 = none. */
     val goalWeight: Double = 0.0,
+    /** When the goal weight was set; its direction and progress count from the weight then. */
+    val goalSetAt: Long = 0,
     /** Monday-morning notification with last week's numbers. */
     val weeklyReport: Boolean = true,
     /** Write finished workouts and body weights to Health Connect. */

@@ -13,8 +13,8 @@ android {
         applicationId = "dev.mauve.fit"
         minSdk = 30
         targetSdk = 36
-        versionCode = 34
-        versionName = "1.19.8"
+        versionCode = 35
+        versionName = "1.19.9"
     }
 
     buildTypes {

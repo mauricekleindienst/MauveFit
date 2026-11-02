@@ -650,7 +650,7 @@ private fun Change(cur: Double, prev: Double, percent: Boolean) {
 private fun WeightGoalCard(data: AppData) {
     var editing by remember { mutableStateOf(false) }
     val goal = data.settings.goalWeight
-    val o = WeightGoal.outlook(data.bodyWeights.map { it.at to it.kg }, goal)
+    val o = WeightGoal.outlook(data.bodyWeights.map { it.at to it.kg }, goal, since = data.settings.goalSetAt)
     Card(Modifier.fillMaxWidth(), onClick = { editing = true }) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -675,7 +675,8 @@ private fun WeightGoalCard(data: AppData) {
                 Text(L("Tempo: $sign${Stats.fmtKg(Stats.roundTo(p, 0.1))} kg pro Woche", "Pace: $sign${Stats.fmtKg(Stats.roundTo(p, 0.1))} kg a week"), color = Ink.muted)
             } ?: Text(L("Für ein Tempo braucht es 3 Einträge über mindestens eine Woche.", "A pace needs 3 entries over at least a week."), color = Ink.faint, style = MaterialTheme.typography.bodySmall)
             o.eta?.let { Text(L("So erreichst du es etwa am ${it.format(dayFmt)}.", "At this pace you get there around ${it.format(dayFmt)}."), color = Ink.muted) }
-            if (!o.reached && o.perWeek != null && o.eta == null) Text(L("Das Tempo geht gerade in die andere Richtung.", "The pace is going the other way right now."), color = Ink.coral, style = MaterialTheme.typography.bodySmall)
+            if (!o.reached && o.flat) Text(L("Das Gewicht hält sich gerade.", "Your weight is holding steady right now."), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+            else if (!o.reached && o.perWeek != null && o.eta == null) Text(L("Das Tempo geht gerade in die andere Richtung.", "The pace is going the other way right now."), color = Ink.coral, style = MaterialTheme.typography.bodySmall)
             if (o.tooFast) Text(
                 L("Ziemlich schnell. Etwas langsamer schont Muskeln und Kraft.", "Quite fast. A little slower protects muscle and strength."),
                 color = Ink.coral, style = MaterialTheme.typography.bodySmall,
@@ -697,7 +698,7 @@ private fun WeightGoalCard(data: AppData) {
             confirmButton = {
                 TextButton(enabled = parsed != null, onClick = {
                     val v = parsed ?: return@TextButton
-                    Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v) }
+                    Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v, goalSetAt = System.currentTimeMillis()) }
                     editing = false
                 }) { Text(L("Speichern", "Save")) }
             },

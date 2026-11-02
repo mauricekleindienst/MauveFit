@@ -18,6 +18,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
+import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
@@ -36,6 +37,7 @@ import dev.mauve.fit.data.Motivation
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.system.Recovery
 import kotlinx.coroutines.withTimeoutOrNull
+import java.time.LocalDate
 
 /** 2x2: weeks in a row that met the goal (freezes honoured), freezes in stock and today's readiness. */
 class StreakWidget : GlanceAppWidget() {
@@ -69,6 +71,8 @@ class StreakWidget : GlanceAppWidget() {
             }
             if (d.freezes > 0) Text(Motivation.freezeLabel(d.freezes), style = style(Mauve, 12.sp, FontWeight.Medium), maxLines = 1)
             Spacer(GlanceModifier.defaultWeight())
+            Weeks(d)
+            Spacer(GlanceModifier.defaultWeight())
             if (readiness != null) {
                 Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(14.dp).padding(horizontal = 10.dp, vertical = 8.dp)) {
                     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -89,6 +93,42 @@ class StreakWidget : GlanceAppWidget() {
                 )
             }
         }
+    }
+}
+
+/**
+ * The last eight weeks as bars, this week on the right: full height when the goal was met, a
+ * part for each workout short of it, frozen weeks in mauve.
+ */
+@Composable
+private fun Weeks(d: AppData) {
+    val goal = d.settings.weeklyGoal.coerceAtLeast(1)
+    val monday = Stats.weekStart(LocalDate.now())
+    val counts = d.history.groupingBy { Stats.weekStart(Stats.day(it.startedAt)) }.eachCount()
+    Column(GlanceModifier.fillMaxWidth()) {
+        Row(GlanceModifier.fillMaxWidth().height(34.dp), verticalAlignment = Alignment.Bottom) {
+            for (i in 7 downTo 0) {
+                val week = monday.minusWeeks(i.toLong())
+                val n = counts[week] ?: 0
+                val frozen = Stats.weekKey(week) in d.frozenWeeks
+                val h = when {
+                    frozen || n >= goal -> 34
+                    n == 0 -> 4
+                    else -> 4 + 30 * n / goal
+                }
+                val color = when {
+                    frozen -> Mauve
+                    n >= goal -> Copper
+                    i == 0 -> TextColor
+                    else -> Muted
+                }
+                Box(GlanceModifier.defaultWeight().height(34.dp), contentAlignment = Alignment.BottomCenter) {
+                    Box(GlanceModifier.width(10.dp).height(h.dp).background(if (n == 0 && !frozen) Raised else color).cornerRadius(5.dp)) {}
+                }
+            }
+        }
+        Spacer(GlanceModifier.height(4.dp))
+        Text(L("Letzte 8 Wochen", "Last 8 weeks"), style = style(Muted, 11.sp), maxLines = 1)
     }
 }
 

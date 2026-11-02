@@ -1,5 +1,8 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.system.HealthSync
+import androidx.compose.material.icons.rounded.Sync
+
 import dev.mauve.fit.data.Kit
 
 import android.Manifest
@@ -610,6 +613,12 @@ private fun ConnectStep(
         health = got.containsAll(Recovery.permissions)
         if (health == true) { Haptics.success(); scope.launch { Recovery.refresh(context) } }
     }
+    var share by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { share = App.store.data.value.settings.healthWrite && HealthSync.granted(context) }
+    val askShare = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
+        share = got.containsAll(HealthSync.permissions)
+        if (share) { Haptics.success(); App.store.updateSettings { it.copy(healthWrite = true) } }
+    }
     var notify by remember { mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled()) }
     val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         notify = NotificationManagerCompat.from(context).areNotificationsEnabled()
@@ -625,6 +634,11 @@ private fun ConnectStep(
             L("Schlaf, Ruhepuls und HRV aus Health Connect. An schlechten Tagen startest du etwas leichter.", "Sleep, resting pulse and HRV from Health Connect. On poor days you start a little lighter."),
             done = health == true, action = L("Verbinden", "Connect"), doneLabel = L("Verbunden", "Connected"),
         ) { askHealth.launch(Recovery.permissions) }
+        if (Recovery.available(context)) ConnectCard(
+            Icons.Rounded.Sync, L("Trainings teilen", "Share workouts"),
+            L("Trainings und Gewicht landen in Health Connect, z. B. für Samsung Health.", "Workouts and weight go to Health Connect, e.g. for Samsung Health."),
+            done = share, action = L("Teilen", "Share"), doneLabel = L("Geteilt", "Sharing"),
+        ) { askShare.launch(HealthSync.permissions) }
         if (Build.VERSION.SDK_INT >= 33) ConnectCard(
             Icons.Rounded.Notifications, L("Benachrichtigungen", "Notifications"),
             L("Für den Pausentimer im Hintergrund und Erinnerungen.", "For the rest timer in the background and reminders."),

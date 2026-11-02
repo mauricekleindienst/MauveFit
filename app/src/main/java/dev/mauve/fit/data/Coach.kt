@@ -29,14 +29,20 @@ object Coach {
     fun score(e: Exercise, level: Level = Level.Intermediate, main: Boolean = false): Double {
         var s = 0.0
         // Opening slots of a day should be big compound lifts, not isolation or jumps.
+        // Each word group counts once: a name that strings two movements together ("squat row",
+        // "squatting curl") is a hybrid oddity, not twice as typical.
         if (main) {
-            compoundWords.forEach { if (it in e.name) s += 4 }
-            isolationWords.forEach { if (it in e.name) s -= 5 }
+            if (compoundWords.any { it in e.name }) s += 4
+            if (isolationWords.any { it in e.name }) s -= 5
         }
         if (e.id in staples) s += 10
         val n = e.name
-        strongWords.forEach { if (it in n) s += 2 }
+        val movements = strongWords.filter { it in n }
+        if (movements.isNotEmpty()) s += 2
+        if (movements.size >= 2 && "bench press" !in n && "leg press" !in n) s -= 3
         weakWords.forEach { if (it in n) s -= 4 }
+        // Variants spelled out in brackets ("with rope attachment", "v. 2") are rarely the plain lift.
+        if ('(' in n) s -= 1.5
         s -= n.length / 20.0
         when (e.equipment) {
             "barbell" -> s += if (level == Level.Beginner) 0.5 else 2.0

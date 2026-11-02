@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.14.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.15.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -56,6 +56,12 @@ Stand: Version 1.14.1 (November 2026). Sortiert nach Nutzen für das Training, n
 - Datendatei wird bei einem Lesefehler aus der letzten guten Kopie wiederhergestellt statt geleert
 - Widgets springen um Mitternacht auf den neuen Tag, Erinnerungen folgen Zeitzonenwechseln
 - Uhr nutzt dieselbe Pausenregel wie das Handy, Cardio-Distanz ohne Doppelzählung
+
+## Erledigt in 1.15
+
+- Plan-Generator wählt gängige Übungen statt Mischformen wie "Cable Squat Row"
+- Serien-Widget zeigt die letzten 8 Wochen als Balken
+- Teilen mit Health Connect direkt im Intro
 
 ## Als Nächstes
 

@@ -141,6 +141,8 @@ class Store(context: Context) {
     fun finishWorkout(endAt: Long? = null): String? {
         var saved: String? = null
         update { d ->
+            // The block can run again if another thread changed the data meanwhile: start clean each time.
+            saved = null
             val w = d.active ?: return@update d
             // Unticked sets are dropped; an exercise with nothing done is not logged.
             val entries = w.entries.map { e -> e.copy(sets = e.sets.filter { it.done }) }.filter { e -> e.sets.any { !it.warmup } }
@@ -331,6 +333,7 @@ class Store(context: Context) {
     fun completeChallenge(weekKey: String): Boolean {
         var added = false
         update { d ->
+            added = false
             if (weekKey in d.challengesDone) d
             else { added = true; d.copy(challengesDone = d.challengesDone + weekKey) }
         }

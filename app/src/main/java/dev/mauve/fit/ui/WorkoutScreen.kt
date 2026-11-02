@@ -200,11 +200,13 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
                     data = data,
                     superset = supersetInfo(w, page),
                     onChange = { block -> updateEntry(page, block) },
-                    onSetDone = { warmup ->
+                    onSetDone = { ticked ->
                         // The coach sets the rest: short after warm-ups, longer after a set that fell short.
+                        // It looks at the set just ticked, not the last done one in the list.
                         val entries = App.store.data.value.active?.entries ?: w.entries
                         val entry = entries.getOrNull(page) ?: w.entries[page]
-                        val set = entry.sets.lastOrNull { it.done } ?: entry.sets.first()
+                        val set = entry.sets.getOrNull(ticked) ?: entry.sets.lastOrNull { it.done } ?: entry.sets.first()
+                        val warmup = set.warmup
                         // In a superset the partner comes next without rest; the rest follows the round.
                         val next = if (warmup) null else Supersets.afterSet(entries, page)
                         val complete = entries.all { e -> e.sets.all { it.done } }
@@ -270,7 +272,7 @@ private fun ExercisePage(
     data: AppData,
     superset: SupersetInfo?,
     onChange: ((ExerciseEntry) -> ExerciseEntry) -> Unit,
-    onSetDone: (warmup: Boolean) -> Unit,
+    onSetDone: (index: Int) -> Unit,
     onAllDone: () -> Unit,
     onOpen: () -> Unit,
     onRemove: () -> Unit,
@@ -287,6 +289,7 @@ private fun ExercisePage(
     var editing by remember { mutableStateOf<Int?>(null) }
     var swapping by remember { mutableStateOf(false) }
     var noting by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
     val note = data.exerciseNotes[entry.exerciseId].orEmpty()
     val current = entry.sets.indexOfFirst { !it.done }
 
@@ -297,7 +300,7 @@ private fun ExercisePage(
         if (s.done) Haptics.tick()
         else if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) Haptics.success() else Haptics.heavy()
         if (!s.done) {
-            onSetDone(s.warmup)
+            onSetDone(i)
             if (entry.sets.withIndex().all { (j, x) -> j == i || x.done }) onAllDone()
         }
     }
@@ -306,8 +309,10 @@ private fun ExercisePage(
     val advice = Coach.setAdvice(entry, step)
     val doneCount = entry.sets.count { it.done }
     var handledAt by remember(entry.exerciseId) { mutableStateOf(-1) }
+    // The bar is the floor only for barbell lifts; dumbbells and machines ramp from a step.
+    val warmupFloor = if (Coach.usesBarbell(e)) data.settings.barWeight else step
     val canWarmUp = !bodyweight && entry.sets.none { it.warmup } && entry.sets.none { it.done } &&
-        (entry.sets.firstOrNull()?.weight ?: 0.0) > data.settings.barWeight
+        (entry.sets.firstOrNull()?.weight ?: 0.0) > warmupFloor
 
     /** Changes one set; the same change carries to later unticked sets that still had the old value. */
     /**
@@ -489,9 +494,12 @@ private fun ExercisePage(
                     GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Add) {
                         onChange { en -> en.copy(sets = en.sets + (en.sets.lastOrNull()?.copy(done = false, type = SetType.Normal, rpe = 0) ?: SetEntry(reps = 10))) }
                     }
+                    // A logged set is not dropped by one tap: there is no undo.
                     if (entry.sets.size > 1) GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Remove) {
-                        onChange { en -> en.copy(sets = en.sets.dropLast(1)) }
-                    } else GhostButton(L("Übung entfernen", "Remove exercise"), Modifier.weight(1f), onClick = onRemove)
+                        if (entry.sets.last().done) confirmRemove = true else onChange { en -> en.copy(sets = en.sets.dropLast(1)) }
+                    } else GhostButton(L("Übung entfernen", "Remove exercise"), Modifier.weight(1f)) {
+                        if (entry.sets.any { it.done }) confirmRemove = true else onRemove()
+                    }
                 }
             }
         }
@@ -505,6 +513,19 @@ private fun ExercisePage(
 
     if (swapping) SwapDialog(entry.exerciseId, data, onPick = { onSwap(it); swapping = false }) { swapping = false }
     if (noting) NoteDialog(entry.exerciseId, note) { noting = false }
+    if (confirmRemove) AlertDialog(
+        onDismissRequest = { confirmRemove = false },
+        title = { Text(if (entry.sets.size > 1) L("Erledigten Satz löschen?", "Delete a done set?") else L("Übung mit erledigtem Satz entfernen?", "Remove an exercise with a done set?")) },
+        text = { Text(L("Der Satz ist schon eingetragen und geht damit verloren.", "The set is already logged and will be lost.")) },
+        confirmButton = {
+            TextButton(onClick = {
+                confirmRemove = false
+                if (entry.sets.size > 1) onChange { en -> en.copy(sets = en.sets.dropLast(1)) } else onRemove()
+            }) { Text(L("Löschen", "Delete"), color = Ink.red) }
+        },
+        dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
 
     editing?.let { i ->
         val s = entry.sets.getOrNull(i) ?: return@let
@@ -537,7 +558,10 @@ private fun ExercisePage(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    edit(i, weight = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0), reps = reps.toIntOrNull()?.coerceAtLeast(0), all = toAll)
+                    // Only what was changed carries down: editing the kg must not copy this set's reps too.
+                    val newKg = kg.replace(',', '.').toDoubleOrNull()?.coerceAtLeast(0.0)?.takeIf { kotlin.math.abs(it - s.weight) > 1e-6 }
+                    val newReps = reps.toIntOrNull()?.coerceAtLeast(0)?.takeIf { it != s.reps }
+                    edit(i, weight = newKg, reps = newReps, all = toAll)
                     editing = null
                 }) { Text(L("Übernehmen", "Apply")) }
             },

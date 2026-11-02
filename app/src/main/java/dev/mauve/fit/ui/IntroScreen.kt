@@ -208,7 +208,11 @@ fun IntroScreen(initial: Profile, redo: Boolean = false, onDone: () -> Unit) {
                             val count = remember(option, only) {
                                 App.repo.all.count { option.allows(it.equipment) && (only.isEmpty() || Kit.of(it.equipment)?.key in only) }
                             }
-                            Option(option.label, option.blurb, setup == option, L("$count Übungen stehen zur Wahl", "$count exercises to choose from")) { setup = option }
+                            Option(option.label, option.blurb, setup == option, L("$count Übungen stehen zur Wahl", "$count exercises to choose from")) {
+                                // Kit chosen for another place may not exist here; an empty match would allow nothing.
+                                if (option != setup) kit = emptySet()
+                                setup = option
+                            }
                         }
                         Spacer(Modifier.height(18.dp))
                         KitPicker(setup, kit) { kit = it }

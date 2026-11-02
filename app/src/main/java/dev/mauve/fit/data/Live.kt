@@ -51,8 +51,16 @@ object Live {
      */
     fun manualLoad(old: Workout, new: Workout): List<ExerciseEntry> = new.entries.mapIndexed { i, e ->
         val before = old.entries.getOrNull(i)?.takeIf { it.exerciseId == e.exerciseId } ?: return@mapIndexed e
-        val changed = e.sets.withIndex().any { (j, s) -> !s.warmup && before.sets.getOrNull(j)?.let { abs(it.weight - s.weight) > 1e-6 } == true }
-        if (changed && e.load != 1.0) e.copy(load = 1.0) else e
+        if (abs(e.load - 1.0) < 1e-9) return@mapIndexed e
+        // The load moves with the change: 70 -> 72.5 kg in a 70 % week is about 72.5 %, typing the
+        // full 100 kg is 100 %. Resetting it on any step would carry the light week into the next.
+        val j = e.sets.indices.firstOrNull { j ->
+            val was = before.sets.getOrNull(j)
+            !e.sets[j].warmup && was != null && !was.warmup && abs(was.weight - e.sets[j].weight) > 1e-6
+        } ?: return@mapIndexed e
+        val was = before.sets[j].weight
+        val load = if (was <= 0) 1.0 else (before.load * e.sets[j].weight / was).coerceIn(0.1, 1.0)
+        e.copy(load = load)
     }
 
     /** False once [last] was unticked again (or its exercise removed), so it is no longer shown as done. */

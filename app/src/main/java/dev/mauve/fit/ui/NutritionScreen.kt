@@ -85,7 +85,11 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     val goal = data.profile.goal
     val targets = kg?.let { Nutrition.targets(it, goal) }
     val planned = data.mealPlan.values.sum()
-    val today = LocalDate.now()
+    // "Today" must follow the clock: coming back after midnight with unchanged data does not
+    // recompose, and a glass of water would land on yesterday.
+    var today by remember { mutableStateOf(LocalDate.now()) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { today = LocalDate.now(); onPauseOrDispose { } }
+    androidx.compose.runtime.LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(30_000); LocalDate.now().let { if (it != today) today = it } } }
     val todayKey = today.toString()
     val context = LocalContext.current
 
@@ -99,12 +103,12 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     var confirmDelete by remember { mutableStateOf<Nutrition.Recipe?>(null) }
     if (askWeight) WeightDialog { askWeight = false }
     if (picking) RecipePickerDialog(data, onPick = { r ->
-        App.store.addFood(FoodEntry(date = todayKey, name = r.name, kcal = r.kcal, protein = r.protein, carbs = r.carbs, fat = r.fat, recipeId = r.id))
+        App.store.addFood(FoodEntry(date = LocalDate.now().toString(), name = r.name, kcal = r.kcal, protein = r.protein, carbs = r.carbs, fat = r.fat, recipeId = r.id))
         Haptics.success()
         picking = false
     }) { picking = false }
     if (customEntry) FoodEntryDialog(onSave = { name, kcal, protein, carbs, fat ->
-        App.store.addFood(FoodEntry(date = todayKey, name = name, kcal = kcal, protein = protein, carbs = carbs, fat = fat))
+        App.store.addFood(FoodEntry(date = LocalDate.now().toString(), name = name, kcal = kcal, protein = protein, carbs = carbs, fat = fat))
         Haptics.success()
         customEntry = false
     }) { customEntry = false }

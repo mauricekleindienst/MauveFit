@@ -209,7 +209,9 @@ class Store(context: Context) {
             if (i != index || e.sets.any { it.warmup }) e
             else {
                 val work = e.sets.firstOrNull()?.weight ?: 0.0
-                e.copy(sets = Coach.warmups(work, s.weightStep, s.barWeight) + e.sets)
+                // Ramp from the bar on barbell lifts only; a 30 kg dumbbell press starts lighter.
+                val floor = if (Coach.usesBarbell(App.repo[e.exerciseId])) s.barWeight else s.weightStep
+                e.copy(sets = Coach.warmups(work, s.weightStep, floor) + e.sets)
             }
         })
     }
@@ -221,7 +223,8 @@ class Store(context: Context) {
         d.copy(
             profile = profile.copy(onboarded = true),
             // Rebuilding replaces the generated plans only; plans of the user's own stay.
-            routines = program + d.routines.filterNot { it.id.startsWith("gen-") },
+            // On the first run the starter templates go; their place is taken by the own program.
+            routines = if (d.profile.onboarded) program + d.routines.filterNot { it.id.startsWith("gen-") } else program,
             settings = d.settings.copy(
                 // A goal changed in the settings stays unless the training days changed.
                 weeklyGoal = if (d.profile.onboarded && profile.days == d.profile.days) d.settings.weeklyGoal else profile.days,

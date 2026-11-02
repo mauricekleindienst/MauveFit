@@ -226,7 +226,8 @@ class WorkoutService : Service() {
                 .bigText(listOfNotNull(st.next, st.last?.let { L("Zuletzt: $it", "Last: $it") }).joinToString("\n"))
                 .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
                 // With the ticked count, so a double tap before the shade redraws ticks only one set.
-                .addAction(action("done:${st.ticked}", L("Satz erledigt", "Set done"), 3))
+                // Its own PendingIntent per count: an old button keeps its old count and is rejected.
+                .addAction(action("done:${st.ticked}", L("Satz erledigt", "Set done"), 1000 + st.ticked))
                 .build()
         }
     }

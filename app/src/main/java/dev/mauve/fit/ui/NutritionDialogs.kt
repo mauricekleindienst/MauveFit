@@ -186,12 +186,27 @@ fun RecipeEditor(initial: Nutrition.Recipe?, onSave: (Nutrition.Recipe) -> Unit,
     val macros = listOf(kcal, protein, carbs, fat).map(::parseInt)
     val problem = when {
         name.isBlank() -> L("Gib dem Rezept einen Namen.", "Give the recipe a name.")
-        macros.any { it == null } || (macros[0] ?: 0) !in 1..5000 -> L("Trag die Kalorien pro Portion ein.", "Enter the calories per portion.")
+        macros[0] == null || (macros[0] ?: 0) !in 1..5000 -> L("Trag die Kalorien pro Portion ein (1 bis 5000).", "Enter the calories per portion (1 to 5000).")
+        macros.any { it == null } -> L("Protein, Kohlenhydrate und Fett: nur Zahlen ab 0.", "Protein, carbs and fat: numbers from 0 only.")
         else -> null
     }
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Back or Close on a draft with changes asks first: a second Back press after hiding the
+    // keyboard used to throw away every ingredient and step.
+    val original = remember { listOf(name, kcal, protein, carbs, fat) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text } }
+    val dirty = (listOf(name, kcal, protein, carbs, fat) + ingredients.map { it.name + it.amount + it.unit } + steps.map { it.text }) != original
+    var askClose by remember { mutableStateOf(false) }
+    val close = { if (dirty) askClose = true else onDismiss() }
+    Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Box(Modifier.fillMaxSize().background(Ink.bg).systemBarsPadding().imePadding()) {
+        // Inside the editor's window, or it would open behind it.
+            if (askClose) AlertDialog(
+                onDismissRequest = { askClose = false },
+                title = { Text(L("Änderungen verwerfen?", "Discard changes?")) },
+                confirmButton = { TextButton(onClick = { askClose = false; onDismiss() }) { Text(L("Verwerfen", "Discard"), color = Ink.red) } },
+                dismissButton = { TextButton(onClick = { askClose = false }) { Text(L("Weiter bearbeiten", "Keep editing")) } },
+                containerColor = Ink.raised,
+            )
             LazyColumn(
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -202,7 +217,7 @@ fun RecipeEditor(initial: Nutrition.Recipe?, onSave: (Nutrition.Recipe) -> Unit,
                             if (initial == null) L("Neues Rezept", "New recipe") else L("Rezept bearbeiten", "Edit recipe"),
                             Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium,
                         )
-                        RoundButton(Icons.Rounded.Close, L("Schließen", "Close"), size = 44.dp, onClick = onDismiss)
+                        RoundButton(Icons.Rounded.Close, L("Schließen", "Close"), size = 44.dp, onClick = close)
                     }
                 }
                 item {

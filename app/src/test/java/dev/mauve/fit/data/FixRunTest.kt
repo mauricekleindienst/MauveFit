@@ -58,4 +58,19 @@ class FixRunTest {
         val ticked = old.copy(entries = listOf(e.copy(sets = listOf(SetEntry(70.0, 8, done = true), SetEntry(70.0, 8)))))
         assertEquals(0.7, Live.manualLoad(old, ticked).single().load, 0.0)
     }
+
+    @Test fun aSmallStepScalesTheLoadInsteadOfResettingIt() {
+        val e = ExerciseEntry("bench", load = 0.7, sets = listOf(SetEntry(70.0, 8)))
+        val old = Workout(name = "W", entries = listOf(e))
+        val step = old.copy(entries = listOf(e.copy(sets = listOf(SetEntry(72.5, 8)))))
+        assertEquals(0.725, Live.manualLoad(old, step).single().load, 0.001)
+    }
+
+    @Test fun repsSaidWithMalAloneAreReps() {
+        assertEquals(8, VoiceInput.parse("acht mal").reps)
+        assertEquals(null, VoiceInput.parse("acht mal").weight)
+        val both = VoiceInput.parse("60 mal 8")
+        assertEquals(60.0, both.weight!!, 0.0)
+        assertEquals(8, both.reps)
+    }
 }

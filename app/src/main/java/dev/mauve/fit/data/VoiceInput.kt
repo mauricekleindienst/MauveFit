@@ -41,7 +41,10 @@ object VoiceInput {
                 next in weightUnits || prev == "at" || prev == "mit" -> weight = n
                 next in repUnits && next != "x" && next != "mal" -> reps = n.toInt()
                 // "60 x 8" / "60 mal 8": the number before x is the weight, the one after it the reps.
-                next == "x" || next == "mal" -> if (weight == null) weight = n else loose += n
+                // ...but only when a number follows: "acht mal" alone is reps, not 8 kg.
+                (next == "x" || next == "mal") && tokens.drop(i + 2).any { it.toDoubleOrNull() != null || words[it] != null } ->
+                    if (weight == null && !bodyweight) weight = n else loose += n
+                next == "x" || next == "mal" -> reps = n.toInt()
                 prev == "x" || prev == "mal" -> reps = n.toInt()
                 else -> loose += n
             }

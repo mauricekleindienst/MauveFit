@@ -183,7 +183,8 @@ fun BarcodeDialogs(flow: BarcodeFlow, day: String) {
             val f = grams / 100.0
             App.store.addFood(
                 FoodEntry(
-                    date = day, name = "${food.name}, ${fmt(grams)} g",
+                    // Saved to the day it is now, even if the dialog stayed open over midnight.
+                    date = maxOf(day, java.time.LocalDate.now().toString()), name = "${food.name}, ${fmt(grams)} g",
                     kcal = (food.kcal100 * f).roundToInt(), protein = (food.protein100 * f).roundToInt(),
                     carbs = (food.carbs100 * f).roundToInt(), fat = (food.fat100 * f).roundToInt(),
                 )

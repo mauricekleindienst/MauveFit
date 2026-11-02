@@ -110,6 +110,8 @@ class Ambient {
     var tick by mutableLongStateOf(0L)
     /** End time of the rest that already buzzed, so it buzzes once whichever path gets there first. */
     var buzzedFor = 0L
+    /** The last rest end seen; the phone clears the rest right after it ends, before the minute tick. */
+    var lastEnd = 0L
 }
 
 class WatchActivity : ComponentActivity() {
@@ -134,9 +136,9 @@ class WatchActivity : ComponentActivity() {
                 val now = System.currentTimeMillis()
                 ambient.tick = now
                 // While dimmed the CPU may sleep through the countdown; the minute tick catches the end.
-                val s = link.state.value
-                if (s.active && s.restEndsAt in 1..now && now - s.restEndsAt < 90_000 && ambient.buzzedFor != s.restEndsAt) {
-                    ambient.buzzedFor = s.restEndsAt
+                val end = ambient.lastEnd
+                if (link.state.value.active && end in 1..now && now - end < 90_000 && ambient.buzzedFor != end) {
+                    ambient.buzzedFor = end
                     buzz(this@WatchActivity)
                 }
             }
@@ -217,13 +219,25 @@ private fun WatchApp(link: PhoneLink, heart: HeartRate, ambient: Ambient, onHear
 
     // Buzz when the rest timer ends on the watch, independent of the phone. A rest that already
     // ended before the app opened stays silent.
+    // The phone clears a rest a moment after it ends; keep counting to the last end seen, unless it
+    // was cleared well before (skipped).
+    var lastEnd by remember { mutableLongStateOf(0L) }
     LaunchedEffect(state.restEndsAt, state.active) {
-        val wait = state.restEndsAt - System.currentTimeMillis()
-        if (!state.active || wait <= 0) return@LaunchedEffect
-        delay(wait)
+        when {
+            !state.active -> lastEnd = 0
+            state.restEndsAt > 0 -> lastEnd = state.restEndsAt
+            System.currentTimeMillis() < lastEnd - 1_500 -> lastEnd = 0
+        }
+        ambient.lastEnd = lastEnd
+    }
+    LaunchedEffect(lastEnd) {
+        val end = lastEnd
+        val wait = end - System.currentTimeMillis()
+        if (end == 0L || wait < -5_000) return@LaunchedEffect
+        delay(wait.coerceAtLeast(0))
         now = System.currentTimeMillis()
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && ambient.buzzedFor != state.restEndsAt) {
-            ambient.buzzedFor = state.restEndsAt
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && ambient.buzzedFor != end) {
+            ambient.buzzedFor = end
             buzz(context)
         }
     }

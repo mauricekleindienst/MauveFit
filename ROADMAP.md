@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.6 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.7 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,17 @@ Stand: Version 1.19.6 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.7 (Fix-Runde 6)
+
+- Satz-Dialog übernimmt nur, was geändert wurde: nur kg geändert kopiert nicht die Wiederholungen auf alle folgenden Sätze
+- Sprachsteuerung: "acht mal" sind 8 Wiederholungen, nicht 8 kg
+- Aufwärmsätze starten nur bei Langhantelübungen bei der Stange; Kurzhantel und Maschine bekommen eigene Rampen
+- Pause richtet sich nach dem gerade abgehakten Satz, nicht nach dem letzten in der Liste
+- Erledigten Satz oder Übung mit erledigtem Satz löschen fragt nach
+- Wasser und Essen nach Mitternacht landen auf dem richtigen Tag
+- Intro: Ort wechseln verwirft unpassende Geräteauswahl; Rezept-Editor fragt vor dem Verwerfen
+- Korrekturen an Runde 5: Erststart bekommt keine Vorlagen mehr dazu, Gewichtsschritte skalieren die Last statt sie zurückzusetzen, Uhr vibriert am Pausenende auch gedimmt, Doppeltipp-Schutz in der Benachrichtigung greift wirklich
 
 ## Erledigt in 1.19.6 (Fix-Runde 5)
 

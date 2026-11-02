@@ -116,7 +116,7 @@ class MauveTileService : TileService() {
             text(if (resting) tileText("Nächster: ${s.exercise}", "Up next: ${s.exercise}") else s.exercise,
                 Typography.TYPOGRAPHY_TITLE3, TileInk.TEXT, maxLines = 2),
             gap(2f),
-            text(set, Typography.TYPOGRAPHY_CAPTION1, TileInk.MUTED),
+            text(if (resting && s.last.isNotBlank()) s.last else set, Typography.TYPOGRAPHY_CAPTION1, TileInk.MUTED, maxLines = 2),
             gap(2f),
             text(load(s), Typography.TYPOGRAPHY_TITLE2, TileInk.COPPER),
         )

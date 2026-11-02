@@ -9,6 +9,7 @@ import com.google.android.gms.wearable.WearableListenerService
 import dev.mauve.fit.App
 import dev.mauve.fit.data.AppData
 import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Live
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.data.Supersets
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +47,8 @@ data class WatchState(
     val restTotalSec: Int = 0,
     val doneSets: Int = 0,
     val suggestion: String = "",
+    /** The set just done, "Set 2 done · 80 kg × 8"; empty before the first. */
+    val last: String = "",
     /** This week's workouts against the weekly goal, for the tile. */
     val week: Int = 0,
     val goal: Int = 0,
@@ -85,6 +88,7 @@ object WatchSync {
             restEndsAt = w.restEndsAt ?: 0,
             restTotalSec = w.restTotalSec,
             doneSets = w.doneSets.size,
+            last = Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })?.last.orEmpty(),
         )
     }
 

@@ -49,6 +49,23 @@ class LiveTest {
         assertEquals("Bench Press · Set 3 done · 85 kg × 8", s.last)
     }
 
+    @Test fun untickingTheLastSetForgetsIt() {
+        val w = workout(true, true, true, false)
+        val last = LastSet("bench", 82.5, 8, number = 2)
+        assertTrue(Live.stillDone(w, last))
+        assertFalse(Live.stillDone(workout(true, true, false, false), last))
+        assertTrue(Live.stillDone(w, LastSet("bench", 40.0, 10, number = 0)))
+    }
+
+    @Test fun noRestCountdownOnceEverythingIsDone() {
+        val all = workout(true, true, true, true).let { w -> w.copy(entries = w.entries.map { e -> e.copy(sets = e.sets.map { it.copy(done = true) }) }) }
+        val s = status(all.copy(restEndsAt = 90_000))
+        assertTrue(s.complete)
+        assertFalse(s.resting)
+        assertFalse(s.canTick)
+        assertFalse(status(Workout(name = "Empty")).canTick)
+    }
+
     @Test fun clockRoundsUp() {
         assertEquals("1:30", Live.clock(89_001))
         assertEquals("0:00", Live.clock(-5))

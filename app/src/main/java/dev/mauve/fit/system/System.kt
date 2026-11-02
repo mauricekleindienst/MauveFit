@@ -211,7 +211,7 @@ class WorkoutService : Service() {
                     .addAction(action("plus15", "+15 s", 1)).addAction(action("skip", L("Überspringen", "Skip"), 2))
                     .build()
             }
-            st.complete -> b.setContentTitle(L("Alle Sätze erledigt", "All sets done"))
+            !st.canTick -> b.setContentTitle(if (st.complete) L("Alle Sätze erledigt", "All sets done") else w.name)
                 .setContentText(st.last ?: L("Tippen, um das Training abzuschließen", "Tap to finish the workout"))
                 .setSubText(sets)
                 .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)

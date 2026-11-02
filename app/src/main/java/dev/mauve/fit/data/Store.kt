@@ -124,7 +124,7 @@ class Store(context: Context) {
         d.active?.let { old ->
             val now = System.currentTimeMillis()
             val new = block(old)
-            d.copy(active = new.copy(lastActivityAt = now, lastSet = Live.ticked(old, new, now) ?: new.lastSet))
+            d.copy(active = new.copy(lastActivityAt = now, lastSet = Live.ticked(old, new, now) ?: new.lastSet?.takeIf { Live.stillDone(new, it) }))
         } ?: d
     }
 

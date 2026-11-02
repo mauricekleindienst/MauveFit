@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.17.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.17.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -72,6 +72,12 @@ Stand: Version 1.17.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Benachrichtigung und Widget zeigen das Training live: Pausen-Countdown, zuletzt erledigter Satz mit Gewicht und Wiederholungen, nächster Satz
 - Widget-Knöpfe "Erledigt" und "Weiter" haken den Satz ab oder beenden die Pause, ohne die App zu öffnen
 - Laufende Trainingszeit und Satzfortschritt im Widget; nach der Pause springt es von selbst zum nächsten Satz
+
+## Erledigt in 1.17.1
+
+- Uhr zeigt in der Pause den gerade erledigten Satz mit Gewicht (App und Kachel)
+- Wieder abgehakter Satz wird nicht mehr als "erledigt" angezeigt
+- Kein Pausen-Countdown mehr nach dem letzten Satz; leeres Training zeigt "Öffnen" statt "Erledigt"
 
 ## Als Nächstes
 

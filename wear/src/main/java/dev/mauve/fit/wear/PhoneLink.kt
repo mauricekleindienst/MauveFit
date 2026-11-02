@@ -41,6 +41,8 @@ data class WatchState(
     val restTotalSec: Int = 0,
     val doneSets: Int = 0,
     val suggestion: String = "",
+    /** The set just done, "Set 2 done · 80 kg × 8"; empty before the first. */
+    val last: String = "",
     val week: Int = 0,
     val goal: Int = 0,
 )

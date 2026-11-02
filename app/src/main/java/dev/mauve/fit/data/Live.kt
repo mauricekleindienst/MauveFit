@@ -20,8 +20,11 @@ object Live {
         val total: Int,
         /** Every set is ticked off: only finishing is left. */
         val complete: Boolean,
+        val warmups: Int = 0,
     ) {
         val resting: Boolean get() = restEndsAt != null
+        /** There is an open set to tick off (not when all are done or the workout is still empty). */
+        val canTick: Boolean get() = !complete && total + warmups > 0
     }
 
     /** The set that went from open to done between [old] and [new], if any. */
@@ -36,6 +39,13 @@ object Live {
             }
         }
         return null
+    }
+
+    /** False once [last] was unticked again (or its exercise removed), so it is no longer shown as done. */
+    fun stillDone(w: Workout, last: LastSet): Boolean = w.entries.any { e ->
+        e.exerciseId == last.exerciseId && e.sets.withIndex().any { (j, s) ->
+            s.done && if (last.number == 0) s.warmup else !s.warmup && e.sets.take(j + 1).count { !it.warmup } == last.number
+        }
     }
 
     fun status(d: AppData, title: (String) -> String?, bodyweight: (String) -> Boolean, now: Long = System.currentTimeMillis()): Status? {
@@ -59,17 +69,20 @@ object Live {
             val name = title(l.exerciseId)?.takeIf { l.exerciseId != entry?.exerciseId }
             listOfNotNull(name, what, amount(l.weight, l.reps, bodyweight(l.exerciseId))).joinToString(" · ")
         }
+        val complete = w.entries.isNotEmpty() && w.entries.all { e -> e.sets.all { it.done } }
         return Status(
             workout = w.name,
             startedAt = w.startedAt,
             exercise = entry?.let { title(it.exerciseId) } ?: L("Training", "Workout"),
             next = next,
             last = last,
-            restEndsAt = w.restEndsAt?.takeIf { it > now },
+            // Nothing comes after the last set: no countdown to it.
+            restEndsAt = w.restEndsAt?.takeIf { it > now && !complete },
             restTotalSec = w.restTotalSec,
             done = w.entries.sumOf { e -> e.sets.count { it.done && !it.warmup } },
             total = w.entries.sumOf(working),
-            complete = w.entries.isNotEmpty() && w.entries.all { e -> e.sets.all { it.done } },
+            complete = complete,
+            warmups = w.entries.sumOf { e -> e.sets.count { it.warmup } },
         )
     }
 

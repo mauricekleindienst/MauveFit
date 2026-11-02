@@ -370,6 +370,8 @@ private fun Rest(s: WatchState, now: Long, bpm: Int, ambient: Boolean, onPlus: (
                 Text(clock(left + 999), color = Ink.text, fontSize = 38.sp, fontWeight = FontWeight.Bold)
             }
             if (bpm > 0 && !ambient) HeartBadge(bpm)
+            if (s.last.isNotBlank()) Text(s.last, color = if (ambient) Ink.muted else Ink.copper, fontSize = 11.sp, maxLines = 1,
+                overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             Text(L("Nächster: ${s.exercise}", "Up next: ${s.exercise}"), color = Ink.muted, fontSize = 11.sp, maxLines = 1,
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             if (!ambient) {

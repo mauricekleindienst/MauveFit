@@ -106,7 +106,7 @@ class NextWidget : GlanceAppWidget() {
         val open = openApp(LocalContext.current, "workout")
         val button = when {
             st.resting -> L("Weiter", "Skip") to actionRunCallback<SkipRestAction>()
-            st.complete -> L("Öffnen", "Open") to open
+            !st.canTick -> L("Öffnen", "Open") to open
             else -> L("Erledigt", "Done") to actionRunCallback<SetDoneAction>()
         }
         if (size.height < MEDIUM.height || size.width < MEDIUM.width) {

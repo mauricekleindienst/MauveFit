@@ -81,7 +81,6 @@ import dev.mauve.fit.ui.HomeScreen
 import dev.mauve.fit.ui.Accent
 import dev.mauve.fit.ui.Ink
 import dev.mauve.fit.ui.Pill
-import dev.mauve.fit.ui.LibraryScreen
 import dev.mauve.fit.ui.NutritionScreen
 import dev.mauve.fit.ui.RoutineEditScreen
 import dev.mauve.fit.ui.RoutinesScreen
@@ -96,6 +95,26 @@ import dev.mauve.fit.data.Stats
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import java.time.LocalDate
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.Dp
+import dev.mauve.fit.ui.Centered
+import dev.mauve.fit.ui.GridWidth
+import dev.mauve.fit.ui.LibraryPanes
+import dev.mauve.fit.ui.LibraryScreen
+import dev.mauve.fit.ui.ListWidth
+import dev.mauve.fit.ui.LocalWidth
+import dev.mauve.fit.ui.WindowWidth
 import dev.mauve.fit.ui.WorkoutScreen
 
 private enum class Tab(val route: String, private val de: String, private val en: String, val icon: ImageVector) {
@@ -203,44 +222,62 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
         if (data.profile.onboarded && Build.VERSION.SDK_INT >= 33 && !introAskedNotifications) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
-    Box(Modifier.fillMaxSize()) {
-        NavHost(
-            nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize(),
-            // Tabs: the new tab fades in over the old one, which stays put until it is covered.
-            // Pushed screens move edge to edge like pages, so they never overlap; that keeps it
-            // clean whichever of the two is drawn on top (also while the back gesture scrubs).
-            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { it } },
-            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { -it } },
-            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { -it } },
-            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { it } },
-        ) {
-            screen(Tab.Home.route) { HomeScreen(data, nav) }
-            screen("library") { LibraryScreen(data, nav, pickFor = null) }
-            screen(Tab.Plans.route) { RoutinesScreen(data, nav) }
-            screen(Tab.History.route) { HistoryScreen(data, nav) }
-            screen(Tab.Nutrition.route) { NutritionScreen(data, nav) }
-            screen("exercise/{id}") { ExerciseScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            screen("routine/{id}") { RoutineEditScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            screen("pick/{target}") { LibraryScreen(data, nav, pickFor = it.arguments?.getString("target")) }
-            screen("workout") { WorkoutScreen(data, nav) }
-            screen("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
-            screen("quick") { QuickWorkoutScreen(data, nav) }
-            screen("tools") { ToolsScreen(data, nav) }
-            screen("insights") { InsightsScreen(data, nav) }
-            screen("settings") { SettingsScreen(data, nav) }
-            screen("intro") { IntroScreen(data.profile, redo = true) { nav.popBackStack() } }
-        }
+    // Window width decides the navigation: the floating pill below on phones, a rail on the left
+    // from 600 dp (tablets, unfolded foldables, phones on their side). Only the width counts, so a
+    // fold or a resized window just lands in the matching layout.
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val width = WindowWidth.of(maxWidth)
+        val showNav = data.profile.onboarded && Tab.entries.any { it.route == route }
+        CompositionLocalProvider(LocalWidth provides width) {
+            Box(Modifier.fillMaxSize()) {
+                // The host stays at the same place in both layouts, so switching keeps every screen's state.
+                Row(Modifier.fillMaxSize()) {
+                    if (width.wide) SideBar(route, nav, showNav)
+                    Box(
+                        Modifier.weight(1f).fillMaxHeight()
+                            .then(if (width.wide) Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End)) else Modifier)
+                    ) {
+                        NavHost(
+                            nav, startDestination = Tab.Home.route, modifier = Modifier.fillMaxSize(),
+                            // Tabs: the new tab fades in over the old one, which stays put until it is covered.
+                            // Pushed screens move edge to edge like pages, so they never overlap; that keeps it
+                            // clean whichever of the two is drawn on top (also while the back gesture scrubs).
+                            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { it } },
+                            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { -it } },
+                            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { -it } },
+                            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { it } },
+                        ) {
+                            screen(Tab.Home.route, GridWidth) { HomeScreen(data, nav) }
+                            screen("library", GridWidth) { LibraryPanes(data, nav) }
+                            screen(Tab.Plans.route) { RoutinesScreen(data, nav) }
+                            screen(Tab.History.route, GridWidth) { HistoryScreen(data, nav) }
+                            screen(Tab.Nutrition.route) { NutritionScreen(data, nav) }
+                            screen("exercise/{id}") { ExerciseScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+                            screen("routine/{id}") { RoutineEditScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+                            screen("pick/{target}") { LibraryScreen(data, nav, pickFor = it.arguments?.getString("target")) }
+                            screen("workout", GridWidth) { WorkoutScreen(data, nav) }
+                            screen("summary/{id}") { SummaryScreen(it.arguments?.getString("id").orEmpty(), data, nav) }
+                            screen("quick") { QuickWorkoutScreen(data, nav) }
+                            screen("tools") { ToolsScreen(data, nav) }
+                            screen("insights", GridWidth) { InsightsScreen(data, nav) }
+                            screen("settings") { SettingsScreen(data, nav) }
+                            screen("intro") { IntroScreen(data.profile, redo = true) { nav.popBackStack() } }
+                        }
+                    }
+                }
 
-        // First run: the intro covers everything until it is finished.
-        if (!data.profile.onboarded) IntroScreen(data.profile) {}
+                // First run: the intro covers everything until it is finished.
+                if (!data.profile.onboarded) Centered(ListWidth) { IntroScreen(data.profile) {} }
 
-        AnimatedVisibility(
-            visible = data.profile.onboarded && Tab.entries.any { it.route == route },
-            enter = slideInVertically { it } + fadeIn(),
-            exit = slideOutVertically { it } + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            BottomBar(route, nav)
+                if (!width.wide) AnimatedVisibility(
+                    visible = showNav,
+                    enter = slideInVertically { it } + fadeIn(),
+                    exit = slideOutVertically { it } + fadeOut(),
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    BottomBar(route, nav)
+                }
+            }
         }
     }
 }
@@ -254,8 +291,14 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch() =
  * A destination with its own opaque background, so two screens never show through each other
  * while one slides over the other.
  */
-private fun NavGraphBuilder.screen(route: String, content: @Composable (NavBackStackEntry) -> Unit) =
-    composable(route) { entry -> Box(Modifier.fillMaxSize().background(Ink.bg)) { content(entry) } }
+private fun NavGraphBuilder.screen(route: String, maxWidth: Dp = ListWidth, content: @Composable (NavBackStackEntry) -> Unit) =
+    composable(route) { entry ->
+        // Wide windows: the screen keeps a readable width, centred in the space next to the rail.
+        if (LocalWidth.current.wide) Box(Modifier.fillMaxSize().background(Ink.bg), contentAlignment = Alignment.TopCenter) {
+            Box(Modifier.widthIn(max = maxWidth).fillMaxSize()) { content(entry) }
+        }
+        else Box(Modifier.fillMaxSize().background(Ink.bg)) { content(entry) }
+    }
 
 /**
  * Floating pill navigation: the active tab grows into a lime capsule with its label, the others
@@ -298,6 +341,57 @@ private fun BottomBar(route: String?, nav: NavHostController) {
                         tab.label, color = Ink.bg, style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp), maxLines = 1,
                     )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The bottom bar's counterpart for wide windows: the same raised pill standing upright at the
+ * left edge, the active tab's icon in an accent capsule with its label below. Like the bottom bar
+ * it gives way on pushed screens, but keeps its width so the content never jumps.
+ */
+@Composable
+private fun SideBar(route: String?, nav: NavHostController, visible: Boolean) {
+    Box(
+        Modifier.fillMaxHeight()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
+            .width(104.dp).padding(start = 12.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        AnimatedVisibility(visible, enter = slideInHorizontally { -it } + fadeIn(), exit = slideOutHorizontally { -it } + fadeOut()) {
+            Column(
+                Modifier.width(88.dp).clip(Pill).background(Ink.raised).border(1.dp, Ink.line, Pill)
+                    // Scrolls only when a phone on its side is too short for all four tabs.
+                    .verticalScroll(rememberScrollState()).padding(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Tab.entries.forEach { tab ->
+                    val active = tab.route == route
+                    Column(
+                        Modifier.width(80.dp).clip(RoundedCornerShape(20.dp))
+                            .clickable {
+                                if (!active) Haptics.tick()
+                                if (!active) nav.navigate(tab.route) {
+                                    popUpTo(Tab.Home.route) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                            .padding(vertical = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(
+                            Modifier.size(width = 56.dp, height = 34.dp).clip(Pill).background(if (active) Ink.accent else Ink.raised),
+                            contentAlignment = Alignment.Center,
+                        ) { Icon(tab.icon, null, tint = if (active) Ink.bg else Ink.muted, modifier = Modifier.size(24.dp)) }
+                        Text(
+                            tab.label, color = if (active) Ink.text else Ink.muted, style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (active) FontWeight.Bold else null, modifier = Modifier.padding(top = 4.dp), maxLines = 1,
+                        )
+                    }
                 }
             }
         }

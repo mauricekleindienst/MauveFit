@@ -354,130 +354,142 @@ private fun ExercisePage(
         else heard = L("Spracheingabe ist auf diesem Gerät nicht verfügbar", "Voice input is not available on this device")
     }
 
-    LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 170.dp)) {
-        item {
-            ExerciseMedia(e, Modifier.fillMaxWidth().height(mediaStageHeight()).clickable(onClick = onOpen), corner = 28.dp)
-            Spacer(Modifier.height(16.dp))
-            superset?.let { SupersetBadge(it) }
-            Eyebrow(
-                L(
-                    "Übung ${index + 1} von $total · ${e?.let { Labels.muscle(it.target) } ?: ""}",
-                    "Exercise ${index + 1} of $total · ${e?.let { Labels.muscle(it.target) } ?: ""}",
-                ),
-                color = Ink.accent,
-            )
-            Text(e?.title ?: entry.exerciseId, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (last.isNotEmpty()) Text(
-                L("Letztes Mal: ", "Last time: ") + last.joinToString("   ") { Stats.setLabel(it, bodyweight) },
-                color = Ink.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp),
-            )
-            // The personal setup note sits right under the name, so it is read before the first set.
-            if (note.isNotBlank()) NoteLine(note) { noting = true }
-            Spacer(Modifier.height(12.dp))
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (current >= 0) ActionChip(L("Sprechen", "Voice"), Icons.Rounded.Mic) { Haptics.tick(); speak() }
-                ActionChip(L("Tauschen", "Swap"), Icons.Rounded.SwapHoriz) { swapping = true }
-                if (canWarmUp) ActionChip(L("Aufwärmen", "Warm-up"), Icons.Rounded.LocalFireDepartment, onWarmup)
-                if (last.isNotEmpty() && entry.sets.any { !it.done && !it.warmup }) ActionChip(L("Wie letztes Mal", "Same as last time"), Icons.Rounded.History) {
-                    Haptics.click(); useLast()
+    // Expanded windows: the animation gets a pane of its own on the left, the sets fill the right.
+    val split = LocalWidth.current.expanded
+    val setList = @Composable {
+        LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 170.dp)) {
+            item {
+                if (!split) {
+                    ExerciseMedia(e, Modifier.fillMaxWidth().height(mediaStageHeight()).clickable(onClick = onOpen), corner = 28.dp)
+                    Spacer(Modifier.height(16.dp))
                 }
-                if (note.isBlank()) ActionChip(L("Notiz", "Note"), Icons.Rounded.EditNote) { noting = true }
-            }
-            Spacer(Modifier.height(12.dp))
-            heard?.let { Text(L("Gehört: ", "Heard: ") + it, Modifier.padding(bottom = 8.dp, start = 4.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall) }
-            CoachLine(tip)
-            data.active?.takeIf { it.readinessCut > 0 }?.let { w -> Text(
-                L("Heute ${w.readinessCut} % leichter: Erholung ${w.readinessScore} von 100 laut Uhr.",
-                    "${w.readinessCut} % lighter today: readiness ${w.readinessScore} of 100 from your watch."),
-                Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.coral, style = MaterialTheme.typography.bodySmall,
-            ) }
-            // In a block the week's phase shapes the numbers above; say so, or "one step up" reads wrong.
-            Coach.blockWeek(data)?.let { b ->
-                Text(
-                    L("Block, Woche ${b.week}: ${b.phase.label}. ${b.phase.blurb}", "Block, week ${b.week}: ${b.phase.label}. ${b.phase.blurb}"),
-                    Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
+                superset?.let { SupersetBadge(it) }
+                Eyebrow(
+                    L(
+                        "Übung ${index + 1} von $total · ${e?.let { Labels.muscle(it.target) } ?: ""}",
+                        "Exercise ${index + 1} of $total · ${e?.let { Labels.muscle(it.target) } ?: ""}",
+                    ),
+                    color = Ink.accent,
                 )
-            }
-            e?.steps?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
-            Spacer(Modifier.height(16.dp))
-            Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
-                if (!bodyweight) Text("kg", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
-                Text(L("Wdh.", "Reps"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
-                Spacer(Modifier.width(48.dp))
-            }
-            Spacer(Modifier.height(6.dp))
-        }
-        itemsIndexed(entry.sets) { i, s ->
-            val bg by animateColorAsState(if (s.done) Ink.raised else Ink.surface, label = "set")
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(18.dp)).background(bg)
-                    .then(if (i == current) Modifier.border(1.5.dp, Ink.accent.copy(alpha = 0.6f), RoundedCornerShape(18.dp)) else Modifier)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val label = if (s.warmup) "W" else "${entry.sets.take(i + 1).count { !it.warmup }}"
-                SetLabel(
-                    label, s,
-                    onType = { warmup, type -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(warmup = warmup, type = type) }) } },
-                    onRpe = { rpe -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(rpe = rpe) }) } },
+                Text(e?.title ?: entry.exerciseId, style = MaterialTheme.typography.headlineMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                if (last.isNotEmpty()) Text(
+                    L("Letztes Mal: ", "Last time: ") + last.joinToString("   ") { Stats.setLabel(it, bodyweight) },
+                    color = Ink.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp),
                 )
-                if (!bodyweight) ValueCell(Stats.fmtKg(s.weight), Modifier.weight(1f),
-                    onMinus = { edit(i, weight = (s.weight - step).coerceAtLeast(0.0)) },
-                    onPlus = { edit(i, weight = s.weight + step) },
-                    onEdit = { editing = i })
-                ValueCell("${s.reps}", Modifier.weight(1f),
-                    onMinus = { edit(i, reps = (s.reps - 1).coerceAtLeast(0)) },
-                    onPlus = { edit(i, reps = s.reps + 1) },
-                    onEdit = { editing = i })
-                Box(
-                    Modifier.size(48.dp).clip(Pill)
-                        .background(if (s.done) Ink.accent else Ink.raised)
-                        .clickable { toggleDone(i) },
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Rounded.Check, L("Satz erledigt", "Set done"), tint = if (s.done) Ink.bg else Ink.muted) }
-            }
-        }
-        if (advice != null && handledAt != doneCount) item {
-            Row(
-                Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surface)
-                    .border(1.dp, Ink.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Rounded.AutoAwesome, null, tint = Ink.accent, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(10.dp))
-                Text(advice.text, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    Modifier.clip(Pill).background(Ink.accent).clickable {
-                        Haptics.click()
-                        onChange { en -> en.copy(sets = en.sets.map { x -> if (!x.done && !x.warmup) x.copy(weight = (x.weight + advice.delta).coerceAtLeast(0.0)) else x }) }
-                        handledAt = doneCount
-                    }.padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
+                // The personal setup note sits right under the name, so it is read before the first set.
+                if (note.isNotBlank()) NoteLine(note) { noting = true }
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (current >= 0) ActionChip(L("Sprechen", "Voice"), Icons.Rounded.Mic) { Haptics.tick(); speak() }
+                    ActionChip(L("Tauschen", "Swap"), Icons.Rounded.SwapHoriz) { swapping = true }
+                    if (canWarmUp) ActionChip(L("Aufwärmen", "Warm-up"), Icons.Rounded.LocalFireDepartment, onWarmup)
+                    if (last.isNotEmpty() && entry.sets.any { !it.done && !it.warmup }) ActionChip(L("Wie letztes Mal", "Same as last time"), Icons.Rounded.History) {
+                        Haptics.click(); useLast()
+                    }
+                    if (note.isBlank()) ActionChip(L("Notiz", "Note"), Icons.Rounded.EditNote) { noting = true }
+                }
+                Spacer(Modifier.height(12.dp))
+                heard?.let { Text(L("Gehört: ", "Heard: ") + it, Modifier.padding(bottom = 8.dp, start = 4.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall) }
+                CoachLine(tip)
+                data.active?.takeIf { it.readinessCut > 0 }?.let { w -> Text(
+                    L("Heute ${w.readinessCut} % leichter: Erholung ${w.readinessScore} von 100 laut Uhr.",
+                        "${w.readinessCut} % lighter today: readiness ${w.readinessScore} of 100 from your watch."),
+                    Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.coral, style = MaterialTheme.typography.bodySmall,
+                ) }
+                // In a block the week's phase shapes the numbers above; say so, or "one step up" reads wrong.
+                Coach.blockWeek(data)?.let { b ->
                     Text(
-                        (if (advice.delta > 0) "+" else "") + Stats.fmtKg(advice.delta) + " kg",
-                        color = Ink.bg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge,
+                        L("Block, Woche ${b.week}: ${b.phase.label}. ${b.phase.blurb}", "Block, week ${b.week}: ${b.phase.label}. ${b.phase.blurb}"),
+                        Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Spacer(Modifier.width(4.dp))
-                Box(Modifier.size(32.dp).clip(Pill).clickable { Haptics.tick(); handledAt = doneCount }, contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Close, L("Ausblenden", "Dismiss"), tint = Ink.muted, modifier = Modifier.size(18.dp))
+                e?.steps?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
+                Spacer(Modifier.height(16.dp))
+                Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
+                    if (!bodyweight) Text("kg", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
+                    Text(L("Wdh.", "Reps"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
+                    Spacer(Modifier.width(48.dp))
+                }
+                Spacer(Modifier.height(6.dp))
+            }
+            itemsIndexed(entry.sets) { i, s ->
+                val bg by animateColorAsState(if (s.done) Ink.raised else Ink.surface, label = "set")
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(18.dp)).background(bg)
+                        .then(if (i == current) Modifier.border(1.5.dp, Ink.accent.copy(alpha = 0.6f), RoundedCornerShape(18.dp)) else Modifier)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val label = if (s.warmup) "W" else "${entry.sets.take(i + 1).count { !it.warmup }}"
+                    SetLabel(
+                        label, s,
+                        onType = { warmup, type -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(warmup = warmup, type = type) }) } },
+                        onRpe = { rpe -> onChange { en -> en.copy(sets = en.sets.toMutableList().also { it[i] = it[i].copy(rpe = rpe) }) } },
+                    )
+                    if (!bodyweight) ValueCell(Stats.fmtKg(s.weight), Modifier.weight(1f),
+                        onMinus = { edit(i, weight = (s.weight - step).coerceAtLeast(0.0)) },
+                        onPlus = { edit(i, weight = s.weight + step) },
+                        onEdit = { editing = i })
+                    ValueCell("${s.reps}", Modifier.weight(1f),
+                        onMinus = { edit(i, reps = (s.reps - 1).coerceAtLeast(0)) },
+                        onPlus = { edit(i, reps = s.reps + 1) },
+                        onEdit = { editing = i })
+                    Box(
+                        Modifier.size(48.dp).clip(Pill)
+                            .background(if (s.done) Ink.accent else Ink.raised)
+                            .clickable { toggleDone(i) },
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(Icons.Rounded.Check, L("Satz erledigt", "Set done"), tint = if (s.done) Ink.bg else Ink.muted) }
                 }
             }
-        }
-        item {
-            Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Add) {
-                    onChange { en -> en.copy(sets = en.sets + (en.sets.lastOrNull()?.copy(done = false, type = SetType.Normal, rpe = 0) ?: SetEntry(reps = 10))) }
+            if (advice != null && handledAt != doneCount) item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(16.dp)).background(Ink.surface)
+                        .border(1.dp, Ink.accent.copy(alpha = 0.5f), RoundedCornerShape(16.dp)).padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(Icons.Rounded.AutoAwesome, null, tint = Ink.accent, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(advice.text, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        Modifier.clip(Pill).background(Ink.accent).clickable {
+                            Haptics.click()
+                            onChange { en -> en.copy(sets = en.sets.map { x -> if (!x.done && !x.warmup) x.copy(weight = (x.weight + advice.delta).coerceAtLeast(0.0)) else x }) }
+                            handledAt = doneCount
+                        }.padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            (if (advice.delta > 0) "+" else "") + Stats.fmtKg(advice.delta) + " kg",
+                            color = Ink.bg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge,
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Box(Modifier.size(32.dp).clip(Pill).clickable { Haptics.tick(); handledAt = doneCount }, contentAlignment = Alignment.Center) {
+                        Icon(Icons.Rounded.Close, L("Ausblenden", "Dismiss"), tint = Ink.muted, modifier = Modifier.size(18.dp))
+                    }
                 }
-                if (entry.sets.size > 1) GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Remove) {
-                    onChange { en -> en.copy(sets = en.sets.dropLast(1)) }
-                } else GhostButton(L("Übung entfernen", "Remove exercise"), Modifier.weight(1f), onClick = onRemove)
+            }
+            item {
+                Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Add) {
+                        onChange { en -> en.copy(sets = en.sets + (en.sets.lastOrNull()?.copy(done = false, type = SetType.Normal, rpe = 0) ?: SetEntry(reps = 10))) }
+                    }
+                    if (entry.sets.size > 1) GhostButton(L("Satz", "Set"), Modifier.weight(1f), Icons.Rounded.Remove) {
+                        onChange { en -> en.copy(sets = en.sets.dropLast(1)) }
+                    } else GhostButton(L("Übung entfernen", "Remove exercise"), Modifier.weight(1f), onClick = onRemove)
+                }
             }
         }
     }
+    if (split) Row(Modifier.fillMaxSize()) {
+        Box(Modifier.weight(1f).fillMaxHeight().padding(start = 20.dp, top = 4.dp, bottom = 24.dp), contentAlignment = Alignment.TopCenter) {
+            ExerciseMedia(e, Modifier.aspectRatio(1f).clickable(onClick = onOpen), corner = 28.dp)
+        }
+        Box(Modifier.weight(1f)) { setList() }
+    } else setList()
 
     if (swapping) SwapDialog(entry.exerciseId, data, onPick = { onSwap(it); swapping = false }) { swapping = false }
     if (noting) NoteDialog(entry.exerciseId, note) { noting = false }

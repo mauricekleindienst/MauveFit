@@ -1,5 +1,9 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import dev.mauve.fit.data.I18n
 import dev.mauve.fit.data.VoiceInput
 import androidx.compose.material.icons.rounded.Mic
@@ -426,17 +430,21 @@ private fun ExercisePage(
                 if (!bodyweight) ValueCell(Stats.fmtKg(s.weight), Modifier.weight(1f),
                     onMinus = { edit(i, weight = (s.weight - step).coerceAtLeast(0.0)) },
                     onPlus = { edit(i, weight = s.weight + step) },
-                    onEdit = { editing = i })
+                    onEdit = { editing = i },
+                    spoken = L("Satz ${i + 1}, Gewicht ${Stats.fmtKg(s.weight)} Kilo", "Set ${i + 1}, weight ${Stats.fmtKg(s.weight)} kilos"))
                 ValueCell("${s.reps}", Modifier.weight(1f),
                     onMinus = { edit(i, reps = (s.reps - 1).coerceAtLeast(0)) },
                     onPlus = { edit(i, reps = s.reps + 1) },
-                    onEdit = { editing = i })
+                    onEdit = { editing = i },
+                    spoken = L("Satz ${i + 1}, ${s.reps} Wiederholungen", "Set ${i + 1}, ${s.reps} reps"))
                 Box(
                     Modifier.size(48.dp).clip(Pill)
                         .background(if (s.done) Ink.accent else Ink.raised)
-                        .clickable { toggleDone(i) },
+                        // A toggle for TalkBack: it reads "done" or "not done" with the set number.
+                        .toggleable(value = s.done, role = Role.Checkbox) { toggleDone(i) }
+                        .semantics { contentDescription = L("Satz ${i + 1} erledigt", "Set ${i + 1} done") },
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Rounded.Check, L("Satz erledigt", "Set done"), tint = if (s.done) Ink.bg else Ink.muted) }
+                ) { Icon(Icons.Rounded.Check, null, tint = if (s.done) Ink.bg else Ink.muted) }
             }
         }
         if (advice != null && handledAt != doneCount) item {
@@ -709,7 +717,7 @@ private fun CoachLine(tip: Coach.Tip) {
 
 /** A value with − and + on either side; tapping the value opens exact entry. */
 @Composable
-private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, onPlus: () -> Unit, onEdit: () -> Unit) {
+private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, onPlus: () -> Unit, onEdit: () -> Unit, spoken: String = value) {
     // One inset capsule per value, so the kg and reps controls read as two separate groups.
     Row(
         modifier.height(48.dp).clip(Pill).background(Ink.line.copy(alpha = 0.6f)).padding(horizontal = 4.dp),
@@ -720,7 +728,10 @@ private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, on
         }
         // A fixed-width target, so even a short value like "–" is easy to hit.
         Box(
-            Modifier.weight(1f).fillMaxHeight().clip(Pill).clickable { Haptics.click(); onEdit() },
+            // TalkBack reads what the number is and what a tap does, not just "40".
+            Modifier.weight(1f).fillMaxHeight().clip(Pill)
+                .clickable(onClickLabel = L("ändern", "change")) { Haptics.click(); onEdit() }
+                .semantics(mergeDescendants = true) { contentDescription = spoken },
             contentAlignment = Alignment.Center,
         ) {
             Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, maxLines = 1)

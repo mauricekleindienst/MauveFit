@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import dev.mauve.fit.system.CrashLog
 import dev.mauve.fit.data.CsvExport
 import dev.mauve.fit.data.Cycle
 import dev.mauve.fit.system.CycleHealth
@@ -403,6 +404,20 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                     // One row per set, for Excel, Sheets or another app; the backup above stays the way to restore.
                     GhostButton(L("Verlauf als CSV exportieren", "Export history as CSV"), Modifier.fillMaxWidth(), Icons.Rounded.Download) {
                         csv.launch("mauvefit-${LocalDate.now().format(DateTimeFormatter.ISO_DATE)}.csv")
+                    }
+                }
+                // Crashes stay on the phone until the user decides to share them.
+                var crashes by remember { mutableStateOf(CrashLog.list(context).size) }
+                if (crashes > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(L("$crashes ${if (crashes == 1) "Absturzbericht" else "Absturzberichte"} gespeichert", "$crashes crash ${if (crashes == 1) "report" else "reports"} saved"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GhostButton(L("Teilen", "Share"), Modifier.weight(1f)) {
+                            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, CrashLog.text(context))
+                            context.startActivity(Intent.createChooser(send, L("Absturzbericht teilen", "Share crash report")))
+                        }
+                        GhostButton(L("Löschen", "Delete"), Modifier.weight(1f)) { Haptics.tick(); CrashLog.clear(context); crashes = 0 }
                     }
                 }
                 Spacer(Modifier.height(8.dp))

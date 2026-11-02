@@ -1,5 +1,6 @@
 package dev.mauve.fit
 
+import dev.mauve.fit.system.CrashLog
 import dev.mauve.fit.system.WeeklyReports
 import android.app.Application
 import coil3.ImageLoader
@@ -24,6 +25,8 @@ import kotlin.concurrent.thread
 class App : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
+        // First, so even a crash while loading the store is kept for the settings.
+        CrashLog.install(this)
         store = Store(this)
         I18n.apply(store.data.value.settings.language)
         repo = ExerciseRepo(this)

@@ -140,6 +140,13 @@ class WorkoutService : Service() {
                 if (end == null) { if (wake.isHeld) wake.release(); return@onEach }
                 val left = (end - System.currentTimeMillis()).coerceAtLeast(0)
                 wake.acquire(left + 10_000)
+                if (Build.VERSION.SDK_INT >= 36) scope.launch {
+                    while (App.store.data.value.active?.restEndsAt == end && System.currentTimeMillis() < end) {
+                        delay(2_000)
+                        val d = App.store.data.value
+                        if (d.active?.restEndsAt == end) getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
+                    }
+                }
                 scope.launch {
                     delay(left)
                     val d = App.store.data.value
@@ -173,6 +180,7 @@ class WorkoutService : Service() {
         // Android 16: a live update, shown like a timer on the lock screen and in the status bar.
         if (Build.VERSION.SDK_INT >= 36) b.setRequestPromotedOngoing(true)
         if (w == null) return b.setContentTitle("Mauve Fit").build()
+        if (Build.VERSION.SDK_INT >= 36) b.setStyle(progress(w, resting))
         return if (resting) b.setContentTitle(L("Pause · ${w.name}", "Rest · ${w.name}"))
             .setContentText(L("Als Nächstes: ${s.exercise}", "Up next: ${s.exercise}"))
             .setUsesChronometer(true).setChronometerCountDown(true).setWhen(w.restEndsAt!!).setShowWhen(true)
@@ -186,6 +194,27 @@ class WorkoutService : Service() {
             .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
             .addAction(action("done", L("Satz erledigt", "Set done"), 3))
             .build()
+    }
+
+    /**
+     * Android 16 progress bar of the live update: during a rest the time running out, otherwise
+     * the workout itself, one segment per exercise and filled by the sets done.
+     */
+    @android.annotation.TargetApi(36)
+    private fun progress(w: dev.mauve.fit.data.Workout, resting: Boolean): Notification.ProgressStyle {
+        val copper = 0xFFDB9062.toInt()
+        val mauve = 0xFFC5A9E6.toInt()
+        val style = Notification.ProgressStyle().setStyledByProgress(true)
+        if (resting) {
+            val total = (w.restTotalSec * 1000).coerceAtLeast(1)
+            val left = ((w.restEndsAt ?: 0) - System.currentTimeMillis()).coerceIn(0, total.toLong()).toInt()
+            return style.setProgressSegments(listOf(Notification.ProgressStyle.Segment(total).setColor(mauve)))
+                .setProgress(total - left)
+        }
+        val segments = w.entries.map { e -> e.sets.count { !it.warmup }.coerceAtLeast(1) }
+        val done = w.entries.sumOf { e -> e.sets.count { it.done && !it.warmup } }
+        return style.setProgressSegments(segments.map { Notification.ProgressStyle.Segment(it).setColor(copper) })
+            .setProgress(done)
     }
 
     private fun restOver(d: AppData) {

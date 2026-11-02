@@ -1,5 +1,6 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -188,7 +189,7 @@ fun Modifier.pressable(onLongClick: (() -> Unit)? = null, onClick: () -> Unit): 
     val pressed by source.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.55f, stiffness = 600f), label = "press")
     graphicsLayer { scaleX = scale; scaleY = scale }
-        .combinedClickable(interactionSource = source, indication = null, onLongClick = onLongClick, onClick = onClick)
+        .combinedClickable(interactionSource = source, indication = null, role = Role.Button, onLongClick = onLongClick, onClick = onClick)
 }
 
 @Composable

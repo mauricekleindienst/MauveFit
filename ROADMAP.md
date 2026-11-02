@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.2 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -94,6 +94,10 @@ Stand: Version 1.19.1 (November 2026). Sortiert nach Nutzen für das Training, n
 - Große Systemschrift (130 %) geprüft: Wochenbeschriftungen im Volumen-Diagramm schrumpfen statt abgeschnitten zu werden ("KW44" wurde zu "KW4"), Statistik-Kacheln und Werkzeug-Untertitel dürfen zwei Zeilen haben
 - TalkBack: alle klickbaren Elemente auf Heute und Fortschritt haben eine Beschriftung
 
+## Erledigt in 1.19.2
+
+- Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
 ## Als Nächstes
 
 - **Animationen lizenzrechtlich klären.** Die GIFs sind © Gym visual und nicht von der MIT-Lizenz des Datensatzes gedeckt. Vor einem Store-Release: Lizenz bei Gym visual oder Umstieg auf free-exercise-db (gemeinfrei, zwei Fotos pro Übung).
@@ -118,7 +122,6 @@ Stand: Version 1.19.1 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Design und Bedienung
 
 - **Animierte Übergänge** zwischen Liste und Übungsdetail (Shared Element).
-- **Barrierefreiheit:** Kontrast im hellen Modus messen.
 - **Weitere Sprachen:** Der Datensatz hat Anleitungen in 10 Sprachen; Spanisch, Französisch, Italienisch, Polnisch und Türkisch lassen sich übernehmen.
 
 ## Technik

@@ -39,7 +39,7 @@ data class Palette(
 private val InkPalette = Palette(
     dark = true,
     bg = Color(0xFF111315), surface = Color(0xFF1A1D21), raised = Color(0xFF23272C), line = Color(0xFF2E3338), lineStrong = Color(0xFF4A5058),
-    text = Color(0xFFEDEFF2), muted = Color(0xFFA6ACB4), faint = Color(0xFF858C95),
+    text = Color(0xFFEDEFF2), muted = Color(0xFFA6ACB4), faint = Color(0xFF899099),
     stage = Color(0xFF000000),
     coral = Color(0xFFEE8F6A), red = Color(0xFFF0736A),
 )
@@ -47,19 +47,20 @@ private val InkPalette = Palette(
 private val PaperPalette = Palette(
     dark = false,
     bg = Color(0xFFF2F3F5), surface = Color(0xFFFFFFFF), raised = Color(0xFFE8EAED), line = Color(0xFFD5D9DE), lineStrong = Color(0xFF9AA1AA),
-    text = Color(0xFF121417), muted = Color(0xFF4E555E), faint = Color(0xFF636A73),
+    text = Color(0xFF121417), muted = Color(0xFF4E555E), faint = Color(0xFF626972),
     stage = Color(0xFFFFFFFF),
-    coral = Color(0xFFB4532D), red = Color(0xFFB3362C),
+    coral = Color(0xFFA84D2A), red = Color(0xFFB3362C),
 )
 
 /** Accent choices; each has a tone for ink and one for paper so it keeps contrast in both. */
+/** Light-mode accents are tuned to at least 4.5:1 (WCAG AA) on every paper surface, text on the fill included. */
 enum class Accent(val key: String, private val de: String, private val en: String, val onInk: Color, val onPaper: Color) {
-    Copper("copper", "Kupfer", "Copper", Color(0xFFDB9062), Color(0xFFAC5C2E)),
-    Sand("sand", "Sand", "Sand", Color(0xFFD9B88B), Color(0xFF946233)),
-    Sage("sage", "Salbei", "Sage", Color(0xFF9DC3A3), Color(0xFF4B7453)),
+    Copper("copper", "Kupfer", "Copper", Color(0xFFDB9062), Color(0xFF9E542A)),
+    Sand("sand", "Sand", "Sand", Color(0xFFD9B88B), Color(0xFF8C5D30)),
+    Sage("sage", "Salbei", "Sage", Color(0xFF9DC3A3), Color(0xFF497151)),
     Blue("blue", "Blau", "Blue", Color(0xFF8FB3D2), Color(0xFF3D6180)),
     Mauve("mauve", "Mauve", "Mauve", Color(0xFFC5A9E6), Color(0xFF7955A0)),
-    Lime("lime", "Lime", "Lime", Color(0xFFD5F64E), Color(0xFF668800)),
+    Lime("lime", "Lime", "Lime", Color(0xFFD5F64E), Color(0xFF557100)),
     /** Taken from the wallpaper (Android 12+); the colours here are only the swatch fallback. */
     Wallpaper("wallpaper", "Hintergrund", "Wallpaper", Color(0xFFA6ACB4), Color(0xFF4E555E)),
     ;

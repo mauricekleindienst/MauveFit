@@ -112,6 +112,7 @@ fun InsightsScreen(data: AppData, nav: NavController) {
     val r = remember(data.history, data.food, data.water, data.bodyWeights, data.settings.weeklyGoal, data.frozenWeeks, data.profile.goal) {
         Insights.report(data, lookup, today)
     }
+    val twoColumns = LocalWidth.current.expanded
     LazyColumn(
         Modifier.statusBarsPadding(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
@@ -123,14 +124,17 @@ fun InsightsScreen(data: AppData, nav: NavController) {
             }
         }
         item { ScreenTitle(L("Was deine Daten über dein Training sagen", "What your data says about your training"), L("Analysen", "Insights")) }
-        item(key = "consistency") { ConsistencyCard(r) }
-        item(key = "volume") { VolumeCard(r) }
-        item(key = "strength") { StrengthCard(r, nav) }
-        item(key = "sessions") { SessionsCard(r) }
-        item(key = "records") { RecordsCard(r, today, nav) }
-        r.food?.let { f -> item(key = "food") { FoodCard(f) } }
-        if (r.weight != null || r.readiness != null) item(key = "body") { BodyCard(r) }
-        item(key = "effort") { EffortCard(r.effort) }
+        // Two columns of cards on expanded windows.
+        cards(twoColumns, 12.dp, key = "cards") {
+            item(key = "consistency") { ConsistencyCard(r) }
+            item(key = "volume") { VolumeCard(r) }
+            item(key = "strength") { StrengthCard(r, nav) }
+            item(key = "sessions") { SessionsCard(r) }
+            item(key = "records") { RecordsCard(r, today, nav) }
+            r.food?.let { f -> item(key = "food") { FoodCard(f) } }
+            if (r.weight != null || r.readiness != null) item(key = "body") { BodyCard(r) }
+            item(key = "effort") { EffortCard(r.effort) }
+        }
     }
 }
 

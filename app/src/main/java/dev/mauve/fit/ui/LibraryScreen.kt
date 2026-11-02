@@ -50,11 +50,12 @@ import dev.mauve.fit.data.Labels
 
 /**
  * Searchable exercise library. With [pickFor] set ("workout" or a plan id) tapping an exercise
- * adds it there and goes back, so the same screen doubles as the exercise picker.
+ * adds it there and goes back, so the same screen doubles as the exercise picker. [onOpen] shows a
+ * tapped exercise in place (the detail pane on wide windows) instead of on its own screen.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
+fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?, onOpen: ((String) -> Unit)? = null) {
     val repo = App.repo
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf<String?>(null) }
@@ -74,7 +75,7 @@ fun LibraryScreen(data: AppData, nav: NavController, pickFor: String?) {
 
     fun pick(e: Exercise) {
         when (pickFor) {
-            null -> nav.navigate("exercise/${e.id}")
+            null -> if (onOpen != null) onOpen(e.id) else nav.navigate("exercise/${e.id}")
             "workout" -> { App.store.addToActive(e.id); nav.popBackStack() }
             else -> { App.store.addToRoutine(pickFor, e.id); nav.popBackStack() }
         }

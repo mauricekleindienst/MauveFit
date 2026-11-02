@@ -97,6 +97,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
     // "weight" or a measurement key while the add dialog is open; the open body card lists its entries.
     var addFor by remember { mutableStateOf<String?>(null) }
     var openBody by remember { mutableStateOf<String?>(null) }
+    val twoColumns = LocalWidth.current.expanded
 
     LazyColumn(
         Modifier.statusBarsPadding(),
@@ -121,7 +122,7 @@ fun HistoryScreen(data: AppData, nav: NavController) {
         }
         when (tab) {
             0 -> {
-                overview(data, nav)
+                overview(data, nav, twoColumns)
                 workouts(data, expanded, { expanded = it }, { confirm = it }) { confirmCardio = it }
             }
             1 -> records(data, nav)
@@ -493,35 +494,37 @@ private fun TrendChart(values: List<Float>, modifier: Modifier = Modifier) {
     }
 }
 
-/** Insights entry, weekly volume and sets per muscle, above the workout list. */
-private fun LazyListScope.overview(data: AppData, nav: NavController) {
+/** Insights entry, weekly volume and sets per muscle, above the workout list; two columns on expanded windows. */
+private fun LazyListScope.overview(data: AppData, nav: NavController, twoColumns: Boolean) {
     if (data.history.isNotEmpty()) item(key = "insights") { InsightsTile(data) { nav.navigate("insights") { launchSingleTop = true } } }
     if (data.history.isEmpty()) {
         if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
         return
     }
     val volume = Stats.weeklyVolume(data.history)
-    item {
-        Card(Modifier.fillMaxWidth()) {
-            Eyebrow(L("Volumen pro Woche", "Volume per week"))
-            Spacer(Modifier.height(14.dp))
-            Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
+    cards(twoColumns, 10.dp, key = "overview") {
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Eyebrow(L("Volumen pro Woche", "Volume per week"))
+                Spacer(Modifier.height(14.dp))
+                Bars(volume.map { it.second.toFloat() }, volume.map { L("KW", "W") + it.first.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) })
+            }
         }
-    }
-    item { Heatmap(Progress.heatmap(data.history, App.repo)) }
-    item { MonthlyRecap(Progress.monthRecaps(data.history, App.repo)) }
-    if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
-    val muscles = Stats.muscleSets(data.history, App.repo).entries.sortedByDescending { it.value }.take(6)
-    if (muscles.isNotEmpty()) item {
-        Card(Modifier.fillMaxWidth()) {
-            Eyebrow(L("Sätze pro Muskel · 7 Tage", "Sets per muscle · 7 days"))
-            Spacer(Modifier.height(12.dp))
-            val max = muscles.first().value.toFloat()
-            muscles.forEach { (m, n) ->
-                Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(Labels.muscle(m), Modifier.width(118.dp), style = MaterialTheme.typography.bodyMedium)
-                    Meter(n / max, Modifier.weight(1f))
-                    Text("$n", Modifier.width(34.dp), textAlign = TextAlign.End, color = Ink.muted)
+        item { Heatmap(Progress.heatmap(data.history, App.repo)) }
+        item { MonthlyRecap(Progress.monthRecaps(data.history, App.repo)) }
+        if (data.cardio.isNotEmpty()) item { Card(Modifier.fillMaxWidth()) { CardioWeek(data.cardio) } }
+        val muscles = Stats.muscleSets(data.history, App.repo).entries.sortedByDescending { it.value }.take(6)
+        if (muscles.isNotEmpty()) item {
+            Card(Modifier.fillMaxWidth()) {
+                Eyebrow(L("Sätze pro Muskel · 7 Tage", "Sets per muscle · 7 days"))
+                Spacer(Modifier.height(12.dp))
+                val max = muscles.first().value.toFloat()
+                muscles.forEach { (m, n) ->
+                    Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(Labels.muscle(m), Modifier.width(118.dp), style = MaterialTheme.typography.bodyMedium)
+                        Meter(n / max, Modifier.weight(1f))
+                        Text("$n", Modifier.width(34.dp), textAlign = TextAlign.End, color = Ink.muted)
+                    }
                 }
             }
         }

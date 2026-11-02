@@ -64,7 +64,7 @@ import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun ExerciseScreen(id: String, data: AppData, nav: NavController) {
+fun ExerciseScreen(id: String, data: AppData, nav: NavController, onBack: (() -> Unit)? = null) {
     val e = App.repo[id] ?: return
     val sessions = remember(data.history, id) { Stats.sessions(data.history, id) }
     var choosePlan by remember { mutableStateOf(false) }
@@ -73,7 +73,7 @@ fun ExerciseScreen(id: String, data: AppData, nav: NavController) {
     LazyColumn(Modifier.statusBarsPadding(), contentPadding = PaddingValues(bottom = 40.dp)) {
         stickyHeader {
             Row(Modifier.fillMaxWidth().stickyScrim().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back")) { nav.popBackStack() }
+                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back")) { if (onBack != null) onBack() else nav.popBackStack() }
                 Spacer(Modifier.weight(1f))
                 val fav = id in data.favorites
                 Box(

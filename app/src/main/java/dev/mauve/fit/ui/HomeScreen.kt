@@ -78,6 +78,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val tip = remember(data.history, data.settings, data.routines, data.cardio) { Coach.homeTip(data, App.repo) }
     val challenge = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
+    val twoColumns = LocalWidth.current.expanded
 
     // A new week may have started while the app stayed open: book the one that ended.
     LaunchedEffect(Stats.weekKey(LocalDate.now())) { App.store.settleStreak() }
@@ -106,90 +107,94 @@ fun HomeScreen(data: AppData, nav: NavController) {
 
         item { WeekStrip(Stats.weekDays(history)) }
 
-        // A running workout always comes first.
-        data.active?.let { w ->
-            // Open for hours: most likely forgotten, so offer to save or drop it right here.
-            if (System.currentTimeMillis() - w.startedAt > 4 * 60 * 60_000L) item {
-                Card(Modifier.fillMaxWidth()) {
-                    Eyebrow(L("Training noch offen", "Workout still open"), color = Ink.coral)
-                    Text(
-                        L("„${w.name}“ läuft seit ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Speichern, was erledigt ist, oder verwerfen?",
-                            "\"${w.name}\" has been running for ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Save what is done, or discard it?"),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PrimaryButton(L("Speichern", "Save"), Modifier.weight(1f)) {
-                            Haptics.success()
-                            // The real end is unknown; about three minutes per set done keeps the stats honest.
-                            val minutes = (w.doneSets.size * 3).coerceIn(10, 120)
-                            App.store.finishWorkout(w.startedAt + minutes * 60_000L)?.let { nav.navigate("summary/$it") }
+        // On expanded windows the cards below pack into two columns; on phones each is its own row.
+        cards(twoColumns, 14.dp, key = "cards") {
+
+            // A running workout always comes first.
+            data.active?.let { w ->
+                // Open for hours: most likely forgotten, so offer to save or drop it right here.
+                if (System.currentTimeMillis() - w.startedAt > 4 * 60 * 60_000L) item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Eyebrow(L("Training noch offen", "Workout still open"), color = Ink.coral)
+                        Text(
+                            L("„${w.name}“ läuft seit ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Speichern, was erledigt ist, oder verwerfen?",
+                                "\"${w.name}\" has been running for ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}. Save what is done, or discard it?"),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            PrimaryButton(L("Speichern", "Save"), Modifier.weight(1f)) {
+                                Haptics.success()
+                                // The real end is unknown; about three minutes per set done keeps the stats honest.
+                                val minutes = (w.doneSets.size * 3).coerceIn(10, 120)
+                                App.store.finishWorkout(w.startedAt + minutes * 60_000L)?.let { nav.navigate("summary/$it") }
+                            }
+                            GhostButton(L("Verwerfen", "Discard"), Modifier.weight(1f)) { Haptics.warn(); App.store.discardWorkout() }
                         }
-                        GhostButton(L("Verwerfen", "Discard"), Modifier.weight(1f)) { Haptics.warn(); App.store.discardWorkout() }
+                    }
+                }
+                item {
+                    Card(onClick = { nav.navigate("workout") }, color = Ink.accent) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Eyebrow(L("Training läuft", "Workout in progress"), color = Ink.bg)
+                                Text(w.name, style = MaterialTheme.typography.headlineSmall, color = Ink.bg)
+                                Text(L("${Stats.sets(w.doneSets.size)} erledigt", "${Stats.sets(w.doneSets.size)} done"), color = Ink.bg.copy(alpha = 0.7f))
+                            }
+                            Box(Modifier.size(52.dp).clip(Pill).background(Ink.bg), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.PlayArrow, L("Fortsetzen", "Resume"), tint = Ink.accent)
+                            }
+                        }
                     }
                 }
             }
+
+            if (data.active == null && tip != null) item {
+                CoachCard(tip) { action ->
+                    when (action) {
+                        is Coach.Action.StartDeload -> App.store.startDeload()
+                        is Coach.Action.EndDeload -> App.store.endDeload()
+                        is Coach.Action.StartBlock -> App.store.startBlock(data.settings.blockWeeks)
+                        is Coach.Action.AddExercise -> App.store.addToRoutine(action.routineId, action.exerciseId)
+                    }
+                }
+            }
+
+            recovery?.let { r -> item { ReadinessCard(r, onShort = next?.let { n -> { App.store.startWorkout(n, short = true); nav.navigate("workout") } }.takeIf { data.active == null && r.score < 50 }) } }
+            if (cycle.on) item { CycleCard(cycle) { nav.navigate("settings") } }
+            Coach.blockWeek(data)?.let { b -> item { BlockCard(b) } }
+
+            if (data.active == null && next != null) item {
+                NextWorkoutCard(next, onShort = {
+                    App.store.startWorkout(next, short = true)
+                    nav.navigate("workout")
+                }) { start(next) }
+            }
+
             item {
-                Card(onClick = { nav.navigate("workout") }, color = Ink.accent) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Eyebrow(L("Training läuft", "Workout in progress"), color = Ink.bg)
-                            Text(w.name, style = MaterialTheme.typography.headlineSmall, color = Ink.bg)
-                            Text(L("${Stats.sets(w.doneSets.size)} erledigt", "${Stats.sets(w.doneSets.size)} done"), color = Ink.bg.copy(alpha = 0.7f))
-                        }
-                        Box(Modifier.size(52.dp).clip(Pill).background(Ink.bg), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.PlayArrow, L("Fortsetzen", "Resume"), tint = Ink.accent)
-                        }
-                    }
+                // Same height for all three, even when the streak carries its freeze line.
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f).fillMaxHeight(), if (thisWeek >= goal) Ink.accent else Ink.text)
+                    StreakStat(streak, data.freezes, Modifier.weight(1f).fillMaxHeight())
+                    Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
                 }
             }
-        }
 
-        if (data.active == null && tip != null) item {
-            CoachCard(tip) { action ->
-                when (action) {
-                    is Coach.Action.StartDeload -> App.store.startDeload()
-                    is Coach.Action.EndDeload -> App.store.endDeload()
-                    is Coach.Action.StartBlock -> App.store.startBlock(data.settings.blockWeeks)
-                    is Coach.Action.AddExercise -> App.store.addToRoutine(action.routineId, action.exerciseId)
+            // Monday and Tuesday: how last week went, before the new one takes over.
+            if (LocalDate.now().dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
+                ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
+            }
+            item { ChallengeCard(challenge, data.challengesDone.size) }
+
+            if (data.active == null) item {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
+                    ShortcutTile(L("Freies Training", "Free workout"), L("Ohne Plan", "No plan"), Icons.Rounded.PlayArrow, Modifier.weight(1f)) { start(null) }
                 }
             }
+
+            if (history.isNotEmpty()) item { RecoveryCard(Coach.withCardio(Progress.recovery(history, App.repo), data.cardio)) }
         }
-
-        recovery?.let { r -> item { ReadinessCard(r, onShort = next?.let { n -> { App.store.startWorkout(n, short = true); nav.navigate("workout") } }.takeIf { data.active == null && r.score < 50 }) } }
-        if (cycle.on) item { CycleCard(cycle) { nav.navigate("settings") } }
-        Coach.blockWeek(data)?.let { b -> item { BlockCard(b) } }
-
-        if (data.active == null && next != null) item {
-            NextWorkoutCard(next, onShort = {
-                App.store.startWorkout(next, short = true)
-                nav.navigate("workout")
-            }) { start(next) }
-        }
-
-        item {
-            // Same height for all three, even when the streak carries its freeze line.
-            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f).fillMaxHeight(), if (thisWeek >= goal) Ink.accent else Ink.text)
-                StreakStat(streak, data.freezes, Modifier.weight(1f).fillMaxHeight())
-                Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
-            }
-        }
-
-        // Monday and Tuesday: how last week went, before the new one takes over.
-        if (LocalDate.now().dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
-            ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
-        }
-        item { ChallengeCard(challenge, data.challengesDone.size) }
-
-        if (data.active == null) item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ShortcutTile(L("Schnelltraining", "Quick workout"), L("Coach baut es", "Coach builds it"), Icons.Rounded.AutoAwesome, Modifier.weight(1f)) { nav.navigate("quick") }
-                ShortcutTile(L("Freies Training", "Free workout"), L("Ohne Plan", "No plan"), Icons.Rounded.PlayArrow, Modifier.weight(1f)) { start(null) }
-            }
-        }
-
-        if (history.isNotEmpty()) item { RecoveryCard(Coach.withCardio(Progress.recovery(history, App.repo), data.cardio)) }
 
     }
     }

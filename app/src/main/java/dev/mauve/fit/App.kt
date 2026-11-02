@@ -40,6 +40,7 @@ class App : Application(), SingletonImageLoader.Factory {
         WorkoutService.follow(this)
         Reminders.follow(this)
         WeeklyReports.follow(this)
+        dev.mauve.fit.system.HealthSync.follow(this)
         NextWidget.follow(this)
         thread(name = "exercise-db") {
             repo.all

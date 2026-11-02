@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.13.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.14.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -46,6 +46,10 @@ Stand: Version 1.13.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Absturzberichte lokal speichern, teilen oder löschen
 - Barrierefreiheit: TalkBack-Beschriftungen für Sätze, Werte und Karten; getestet mit 130 % Schriftgröße
 
+## Erledigt in 1.14
+
+- Trainings und Körpergewicht in Health Connect schreiben (optional, letzte 90 Tage, Änderungen und Löschungen werden übernommen)
+
 ## Als Nächstes
 
 - **Uhr-App auf echter Galaxy Watch testen.** Bisher nur gebaut, nicht auf einem Gerät oder Wear-Emulator gelaufen.
@@ -61,7 +65,7 @@ Stand: Version 1.13.0 (November 2026). Sortiert nach Nutzen für das Training, n
 
 ## Plattform
 
-- **Health Connect:** Trainings und Gewicht synchronisieren, Herzfrequenz der Uhr speichern.
+- **Health Connect:** Herzfrequenz der Uhr während des Trainings speichern.
 - **Tile und Complication für die Uhr:** Wochenziel und Schnellstart direkt vom Zifferblatt.
 - **Cloud-Backup optional** (Google Drive), weiterhin ohne Konto in der App.
 

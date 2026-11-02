@@ -205,6 +205,8 @@ data class Settings(
     val goalWeight: Double = 0.0,
     /** Monday-morning notification with last week's numbers. */
     val weeklyReport: Boolean = true,
+    /** Write finished workouts and body weights to Health Connect. */
+    val healthWrite: Boolean = false,
 )
 
 @Serializable

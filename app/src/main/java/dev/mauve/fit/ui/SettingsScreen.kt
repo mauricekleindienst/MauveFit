@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material.icons.rounded.Favorite
 import dev.mauve.fit.system.Recovery
+import dev.mauve.fit.system.HealthSync
+import androidx.compose.material.icons.rounded.Sync
 import androidx.health.connect.client.PermissionController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.border
@@ -244,6 +246,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         }
 
         item { RecoverySection() }
+        item { HealthWriteSection() }
         item { CycleSection() }
         item {
             Section(L("Training", "Training"), Icons.Rounded.AutoAwesome) {
@@ -440,9 +443,9 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Text(
                     L(
                         "Übungsdaten: exercises-dataset von hasaneyldrm (MIT-Lizenz). ${Exercise.ATTRIBUTION}. " +
-                            "Schrift: Space Grotesk (SIL Open Font License). Keine Konten, kein Tracking, keine Werbung.",
+                            "Schrift: Archivo (SIL Open Font License). Keine Konten, kein Tracking, keine Werbung.",
                         "Exercise data: exercises-dataset by hasaneyldrm (MIT licence). ${Exercise.ATTRIBUTION}. " +
-                            "Font: Space Grotesk (SIL Open Font License). No accounts, no tracking, no ads.",
+                            "Font: Archivo (SIL Open Font License). No accounts, no tracking, no ads.",
                     ),
                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,
                 )
@@ -538,6 +541,50 @@ private fun RecoverySection() {
                 }
             }
             else -> PrimaryButton(L("Mit Health Connect verbinden", "Connect Health Connect"), Modifier.fillMaxWidth()) { ask.launch(Recovery.permissions) }
+        }
+    }
+}
+
+/** Shares finished workouts and body weights with Health Connect; off until the person turns it on. */
+@Composable
+private fun HealthWriteSection() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val on = App.store.data.collectAsState().value.settings.healthWrite
+    val status by HealthSync.status.collectAsState()
+    var granted by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(on) { HealthSync.load(context); granted = HealthSync.granted(context) }
+    val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
+        granted = got.containsAll(HealthSync.permissions)
+        if (granted == true) {
+            Haptics.success()
+            App.store.updateSettings { it.copy(healthWrite = true) }
+            scope.launch { HealthSync.sync(context) }
+        }
+    }
+    if (!Recovery.available(context)) return
+    Section(L("Mit Health Connect teilen", "Share with Health Connect"), Icons.Rounded.Sync) {
+        Toggle(
+            L("Trainings und Gewicht schreiben", "Write workouts and weight"),
+            L("Samsung Health, Fit und andere Apps sehen deine Einheiten der letzten 90 Tage", "Samsung Health, Fit and other apps see your sessions from the last 90 days"),
+            on && granted == true,
+        ) { v ->
+            if (!v) { App.store.updateSettings { it.copy(healthWrite = false) }; HealthSync.forget(context) }
+            else if (granted == true) { App.store.updateSettings { it.copy(healthWrite = true) }; scope.launch { HealthSync.sync(context) } }
+            else ask.launch(HealthSync.permissions)
+        }
+        if (on && granted == true) {
+            Spacer(Modifier.height(4.dp))
+            val at = status?.at ?: 0
+            val time = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+            Text(
+                when {
+                    status?.error != null -> L("Schreiben fehlgeschlagen: ${status?.error}", "Writing failed: ${status?.error}")
+                    at > 0 -> L("Zuletzt geschrieben: ${time.format(at)}", "Last written: ${time.format(at)}")
+                    else -> L("Neue Trainings und Gewichte werden automatisch geschrieben.", "New workouts and weights are written automatically.")
+                },
+                color = if (status?.error != null) Ink.red else Ink.muted, style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

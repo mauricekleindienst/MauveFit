@@ -12,6 +12,7 @@ import androidx.glance.GlanceModifier
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.Action
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -107,7 +108,8 @@ class NextWidget : GlanceAppWidget() {
         val button = when {
             st.resting -> L("Weiter", "Skip") to actionRunCallback<SkipRestAction>()
             !st.canTick -> L("Öffnen", "Open") to open
-            else -> L("Erledigt", "Done") to actionRunCallback<SetDoneAction>()
+            // The count seen when drawn: a second tap before the redraw is ignored, not a second set.
+            else -> L("Erledigt", "Done") to actionRunCallback<SetDoneAction>(actionParametersOf(SetDoneAction.Ticked to st.ticked))
         }
         if (size.height < MEDIUM.height || size.width < MEDIUM.width) {
             Row(

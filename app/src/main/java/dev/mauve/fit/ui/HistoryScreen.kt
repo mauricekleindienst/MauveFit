@@ -158,19 +158,23 @@ fun HistoryScreen(data: AppData, nav: NavController) {
             val last = if (weight) data.bodyWeights.firstOrNull()?.kg else data.measurements.firstOrNull { it.kind == kind }?.cm
             mutableStateOf(last?.let(Stats::fmtKg).orEmpty())
         }
+        // Out of range or not a number: say so and keep the dialog, instead of closing on nothing.
+        val range = if (weight) 25.0..350.0 else 10.0..250.0
+        val parsed = value.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it in range }
+        val bad = value.isNotBlank() && parsed == null
         AlertDialog(
             onDismissRequest = { addFor = null },
             title = { Text(if (weight) L("Körpergewicht", "Body weight") else Progress.measures[kind].orEmpty()) },
             text = {
-                OutlinedTextField(value, { value = it }, label = { Text(unit) }, singleLine = true,
+                OutlinedTextField(value, { value = it }, label = { Text(unit) }, singleLine = true, isError = bad,
+                    supportingText = if (bad) { { Text(L("Zahl zwischen ${range.start.toInt()} und ${range.endInclusive.toInt()}", "A number from ${range.start.toInt()} to ${range.endInclusive.toInt()}")) } } else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val v = value.replace(',', '.').toDoubleOrNull()
-                    if (weight) v?.takeIf { it in 25.0..350.0 }?.let(App.store::addBodyWeight)
-                    else v?.takeIf { it in 10.0..250.0 }?.let { App.store.addMeasurement(kind, it) }
-                    if (v != null) Haptics.tick()
+                TextButton(enabled = parsed != null, onClick = {
+                    val v = parsed ?: return@TextButton
+                    if (weight) App.store.addBodyWeight(v) else App.store.addMeasurement(kind, v)
+                    Haptics.tick()
                     addFor = null
                 }) { Text(L("Speichern", "Save")) }
             },
@@ -448,11 +452,17 @@ private fun TrendCard(
         if (open) {
             Spacer(Modifier.height(12.dp))
             entries.forEach { (at, v) ->
+                // Two taps: the first arms the small X, the second deletes; no undo exists.
+                var armed by remember(at) { mutableStateOf(false) }
                 Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(Stats.day(at).format(dayFmt), Modifier.weight(1f), color = Ink.muted)
                     Text("${Stats.fmtKg(v)} $unit", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Rounded.Close, L("Löschen", "Delete"), tint = Ink.faint, modifier = Modifier.clip(Pill).clickable { Haptics.tick(); onDelete(at) })
+                    if (armed) Text(
+                        L("Löschen", "Delete"), color = Ink.red, style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.clip(Pill).clickable { Haptics.warn(); onDelete(at); armed = false }.padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                    else Icon(Icons.Rounded.Close, L("Löschen", "Delete"), tint = Ink.faint, modifier = Modifier.clip(Pill).clickable { Haptics.tick(); armed = true })
                 }
             }
         }
@@ -674,18 +684,20 @@ private fun WeightGoalCard(data: AppData) {
     }
     if (editing) {
         var kg by remember { mutableStateOf(if (goal > 0) Stats.fmtKg(goal) else "") }
+        val parsed = kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it in 30.0..300.0 }
+        val bad = kg.isNotBlank() && parsed == null
         AlertDialog(
             onDismissRequest = { editing = false },
             title = { Text(L("Zielgewicht", "Goal weight")) },
             text = {
-                OutlinedTextField(kg, { kg = it }, label = { Text("kg") }, singleLine = true,
+                OutlinedTextField(kg, { kg = it }, label = { Text("kg") }, singleLine = true, isError = bad,
+                    supportingText = if (bad) { { Text(L("Zahl zwischen 30 und 300", "A number from 30 to 300")) } } else null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
             },
             confirmButton = {
-                TextButton(onClick = {
-                    kg.replace(',', '.').toDoubleOrNull()?.takeIf { it in 30.0..300.0 }?.let { v ->
-                        Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v) }
-                    }
+                TextButton(enabled = parsed != null, onClick = {
+                    val v = parsed ?: return@TextButton
+                    Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v) }
                     editing = false
                 }) { Text(L("Speichern", "Save")) }
             },

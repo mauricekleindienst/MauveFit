@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.5 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.6 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,20 @@ Stand: Version 1.19.5 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.6 (Fix-Runde 5)
+
+- "Alle Daten löschen" löscht auch Fortschrittsfotos und alle Sicherheitskopien und stellt Sprache und Design sofort zurück
+- Gewicht von Hand geändert in einer leichten Woche: die nächste Empfehlung springt nicht mehr 45 % zu hoch
+- Doppeltippen auf "Erledigt" im Widget oder in der Benachrichtigung hakt nur einen Satz ab
+- Übung im Supersatz tauschen hält den Supersatz zusammen
+- Rekord-Zeitleiste und Monatsrückblick: Gewicht schlägt Wiederholungen, keine Prozent zwischen kg und Wdh.
+- Speicherfehler (Speicher voll) beendet die App nicht mehr und stoppt das automatische Speichern nicht
+- Sprache des Handys geändert: die App und ihre Benachrichtigungen folgen sofort
+- Fortschrittsfoto und Körperwerte löschen erst nach Bestätigung; ungültige Eingaben werden rot markiert statt still verworfen
+- Foto-Import aus der Cloud ohne Netz stürzt nicht mehr ab
+- Animationen auf dem Gerät werden beim Start nicht mehr jedes Mal neu dekodiert (Akku, Speicher)
+- Widget-Mitternacht folgt Zeitzonenwechseln; CSV-Export behält 11,25 kg; Fotodaten in der App-Sprache
 
 ## Erledigt in 1.19.5 (Fix-Runs 3 und 4)
 

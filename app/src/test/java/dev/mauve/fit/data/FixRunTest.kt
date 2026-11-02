@@ -49,4 +49,13 @@ class FixRunTest {
             assertTrue("$kg $goal", t.protein * 4 + t.fat * 9 + t.carbs * 4 <= t.kcal + 6)
         }
     }
+
+    @Test fun aWeightChangedByHandEndsTheReducedLoad() {
+        val e = ExerciseEntry("bench", load = 0.7, sets = listOf(SetEntry(70.0, 8), SetEntry(70.0, 8)))
+        val old = Workout(name = "W", entries = listOf(e))
+        val raised = old.copy(entries = listOf(e.copy(sets = listOf(SetEntry(100.0, 8), SetEntry(70.0, 8)))))
+        assertEquals(1.0, Live.manualLoad(old, raised).single().load, 0.0)
+        val ticked = old.copy(entries = listOf(e.copy(sets = listOf(SetEntry(70.0, 8, done = true), SetEntry(70.0, 8)))))
+        assertEquals(0.7, Live.manualLoad(old, ticked).single().load, 0.0)
+    }
 }

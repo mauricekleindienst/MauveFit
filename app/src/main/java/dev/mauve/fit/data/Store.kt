@@ -66,10 +66,13 @@ class Store(context: Context) {
 
     @Synchronized
     private fun save(d: AppData) {
-        // Write beside and rename so a crash mid-write never leaves a truncated file.
-        val tmp = File(file.parentFile, "data.json.tmp")
-        tmp.writeText(json.encodeToString(AppData.serializer(), d))
-        if (!tmp.renameTo(file)) { file.delete(); tmp.renameTo(file) }
+        // A failed write (storage full) must not kill the app or end autosave; the next change retries.
+        runCatching {
+            // Write beside and rename so a crash mid-write never leaves a truncated file.
+            val tmp = File(file.parentFile, "data.json.tmp")
+            tmp.writeText(json.encodeToString(AppData.serializer(), d))
+            if (!tmp.renameTo(file)) { file.delete(); tmp.renameTo(file) }
+        }
     }
 
     // --- Workout flow ------------------------------------------------------------
@@ -126,7 +129,11 @@ class Store(context: Context) {
         d.active?.let { old ->
             val now = System.currentTimeMillis()
             val new = block(old)
-            d.copy(active = new.copy(lastActivityAt = now, lastSet = Live.ticked(old, new, now) ?: new.lastSet?.takeIf { Live.stillDone(new, it) }))
+            d.copy(active = new.copy(
+                entries = Live.manualLoad(old, new),
+                lastActivityAt = now,
+                lastSet = Live.ticked(old, new, now) ?: new.lastSet?.takeIf { Live.stillDone(new, it) },
+            ))
         } ?: d
     }
 
@@ -167,15 +174,18 @@ class Store(context: Context) {
      */
     fun swapExercise(index: Int, exerciseId: String) = updateActive { w ->
         val d = data.value
+        // The done part goes after the whole superset run, or it would split the group in two.
+        val runEnd = Supersets.members(w.entries.map { it.superset }, index)?.last ?: index
+        val doneOld = w.entries.getOrNull(index)?.let { e -> e.sets.filter { it.done }.takeIf { it.isNotEmpty() }?.let { e.copy(sets = it, superset = null) } }
         w.copy(entries = w.entries.flatMapIndexed { i, e ->
-            if (i != index) listOf(e)
+            val tail = if (i == runEnd && doneOld != null) listOf(doneOld) else emptyList()
+            if (i != index) listOf(e) + tail
             else {
                 val reps = e.sets.firstOrNull { !it.warmup }?.let { if (it.target > 0) it.target else it.reps } ?: 10
                 val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
                 val open = e.sets.count { !it.done && !it.warmup }.coerceAtLeast(1)
                 val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d))
-                val done = e.sets.filter { it.done }
-                if (done.isEmpty()) listOf(fresh) else listOf(fresh, e.copy(sets = done, superset = null))
+                listOf(fresh) + tail
             }
         })
     }
@@ -240,7 +250,18 @@ class Store(context: Context) {
     }.isSuccess
 
     /** Deletes all data and returns to the intro. */
-    fun reset() { update { AppData() }; flush() }
+    /**
+     * Deletes all data and returns to the intro, including what lives beside the data file:
+     * progress photos and the safety copies (previous start, before an import, unreadable files).
+     */
+    fun reset() {
+        update { AppData() }
+        flush()
+        val dir = file.parentFile ?: return
+        runCatching { File(dir, "photos").deleteRecursively() }
+        dir.listFiles { f -> f.name == "data.prev.json" || f.name.startsWith("data.before-import-") || f.name.startsWith("data.broken-") }
+            ?.forEach { runCatching { it.delete() } }
+    }
 
     fun setFeel(workoutId: String, feel: Int, note: String) = update { d ->
         d.copy(history = d.history.map { if (it.id == workoutId) it.copy(feel = feel, note = note) else it })
@@ -413,9 +434,11 @@ class Store(context: Context) {
     private fun saveCycle() {
         val c = _cycle.value
         if (!c.on) { cycleFile.delete(); return }
-        val tmp = File(cycleFile.parentFile, "cycle.json.tmp")
-        tmp.writeText(json.encodeToString(CycleSettings.serializer(), c))
-        tmp.renameTo(cycleFile)
+        runCatching {
+            val tmp = File(cycleFile.parentFile, "cycle.json.tmp")
+            tmp.writeText(json.encodeToString(CycleSettings.serializer(), c))
+            tmp.renameTo(cycleFile)
+        }
     }
 
     // Cardio extras -----------------------------------------------------------------

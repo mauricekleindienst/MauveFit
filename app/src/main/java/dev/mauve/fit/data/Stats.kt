@@ -128,7 +128,7 @@ object Stats {
      * Weighted sets rank by estimated 1RM, sets without weight by reps, and any weighted set beats
      * one without: 0 kg x 30 is not a better bench press than 20 kg x 8.
      */
-    private fun recordScore(s: SetEntry): Double = if (s.weight > 0) 1_000_000 + e1rm(s) else s.reps.toDouble()
+    fun recordScore(s: SetEntry): Double = if (s.weight > 0) 1_000_000 + e1rm(s) else s.reps.toDouble()
 
     /** Best set ever for every exercise, most recently set records first. */
     fun records(history: List<Workout>): List<Record> {

@@ -34,6 +34,9 @@ object Media {
     private fun urls(e: Exercise) = listOf(e.imageUrl, e.gifUrl)
 
     private suspend fun fetch(context: Context, url: String): Boolean {
+        // Already on disk: skip it. Executing the request would decode and upscale the whole GIF
+        // again, on every start of the process, even from a background receiver.
+        SingletonImageLoader.get(context).diskCache?.openSnapshot(url)?.use { return true }
         val request = ImageRequest.Builder(context).data(url)
             .memoryCachePolicy(CachePolicy.DISABLED) // only the disk copy is wanted
             .build()

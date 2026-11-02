@@ -322,14 +322,16 @@ object Insights {
                 val top = sets.maxByOrNull { score(it) } ?: return@forEach
                 val s = score(top)
                 val prev = best[id]
-                if (prev != null && s > prev + 1e-9) out += Pr(id, Stats.day(w.startedAt), top, Stats.e1rm(top), pctChange(prev, s))
+                // A gain in percent only between two weighted bests; reps against kg is no percentage.
+                val gain = if (prev != null && prev >= 1e6 && s >= 1e6) pctChange(prev - 1e6, s - 1e6) else null
+                if (prev != null && s > prev + 1e-9) out += Pr(id, Stats.day(w.startedAt), top, Stats.e1rm(top), gain)
                 if (prev == null || s > prev) best[id] = s
             }
         }
         return out.asReversed().take(count)
     }
 
-    private fun score(s: SetEntry) = if (s.weight > 0) Stats.e1rm(s) else s.reps.toDouble()
+    private fun score(s: SetEntry) = Stats.recordScore(s)
 
     // --- Nutrition -----------------------------------------------------------------------------
 

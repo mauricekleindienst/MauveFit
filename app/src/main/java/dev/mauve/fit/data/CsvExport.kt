@@ -47,7 +47,9 @@ object CsvExport {
     }
 
     /** Whole numbers without ".0", otherwise one decimal; always with a point. */
-    private fun num(v: Double): String = if (v % 1.0 == 0.0) v.toLong().toString() else "%.1f".format(java.util.Locale.ROOT, v)
+    private fun num(v: Double): String = if (v % 1.0 == 0.0) v.toLong().toString()
+    // Quarter kilos keep both decimals (11.25 kg stays 11.25), like Stats.fmtKg.
+    else (if (kotlin.math.abs(v * 4 - Math.round(v * 4)) < 1e-9) "%.2f" else "%.1f").format(java.util.Locale.ROOT, v).trimEnd('0').trimEnd('.')
 
     /** Quotes a cell when it contains a comma, quote or line break (RFC 4180). */
     private fun cell(s: String): String =

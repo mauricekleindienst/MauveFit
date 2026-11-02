@@ -235,9 +235,14 @@ class StartNextAction : ActionCallback {
 /** Ticks off the current set from the widget; the rest starts like on the phone and the watch. */
 class SetDoneAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        WatchSync.handle("done")
+        WatchSync.handle(parameters[Ticked]?.let { "done:$it" } ?: "done")
         App.store.flush()
         Widgets.updateAll(context)
+    }
+
+    companion object {
+        /** The ticked count the widget was drawn with. */
+        val Ticked = ActionParameters.Key<Int>("ticked")
     }
 }
 

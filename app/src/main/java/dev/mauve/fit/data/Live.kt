@@ -1,5 +1,7 @@
 package dev.mauve.fit.data
 
+import kotlin.math.abs
+
 /**
  * What the running workout looks like at a glance, for the notification and the widgets: the set
  * to do now, the one just done and the rest between them.
@@ -21,6 +23,8 @@ object Live {
         /** Every set is ticked off: only finishing is left. */
         val complete: Boolean,
         val warmups: Int = 0,
+        /** Every ticked set, warm-ups included: "done:<ticked>" only counts once. */
+        val ticked: Int = 0,
     ) {
         val resting: Boolean get() = restEndsAt != null
         /** There is an open set to tick off (not when all are done or the workout is still empty). */
@@ -39,6 +43,16 @@ object Live {
             }
         }
         return null
+    }
+
+    /**
+     * An entry whose working weights were changed by hand (or by the watch) is no longer running
+     * at the reduced load it was suggested with: 100 kg lifted in a 70 % week is 100 kg, not 143.
+     */
+    fun manualLoad(old: Workout, new: Workout): List<ExerciseEntry> = new.entries.mapIndexed { i, e ->
+        val before = old.entries.getOrNull(i)?.takeIf { it.exerciseId == e.exerciseId } ?: return@mapIndexed e
+        val changed = e.sets.withIndex().any { (j, s) -> !s.warmup && before.sets.getOrNull(j)?.let { abs(it.weight - s.weight) > 1e-6 } == true }
+        if (changed && e.load != 1.0) e.copy(load = 1.0) else e
     }
 
     /** False once [last] was unticked again (or its exercise removed), so it is no longer shown as done. */
@@ -83,6 +97,7 @@ object Live {
             total = w.entries.sumOf(working),
             complete = complete,
             warmups = w.entries.sumOf { e -> e.sets.count { it.warmup } },
+            ticked = w.entries.sumOf { e -> e.sets.count { it.done } },
         )
     }
 

@@ -56,16 +56,19 @@ fun ProgressPhotos() {
     val dir = remember { File(context.filesDir, "photos").apply { mkdirs() } }
     var photos by remember { mutableStateOf(list(dir)) }
     var viewing by remember { mutableStateOf<File?>(null) }
+    var confirmDelete by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         scope.launch {
-            withContext(Dispatchers.IO) {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    File(dir, "${System.currentTimeMillis()}.jpg").outputStream().use { input.copyTo(it) }
-                }
+            // A cloud photo that cannot be fetched (offline) must not crash or leave half a file.
+            val ok = withContext(Dispatchers.IO) {
+                val out = File(dir, "${System.currentTimeMillis()}.jpg")
+                runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } } != null
+                }.getOrDefault(false).also { if (!it) out.delete() }
             }
-            Haptics.success()
+            if (ok) Haptics.success() else Haptics.warn()
             photos = list(dir)
         }
     }
@@ -98,16 +101,20 @@ fun ProgressPhotos() {
 
     viewing?.let { f ->
         AlertDialog(
-            onDismissRequest = { viewing = null },
+            onDismissRequest = { viewing = null; confirmDelete = false },
             title = { Text(dateOf(f)) },
             text = {
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     AsyncImage(f, null, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxWidth().clip(RowShape))
                 }
             },
-            confirmButton = { TextButton(onClick = { viewing = null }) { Text(L("Schließen", "Close")) } },
+            confirmButton = { TextButton(onClick = { viewing = null; confirmDelete = false }) { Text(L("Schließen", "Close")) } },
             dismissButton = {
-                TextButton(onClick = { Haptics.warn(); f.delete(); photos = list(dir); viewing = null }) { Text(L("Löschen", "Delete"), color = Ink.red) }
+                // Asks first: the photo is in no backup, so a slip would lose it for good.
+                if (confirmDelete) TextButton(onClick = { Haptics.warn(); f.delete(); photos = list(dir); viewing = null; confirmDelete = false }) {
+                    Text(L("Wirklich löschen", "Really delete"), color = Ink.red)
+                }
+                else TextButton(onClick = { confirmDelete = true }) { Text(L("Löschen", "Delete"), color = Ink.red) }
             },
             containerColor = Ink.raised,
         )
@@ -118,6 +125,6 @@ private fun list(dir: File) = dir.listFiles { f -> f.extension == "jpg" }.orEmpt
 
 private fun dateOf(f: File): String {
     val at = f.nameWithoutExtension.toLongOrNull() ?: f.lastModified()
-    val fmt = DateTimeFormatter.ofPattern(if (I18n.german) "d. MMM yyyy" else "MMM d, yyyy")
+    val fmt = DateTimeFormatter.ofPattern(if (I18n.german) "d. MMM yyyy" else "MMM d, yyyy", I18n.locale)
     return Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDate().format(fmt)
 }

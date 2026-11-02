@@ -140,7 +140,7 @@ object Progress {
             w.entries.groupBy { it.exerciseId }.forEach { (id, entries) ->
                 val sets = entries.flatMap { it.sets }.filter { !it.warmup }
                 if (sets.isEmpty()) return@forEach
-                val score = sets.maxOf { if (it.weight > 0) Stats.e1rm(it) else it.reps.toDouble() }
+                val score = sets.maxOf { Stats.recordScore(it) }
                 val prev = best[id]
                 if (prev != null && score > prev) out[month] = (out[month] ?: 0) + 1
                 if (prev == null || score > prev) best[id] = score

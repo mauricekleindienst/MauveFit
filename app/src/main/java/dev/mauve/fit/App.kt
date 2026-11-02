@@ -23,6 +23,13 @@ import dev.mauve.fit.widget.NextWidget
 import kotlin.concurrent.thread
 
 class App : Application(), SingletonImageLoader.Factory {
+    /** The phone's language changed: with the setting on "system" the app follows, notifications too. */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        I18n.apply(store.data.value.settings.language)
+        dev.mauve.fit.system.createChannels(this)
+    }
+
     override fun onCreate() {
         super.onCreate()
         // First, so even a crash while loading the store is kept for the settings.

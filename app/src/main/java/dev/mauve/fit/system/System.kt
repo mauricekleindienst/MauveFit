@@ -184,7 +184,7 @@ class WorkoutService : Service() {
 
     private fun action(cmd: String, label: String, req: Int) = Notification.Action.Builder(
         null, label,
-        PendingIntent.getService(this, req, Intent(this, WorkoutService::class.java).putExtra("cmd", cmd), PendingIntent.FLAG_IMMUTABLE),
+        PendingIntent.getService(this, req, Intent(this, WorkoutService::class.java).putExtra("cmd", cmd), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
     ).build()
 
     private fun build(d: AppData): Notification {
@@ -225,7 +225,8 @@ class WorkoutService : Service() {
                 .setSubText(sets)
                 .bigText(listOfNotNull(st.next, st.last?.let { L("Zuletzt: $it", "Last: $it") }).joinToString("\n"))
                 .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
-                .addAction(action("done", L("Satz erledigt", "Set done"), 3))
+                // With the ticked count, so a double tap before the shade redraws ticks only one set.
+                .addAction(action("done:${st.ticked}", L("Satz erledigt", "Set done"), 3))
                 .build()
         }
     }
@@ -369,7 +370,7 @@ object Reminders {
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action in RESCHEDULE) { Reminders.schedule(context); return }
+        if (intent.action in RESCHEDULE) { Reminders.schedule(context); dev.mauve.fit.widget.Widgets.scheduleMidnight(context); return }
         val d = App.store.data.value
         val trainedToday = d.history.any { Stats.day(it.startedAt) == LocalDate.now() }
         if (!trainedToday && d.active == null) {

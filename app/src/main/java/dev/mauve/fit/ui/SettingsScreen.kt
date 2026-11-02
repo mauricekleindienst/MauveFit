@@ -189,6 +189,8 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                                     if (!on) {
                                         App.store.updateSettings { it.copy(language = value) }
                                         I18n.apply(value)
+                                        // Channel names show in the system settings; they follow the language too.
+                                        dev.mauve.fit.system.createChannels(context)
                                         (context as? android.app.Activity)?.recreate()
                                     }
                                 }
@@ -463,9 +465,14 @@ fun SettingsScreen(data: AppData, nav: NavController) {
     if (confirmReset) AlertDialog(
         onDismissRequest = { confirmReset = false },
         title = { Text(L("Alle Daten löschen?", "Delete all data?")) },
-        text = { Text(L("Trainings, Pläne, Rekorde und Einstellungen werden entfernt. Das lässt sich nur mit einem Backup rückgängig machen.", "Workouts, plans, records and settings are removed. Only a backup can undo this.")) },
+        text = { Text(L("Trainings, Pläne, Rekorde, Fortschrittsfotos und Einstellungen werden entfernt. Das lässt sich nur mit einem Backup rückgängig machen (Fotos sind nicht darin).", "Workouts, plans, records, progress photos and settings are removed. Only a backup can undo this (photos are not in it).")) },
         confirmButton = {
-            TextButton(onClick = { Haptics.warn(); confirmReset = false; App.store.reset(); App.store.clearCycle(); nav.navigate("home") { popUpTo(0) } }) { Text(L("Löschen", "Delete"), color = Ink.red) }
+            TextButton(onClick = { Haptics.warn(); confirmReset = false; App.store.reset(); App.store.clearCycle()
+                // Language, theme and accent are back to "system": apply them now, not after a restart.
+                I18n.apply("system"); dev.mauve.fit.system.createChannels(context)
+                nav.navigate("home") { popUpTo(0) }
+                (context as? android.app.Activity)?.recreate()
+            }) { Text(L("Löschen", "Delete"), color = Ink.red) }
         },
         dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(L("Abbrechen", "Cancel")) } },
         containerColor = Ink.raised,

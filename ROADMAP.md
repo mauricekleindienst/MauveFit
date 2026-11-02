@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.15.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.16.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -62,6 +62,10 @@ Stand: Version 1.15.0 (November 2026). Sortiert nach Nutzen für das Training, n
 - Plan-Generator wählt gängige Übungen statt Mischformen wie "Cable Squat Row"
 - Serien-Widget zeigt die letzten 8 Wochen als Balken
 - Teilen mit Health Connect direkt im Intro
+
+## Erledigt in 1.16
+
+- Startgewicht beim ersten Mal aus Körpergewicht und Erfahrung geschätzt (Langhantel und Kurzhantel, vorsichtig)
 
 ## Als Nächstes
 

@@ -271,6 +271,41 @@ object Coach {
         return sets.map { it.copy(weight = Stats.roundTo(it.weight / f, d.settings.weightStep)) }
     }
 
+    /**
+     * Rough one-rep max as a share of body weight for the classic free-weight lifts, per level.
+     * Deliberately low (between typical women's and men's numbers), since the app does not ask.
+     */
+    private val strengthRatios = listOf(
+        "deadlift" to Triple(0.8, 1.15, 1.5),
+        "squat" to Triple(0.65, 0.95, 1.3),
+        "bench press" to Triple(0.5, 0.75, 1.0),
+        "row" to Triple(0.45, 0.65, 0.85),
+        "shoulder press" to Triple(0.33, 0.48, 0.65),
+        "overhead press" to Triple(0.33, 0.48, 0.65),
+        "military press" to Triple(0.33, 0.48, 0.65),
+        "curl" to Triple(0.2, 0.3, 0.4),
+    )
+
+    /**
+     * A careful first weight for a barbell or dumbbell lift that has never been logged, from body
+     * weight and level: 80 % of the working weight the estimated max allows for [reps]. Dumbbells
+     * are per hand. Null for anything else, e.g. machines, whose numbers differ from gym to gym.
+     */
+    fun firstEstimate(e: Exercise, bodyKg: Double?, level: Level, reps: Int, bar: Double = 20.0): Double? {
+        if (bodyKg == null || bodyKg <= 0) return null
+        val perHand = when (e.equipment) {
+            "barbell" -> 1.0
+            "dumbbell" -> 0.4
+            else -> return null
+        }
+        val r = strengthRatios.firstOrNull { it.first in e.name }?.second ?: return null
+        val ratio = when (level) { Level.Beginner -> r.first; Level.Intermediate -> r.second; Level.Advanced -> r.third }
+        val max = bodyKg * ratio * perHand
+        val w = max / (1 + reps / 30.0) * 0.8
+        // An empty barbell is the least a barbell lift can start with.
+        return if (e.equipment == "barbell") w.coerceAtLeast(bar) else w
+    }
+
     /** [load] scales the suggestion, e.g. for readiness; 1.0 leaves it as progression decided. */
     fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0): Double {
         val step = d.settings.weightStep
@@ -281,7 +316,8 @@ object Coach {
                 val o = repo[r.exerciseId]
                 o != null && e != null && o.target == e.target && o.equipment == e.equipment && r.best.weight > 0
             }.maxOfOrNull { it.e1rm }
-            if (similar == null) 0.0 else similar / (1 + reps / 30.0) * 0.85
+            if (similar != null) similar / (1 + reps / 30.0) * 0.85
+            else e?.let { firstEstimate(it, d.bodyWeights.firstOrNull()?.kg, d.profile.level, reps, d.settings.barWeight) } ?: 0.0
         }
         // A block's phase sets the load; outside a block the light week does.
         w *= loadFactor(d) * load

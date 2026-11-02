@@ -442,9 +442,9 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Spacer(Modifier.height(6.dp))
                 Text(
                     L(
-                        "Übungsdaten: exercises-dataset von hasaneyldrm (MIT-Lizenz). ${Exercise.ATTRIBUTION}. " +
+                        "Übungsdaten: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT-Lizenz). Animationen ${Exercise.ATTRIBUTION}. " +
                             "Schrift: Archivo (SIL Open Font License). Keine Konten, kein Tracking, keine Werbung.",
-                        "Exercise data: exercises-dataset by hasaneyldrm (MIT licence). ${Exercise.ATTRIBUTION}. " +
+                        "Exercise data: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT licence). Animations ${Exercise.ATTRIBUTION}. " +
                             "Font: Archivo (SIL Open Font License). No accounts, no tracking, no ads.",
                     ),
                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,

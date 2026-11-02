@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.17.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.18.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -79,7 +79,14 @@ Stand: Version 1.17.1 (November 2026). Sortiert nach Nutzen für das Training, n
 - Wieder abgehakter Satz wird nicht mehr als "erledigt" angezeigt
 - Kein Pausen-Countdown mehr nach dem letzten Satz; leeres Training zeigt "Öffnen" statt "Erledigt"
 
+## Erledigt in 1.18
+
+- Ausführungsanleitungen ("So geht's") aller 1.324 Übungen auf Deutsch; Englisch bleibt für englische Sprache
+- Lizenzhinweise genau wie gefordert: "© Gym visual — https://gymvisual.com/" und MIT-Copyright des Datensatzes
+
 ## Als Nächstes
+
+- **Animationen lizenzrechtlich klären.** Die GIFs sind © Gym visual und nicht von der MIT-Lizenz des Datensatzes gedeckt. Vor einem Store-Release: Lizenz bei Gym visual oder Umstieg auf free-exercise-db (gemeinfrei, zwei Fotos pro Übung).
 
 - **Uhr-App auf echter Galaxy Watch testen.** Bisher nur gebaut, nicht auf einem Gerät oder Wear-Emulator gelaufen.
 

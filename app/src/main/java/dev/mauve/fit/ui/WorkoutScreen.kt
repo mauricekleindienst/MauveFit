@@ -407,7 +407,7 @@ private fun ExercisePage(
                         Modifier.padding(top = 8.dp, start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                e?.steps?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
+                e?.let { App.repo.steps(it) }?.takeIf { it.isNotEmpty() }?.let { steps -> HowTo(steps) }
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)

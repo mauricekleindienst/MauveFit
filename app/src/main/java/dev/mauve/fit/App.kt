@@ -43,7 +43,7 @@ class App : Application(), SingletonImageLoader.Factory {
         dev.mauve.fit.system.HealthSync.follow(this)
         NextWidget.follow(this)
         thread(name = "exercise-db") {
-            repo.all
+            repo.warm()
             WatchSync.start(this)
             Media.prefetchPlans(this)
         }

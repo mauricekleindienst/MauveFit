@@ -115,7 +115,7 @@ fun ExerciseScreen(id: String, data: AppData, nav: NavController, onBack: (() ->
             Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                 Eyebrow(L("Ausführung", "How to"))
                 Spacer(Modifier.height(8.dp))
-                e.steps.forEachIndexed { i, step ->
+                App.repo.steps(e).forEachIndexed { i, step ->
                     Row(Modifier.padding(vertical = 8.dp)) {
                         Box(Modifier.size(28.dp).clip(Pill).background(Ink.raised), contentAlignment = Alignment.Center) {
                             Text("${i + 1}", color = Ink.accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)

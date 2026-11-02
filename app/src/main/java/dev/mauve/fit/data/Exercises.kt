@@ -34,7 +34,8 @@ data class Exercise(
     companion object {
         const val MEDIA_BASE = "https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/"
         const val FALLBACK_BASE = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/"
-        val ATTRIBUTION get() = L("Animationen © Gym visual · gymvisual.com", "Animations © Gym visual · gymvisual.com")
+        // Wording the media notice of exercises-dataset asks for on every use.
+        const val ATTRIBUTION = "© Gym visual — https://gymvisual.com/"
     }
 }
 
@@ -49,6 +50,23 @@ class ExerciseRepo(private val context: Context) {
     private val byId by lazy { all.associateBy { it.id } }
 
     operator fun get(id: String): Exercise? = byId[id]
+
+    /** German how-to steps by exercise id (our own translation; the dataset has none). */
+    private val stepsDe: Map<String, List<String>> by lazy {
+        runCatching {
+            context.assets.open("exercises_de.json").bufferedReader().use { json.decodeFromString<Map<String, List<String>>>(it.readText()) }
+        }.getOrDefault(emptyMap())
+    }
+
+    /** The how-to in the app's language, falling back to English. */
+    fun steps(e: Exercise): List<String> =
+        if (I18n.german) stepsDe[e.id]?.takeIf { it.size == e.steps.size } ?: e.steps else e.steps
+
+    /** Loads everything up front, off the main thread. */
+    fun warm() {
+        all.size
+        if (I18n.german) stepsDe.size
+    }
 
     val categories: List<String> by lazy { all.map { it.category }.distinct().sortedBy { Labels.category(it) } }
     val equipment: List<String> by lazy {

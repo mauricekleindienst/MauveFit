@@ -87,8 +87,9 @@ object Updater {
                 )
             }
         }
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("checked", System.currentTimeMillis()).apply()
         result.onSuccess { r ->
+            // Only a check that got an answer counts; offline, the next start tries again.
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putLong("checked", System.currentTimeMillis()).apply()
             _state.value = if (newer(r.version, current(context))) State.Available(r) else if (quiet) State.Idle else State.UpToDate
         }.onFailure {
             if (!quiet) _state.value = State.Failed(L("Keine Verbindung zu GitHub", "Could not reach GitHub"))

@@ -299,7 +299,9 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
 private fun LazyListScope.achievements(data: AppData) {
     val list = Progress.achievements(data)
     item(key = "challenges") {
-        val c = remember(data.history, data.settings, data.profile) { Motivation.challenge(data, App.repo) }
+        // Keyed by the week: left open over Sunday night it would keep last week's challenge.
+        val week = Stats.weekKey(rememberToday().value)
+        val c = remember(data.history, data.settings, data.profile, week) { Motivation.challenge(data, App.repo) }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
                 Eyebrow(L("Wochen-Challenges", "Weekly challenges"))
@@ -698,7 +700,7 @@ private fun WeightGoalCard(data: AppData) {
             confirmButton = {
                 TextButton(enabled = parsed != null, onClick = {
                     val v = parsed ?: return@TextButton
-                    Haptics.success(); App.store.updateSettings { it.copy(goalWeight = v, goalSetAt = System.currentTimeMillis()) }
+                    Haptics.success(); App.store.updateSettings { s -> if (kotlin.math.abs(s.goalWeight - v) < 1e-6) s else s.copy(goalWeight = v, goalSetAt = System.currentTimeMillis()) }
                     editing = false
                 }) { Text(L("Speichern", "Save")) }
             },

@@ -87,9 +87,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
     val planned = data.mealPlan.values.sum()
     // "Today" must follow the clock: coming back after midnight with unchanged data does not
     // recompose, and a glass of water would land on yesterday.
-    var today by remember { mutableStateOf(LocalDate.now()) }
-    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { today = LocalDate.now(); onPauseOrDispose { } }
-    androidx.compose.runtime.LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(30_000); LocalDate.now().let { if (it != today) today = it } } }
+    val today by rememberToday()
     val todayKey = today.toString()
     val context = LocalContext.current
 

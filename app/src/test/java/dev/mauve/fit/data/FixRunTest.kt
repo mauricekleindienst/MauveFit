@@ -107,4 +107,23 @@ class FixRunTest {
         val o = WeightGoal.outlook(entries, 80.0, now, since = now)!!
         assertTrue(!o.reached)
     }
+
+    @Test fun aRecipeWithAnUnknownGoalStillLoads() {
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val text = """{"id":"r","de":"x","en":"x","goals":["Muscle","FutureGoal"],"minutes":5,"kcal":100,"protein":1,"carbs":1,"fat":1,"keepsDays":1,"tags":["Nope"],"ingredients":[],"stepsDe":[],"stepsEn":[]}"""
+        val r = json.decodeFromString(Nutrition.Recipe.serializer(), text)
+        assertEquals(setOf(Goal.Muscle), r.goals)
+        assertTrue(r.tags.isEmpty())
+    }
+
+    @Test fun aSmallWeightCutForABreakComesBackExactly() {
+        // 5 kg remembered as the full weight, 5 kg lifted at 0.8 (4 rounded up to a step): stays 5.
+        val e = ExerciseEntry("raise", load = 0.8, fullTop = 5.0, sets = List(3) { SetEntry(5.0, 12, target = 12, done = true) })
+        val d = AppData(history = listOf(Workout(name = "W", finishedAt = 1L, entries = listOf(e))))
+        assertEquals(5.0, Coach.lastFullSets(d, "raise").first().weight, 0.0)
+        // 70 kg in a 70 % week of a 100 kg lift comes back as 100.
+        val e2 = ExerciseEntry("bench", load = 0.7, fullTop = 100.0, sets = List(3) { SetEntry(70.0, 8, done = true) })
+        val d2 = AppData(history = listOf(Workout(name = "W", finishedAt = 1L, entries = listOf(e2))))
+        assertEquals(100.0, Coach.lastFullSets(d2, "bench").first().weight, 0.0)
+    }
 }

@@ -546,7 +546,8 @@ private fun ExercisePage(
                     OutlinedTextField(reps, { reps = it }, Modifier.weight(1f).then(if (bodyweight) Modifier.focusRequester(focus) else Modifier), label = { Text(L("Wdh.", "Reps")) }, singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
-                if (Coach.usesBarbell(e)) PlateView(kg.replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 } ?: 0.0, data.settings.barWeight)
+                val previewKg = kg.replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 }
+                if (Coach.usesBarbell(e) && previewKg != null) PlateView(previewKg, data.settings.barWeight)
                 if (hasFollowing) Row(
                     Modifier.padding(top = 14.dp).fillMaxWidth().clip(RowShape).clickable { Haptics.tick(); toAll = !toAll }.padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,

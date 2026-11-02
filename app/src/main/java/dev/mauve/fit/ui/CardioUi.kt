@@ -92,7 +92,7 @@ fun CardioCard(data: AppData) {
     // Watch import is offered only to people who already connected Health Connect.
     var connected by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(Unit) { connected = Recovery.granted(context) }
+    OnResume { connected = Recovery.granted(context) }
 
     fun import() = scope.launch {
         val found = CardioSync.recent(context)

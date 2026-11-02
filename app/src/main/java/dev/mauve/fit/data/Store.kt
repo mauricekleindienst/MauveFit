@@ -22,7 +22,7 @@ import kotlinx.serialization.json.jsonObject
 
 /** All app state in one JSON file, written shortly after every change. */
 @OptIn(FlowPreview::class)
-class Store(context: Context) {
+class Store(private val context: Context) {
     private val file = File(context.filesDir, "data.json")
     // Unknown keys and enum values from another app version fall back to defaults instead of failing.
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; coerceInputValues = true }
@@ -37,6 +37,10 @@ class Store(context: Context) {
         _data.drop(1).debounce(300).onEach(::save).launchIn(scope)
         // Writes the recovered state back at once, so the broken file is not read again.
         if (recovered) flush()
+        // A goal set before goals had a start date counts from now on, not from the oldest weigh-in.
+        if (_data.value.settings.let { it.goalWeight > 0 && it.goalSetAt == 0L }) {
+            update { it.copy(settings = it.settings.copy(goalSetAt = System.currentTimeMillis())) }
+        }
     }
 
     fun update(block: (AppData) -> AppData) = _data.update(block)
@@ -56,9 +60,15 @@ class Store(context: Context) {
         }
         if (!file.exists() && !prev.exists()) return AppData()
         if (file.exists()) runCatching { file.copyTo(File(dir, "data.broken-${System.currentTimeMillis()}.json")) }
+        prune("data.broken-")
         val older = read(File(dir, "data.json.tmp")) ?: read(prev) ?: return AppData()
         recovered = true
         return older
+    }
+
+    /** Keeps the newest three safety copies starting with [prefix]; each is a full copy of the data. */
+    private fun prune(prefix: String) {
+        file.parentFile?.listFiles { f -> f.name.startsWith(prefix) }?.sortedByDescending { it.name }?.drop(3)?.forEach { runCatching { it.delete() } }
     }
 
     /** Writes immediately; called when the app goes to the background so a quick kill loses nothing. */
@@ -89,7 +99,9 @@ class Store(context: Context) {
         val load = if (d.settings.autoRegulate) Coach.readinessLoad(score) else 1.0
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
-            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset, load = Coach.loadFactor(d) * load * Coach.breakLoad(d, p.exerciseId))
+            val f = Coach.loadFactor(d) * load * Coach.breakLoad(d, p.exerciseId)
+            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset,
+                load = f, fullTop = Coach.fullTop(d, App.repo, p.exerciseId, p.reps, f))
         }.withSupersetsCleaned()
         d.copy(active = Workout(
             name = plan?.name ?: L("Freies Training", "Free workout"), routineId = routine?.id, entries = entries,
@@ -185,7 +197,8 @@ class Store(context: Context) {
                 val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
                 val open = e.sets.count { !it.done && !it.warmup }.coerceAtLeast(1)
                 // A new exercise starts its own load: the old one's full-load anchor does not apply.
-                val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId), fullTop = 0.0)
+                val f = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId)
+                val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = f, fullTop = Coach.fullTop(d, App.repo, exerciseId, reps, f))
                 listOf(fresh) + tail
             }
         })
@@ -250,7 +263,9 @@ class Store(context: Context) {
     }.onSuccess { restored ->
         // The current state is kept next to the data, in case the wrong backup was picked.
         runCatching { file.takeIf { it.exists() }?.copyTo(File(file.parentFile, "data.before-import-${System.currentTimeMillis()}.json")) }
+        prune("data.before-import-")
         update { restored }; flush()
+        if (!restored.settings.healthWrite) dev.mauve.fit.system.HealthSync.forget(context)
     }.isSuccess
 
     /** Deletes all data and returns to the intro. */
@@ -261,6 +276,8 @@ class Store(context: Context) {
     fun reset() {
         update { AppData() }
         flush()
+        // Writing is off now; turned on again later it must not delete the old Health Connect entries.
+        dev.mauve.fit.system.HealthSync.forget(context)
         val dir = file.parentFile ?: return
         runCatching { File(dir, "photos").deleteRecursively() }
         dir.listFiles { f -> f.name == "data.prev.json" || f.name.startsWith("data.before-import-") || f.name.startsWith("data.broken-") }
@@ -280,7 +297,9 @@ class Store(context: Context) {
         val d = data.value
         val reps = Stats.lastSets(d.history, exerciseId).firstOrNull()?.let { if (it.target > 0) it.target else it.reps } ?: 10
         val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
-        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId)))
+        val f = Coach.loadFactor(d) * Coach.breakLoad(d, exerciseId)
+        w.copy(entries = w.entries + ExerciseEntry(exerciseId, d.settings.defaultRest, List(3) { SetEntry(weight, reps, target = reps) },
+            load = f, fullTop = Coach.fullTop(d, App.repo, exerciseId, reps, f)))
     }
 
     // --- Plans -------------------------------------------------------------------

@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.9 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.10 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,16 @@ Stand: Version 1.19.9 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.10 (Fix-Runde 9)
+
+- "Heute", Fortschritt und Analysen folgen der Uhr: nach Mitternacht oder montags früh stimmen Datum, Wochenleiste, Tipp und Challenge, ohne dass sich Daten ändern müssen
+- Health-Connect-Zugriff, der in der Health-Connect-App selbst erteilt oder entzogen wurde, wird beim Zurückkehren erkannt
+- Ein Rezept mit einem unbekannten Ziel oder Tag aus einer neueren App-Version macht die Datendatei nicht mehr unlesbar
+- Einkaufsliste behält Haken beim Sprachwechsel
+- Alle Daten löschen oder ein Backup ohne Health-Connect-Schreiben: späteres Wiedereinschalten löscht keine alten Einträge in Health Connect
+- Sicherheitskopien werden auf die neuesten drei begrenzt
+- Korrekturen an Runde 8: Gewicht nach einer leichten Woche oder Pause kommt exakt zurück (5 kg wurden zu 7,5 kg), bestehende Zielgewichte bekommen ein Startdatum, unverändert gespeichertes Ziel setzt den Start nicht zurück, Challenge "erledigt" und Anzeige stimmen überein
 
 ## Erledigt in 1.19.9 (Fix-Runde 8)
 

@@ -51,6 +51,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -405,4 +407,32 @@ fun Modifier.stickyScrim(): Modifier = drawBehind {
         Brush.verticalGradient(0f to Ink.bg, 0.72f to Ink.bg, 1f to Ink.bg.copy(alpha = 0f)),
         topLeft = Offset(-out, 0f), size = Size(size.width + 2 * out, size.height),
     )
+}
+
+/**
+ * Today's date as state that follows the clock: refreshed when the screen resumes and checked
+ * every 30 s. Reading LocalDate.now() during composition alone goes stale over midnight, because
+ * coming back with unchanged data recomposes nothing.
+ */
+@Composable
+fun rememberToday(): androidx.compose.runtime.State<java.time.LocalDate> {
+    val today = remember { mutableStateOf(java.time.LocalDate.now()) }
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { today.value = java.time.LocalDate.now(); onPauseOrDispose { } }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(30_000)
+            java.time.LocalDate.now().let { if (it != today.value) today.value = it }
+        }
+    }
+    return today
+}
+
+/** Runs [block] each time the screen comes back, e.g. to re-check a permission granted elsewhere. */
+@Composable
+fun OnResume(block: suspend () -> Unit) {
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    androidx.lifecycle.compose.LifecycleResumeEffect(Unit) {
+        val job = scope.launch { block() }
+        onPauseOrDispose { job.cancel() }
+    }
 }

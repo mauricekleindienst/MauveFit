@@ -1,6 +1,7 @@
 package dev.mauve.fit.data
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.serializer
 import kotlin.math.roundToInt
 
 /** Daily targets, meal-prep recipes, a shopping list and short tips, in German and English. */
@@ -57,14 +58,14 @@ object Nutrition {
         val id: String,
         val de: String,
         val en: String,
-        val goals: Set<Goal>,
+        @Serializable(with = GoalSetSerializer::class) val goals: Set<Goal>,
         val minutes: Int,
         val kcal: Int,
         val protein: Int,
         val carbs: Int,
         val fat: Int,
         val keepsDays: Int,
-        val tags: Set<RecipeTag>,
+        @Serializable(with = TagSetSerializer::class) val tags: Set<RecipeTag>,
         /** Amounts are per portion. */
         val ingredients: List<Ingredient>,
         val stepsDe: List<String>,
@@ -813,16 +814,16 @@ object Nutrition {
     /** Everything for the recipe list: own recipes first, then the ones that fit the goal, then the rest. */
     fun listFor(goal: Goal, own: List<Recipe>) = own + forGoal(goal) + recipes.filter { goal !in it.goals }
 
-    data class ShoppingItem(val name: String, val amount: Double, val unit: String) {
-        /** What a tick is stored under. */
-        val key: String get() = "$name|$unit"
+    data class ShoppingItem(val name: String, val amount: Double, val unit: String, val de: String = name) {
+        /** What a tick is stored under: the German name, so a language switch keeps the ticks. */
+        val key: String get() = "$de|$unit"
     }
 
     /** Everything needed for the chosen recipes and portions, merged by ingredient. */
     fun shoppingList(plan: Map<String, Int>, own: List<Recipe> = emptyList()): List<ShoppingItem> =
         plan.flatMap { (id, portions) -> recipe(id, own)?.ingredients.orEmpty().map { it to portions } }
-            .groupBy { (ing, _) -> ing.name to ing.unit }
-            .map { (key, list) -> ShoppingItem(key.first, list.sumOf { (ing, n) -> ing.amount * n }, key.second) }
+            .groupBy { (ing, _) -> ing.de to ing.unit }
+            .map { (key, list) -> ShoppingItem(list.first().first.name, list.sumOf { (ing, n) -> ing.amount * n }, key.second, de = key.first) }
             .sortedBy { it.name }
 
     fun unitLabel(unit: String) = when (unit) {
@@ -870,3 +871,18 @@ object Nutrition {
         return tips[dayOfYear % tips.size]
     }
 }
+
+/**
+ * A set of enum values read by name, skipping names this version does not know: a recipe saved
+ * by a newer version must not make the whole data file unreadable.
+ */
+open class LenientEnumSetSerializer<E : Enum<E>>(private val values: Array<E>) : kotlinx.serialization.KSerializer<Set<E>> {
+    private val inner = kotlinx.serialization.builtins.SetSerializer(String.serializer())
+    override val descriptor = inner.descriptor
+    override fun serialize(encoder: kotlinx.serialization.encoding.Encoder, value: Set<E>) = inner.serialize(encoder, value.map { it.name }.toSet())
+    override fun deserialize(decoder: kotlinx.serialization.encoding.Decoder): Set<E> =
+        inner.deserialize(decoder).mapNotNull { n: String -> values.firstOrNull { it.name == n } }.toSet()
+}
+
+object GoalSetSerializer : LenientEnumSetSerializer<Goal>(Goal.entries.toTypedArray())
+object TagSetSerializer : LenientEnumSetSerializer<Nutrition.RecipeTag>(Nutrition.RecipeTag.entries.toTypedArray())

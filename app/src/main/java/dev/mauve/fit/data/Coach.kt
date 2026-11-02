@@ -268,6 +268,13 @@ object Coach {
     fun lastFullSets(d: AppData, exerciseId: String): List<SetEntry> {
         val prev = d.history.firstNotNullOfOrNull { w -> w.entries.firstOrNull { it.exerciseId == exerciseId } } ?: return emptyList()
         val sets = prev.sets.filter { !it.warmup }
+        // The full-load weight remembered on the entry: no dividing a rounded weight back up
+        // (5 kg cut to 4 rounds to 5, and 5 / 0.8 would come back as 7.5).
+        if (prev.fullTop > 0) {
+            val top = sets.maxOfOrNull { it.weight } ?: return sets
+            if (top <= 0 || top >= prev.fullTop - 1e-6) return sets
+            return sets.map { it.copy(weight = Stats.roundTo(it.weight * prev.fullTop / top, d.settings.weightStep)) }
+        }
         val f = prev.load
         if (f <= 0 || abs(f - 1.0) < 1e-6) return sets
         return sets.map { it.copy(weight = Stats.roundTo(it.weight / f, d.settings.weightStep)) }
@@ -309,11 +316,11 @@ object Coach {
     }
 
     /** [load] scales the suggestion, e.g. for readiness; 1.0 leaves it as progression decided. */
-    fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0): Double {
+    fun startWeight(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double = 1.0, scaled: Boolean = true): Double {
         val step = d.settings.weightStep
         // Drop and failure sets end a session on purpose; the straight sets say whether to go up.
         val last = lastFullSets(d, exerciseId).let { all -> all.filter { it.type == SetType.Normal }.ifEmpty { all } }
-        var w = if (last.isNotEmpty() && longBreak(d, exerciseId)) last.maxOf { it.weight } * 0.8
+        var w = if (last.isNotEmpty() && scaled && longBreak(d, exerciseId)) last.maxOf { it.weight } * 0.8
         else if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
             val e = repo[exerciseId]
             val similar = Stats.records(d.history).filter { r ->
@@ -323,8 +330,9 @@ object Coach {
             if (similar != null) similar / (1 + reps / 30.0) * 0.85
             else e?.let { firstEstimate(it, d.bodyWeights.firstOrNull()?.kg, d.profile.level, reps, d.settings.barWeight) } ?: 0.0
         }
-        // A block's phase sets the load; outside a block the light week does.
-        w *= loadFactor(d) * load
+        // A block's phase sets the load; outside a block the light week does. Unscaled, this is the
+        // full-load weight the entry remembers, so the next session continues from it exactly.
+        if (scaled) w *= loadFactor(d) * load
         return if (w <= 0) 0.0 else Stats.roundTo(w, step).coerceAtLeast(step)
     }
 
@@ -339,6 +347,10 @@ object Coach {
      * The comeback cut as a load factor, recorded on the entry like a light week, so the next
      * session progresses from the full weight again, not from the 80 %.
      */
+    /** The full-load weight to remember on an entry started at [load] below 1, else 0 (nothing to remember). */
+    fun fullTop(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double): Double =
+        if (abs(load - 1.0) < 1e-6) 0.0 else startWeight(d, repo, exerciseId, reps, scaled = false)
+
     fun breakLoad(d: AppData, exerciseId: String): Double =
         if (longBreak(d, exerciseId) && lastFullSets(d, exerciseId).isNotEmpty()) 0.8 else 1.0
 

@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,8 +64,9 @@ private data class Headline(val streak: Int, val rate: Insights.Rate, val volume
 /** Card at the top of Progress > Overview that opens the Insights screen. */
 @Composable
 fun InsightsTile(data: AppData, onClick: () -> Unit) {
-    val h = remember(data.history, data.settings.weeklyGoal, data.frozenWeeks) {
-        val today = LocalDate.now()
+    val day by rememberToday()
+    val h = remember(data.history, data.settings.weeklyGoal, data.frozenWeeks, day) {
+        val today = day
         Headline(
             Insights.streaks(data.history, data.settings.weeklyGoal, today, data.frozenWeeks).current,
             Insights.goalRate(data.history, data.settings.weeklyGoal, today),
@@ -107,7 +109,7 @@ private fun HeadCell(value: String, label: String, color: Color, modifier: Modif
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun InsightsScreen(data: AppData, nav: NavController) {
-    val today = remember { LocalDate.now() }
+    val today by rememberToday()
     // One pass over the whole history; only redone when the data behind it changes.
     val r = remember(data.history, data.food, data.water, data.bodyWeights, data.settings.weeklyGoal, data.frozenWeeks, data.profile.goal) {
         Insights.report(data, lookup, today)

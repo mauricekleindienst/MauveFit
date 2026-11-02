@@ -29,10 +29,10 @@ import java.time.LocalDate
  * training is on; with a start more than two cycles old it asks for a fresh date instead of guessing.
  */
 @Composable
-fun CycleCard(c: CycleSettings, onUpdate: () -> Unit) {
+fun CycleCard(c: CycleSettings, today: LocalDate = LocalDate.now(), onUpdate: () -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(c.on, c.source) { if (c.source == "health") CycleHealth.sync(context) }
-    val s = Cycle.status(c, LocalDate.now())
+    val s = Cycle.status(c, today)
     Card(Modifier.fillMaxWidth()) {
         if (s == null || s.stale) {
             Eyebrow(L("Zyklus", "Cycle"))

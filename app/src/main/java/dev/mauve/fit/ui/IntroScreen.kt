@@ -618,13 +618,13 @@ private fun ConnectStep(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var health by remember { mutableStateOf<Boolean?>(null) }
-    LaunchedEffect(Unit) { health = Recovery.granted(context) }
+    OnResume { health = Recovery.granted(context) }
     val askHealth = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
         health = got.containsAll(Recovery.permissions)
         if (health == true) { Haptics.success(); scope.launch { Recovery.refresh(context) } }
     }
     var share by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { share = App.store.data.value.settings.healthWrite && HealthSync.granted(context) }
+    OnResume { share = App.store.data.value.settings.healthWrite && HealthSync.granted(context) }
     val askShare = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
         share = got.containsAll(HealthSync.permissions)
         if (share) { Haptics.success(); App.store.updateSettings { it.copy(healthWrite = true) } }

@@ -71,7 +71,7 @@ object Motivation {
                 // Rounded down: 2,950 kg is "2.9 of 3 t", not a "3 of 3" that is not done yet.
                 val shown = Stats.fmtKg((kotlin.math.floor(kg / 100) / 10).coerceAtMost(tons.toDouble()))
                 Challenge(key, kind, L("$tons Tonnen Volumen", "$tons tons of volume"), L("Gewicht mal Wiederholungen, über alle Trainings", "Weight times reps, across all workouts"),
-                    kg.roundToInt(), tons * 1000, L("$shown von $tons t", "$shown of $tons t"))
+                    kotlin.math.floor(kg).toInt(), tons * 1000, L("$shown von $tons t", "$shown of $tons t"))
             }
             Kind.Groups -> {
                 val groups = Progress.groups

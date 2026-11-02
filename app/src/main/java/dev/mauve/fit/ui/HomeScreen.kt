@@ -76,14 +76,16 @@ fun HomeScreen(data: AppData, nav: NavController) {
     val recovery by Recovery.today.collectAsState()
     val cycle by App.store.cycle.collectAsState()
     // Keyed by the week too: kept in memory over Sunday night they would show last week's.
-    val weekKey = Stats.weekKey(java.time.LocalDate.now())
+    // Follows the clock: back on Monday morning the date, week strip, tip and challenge move on.
+    val today by rememberToday()
+    val weekKey = Stats.weekKey(today)
     val tip = remember(data.history, data.settings, data.routines, data.cardio, weekKey) { Coach.homeTip(data, App.repo) }
     val challenge = remember(data.history, data.settings, data.profile, weekKey) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)
     val twoColumns = LocalWidth.current.expanded
 
     // A new week may have started while the app stayed open: book the one that ended.
-    LaunchedEffect(Stats.weekKey(LocalDate.now())) { App.store.settleStreak() }
+    LaunchedEffect(weekKey) { App.store.settleStreak() }
     // Completed outside the summary (e.g. a goal change): count it and celebrate once here.
     LaunchedEffect(challenge.week, challenge.done) {
         if (challenge.done && App.store.completeChallenge(challenge.week)) Haptics.success()
@@ -102,12 +104,12 @@ fun HomeScreen(data: AppData, nav: NavController) {
     ) {
         item {
             Row(verticalAlignment = Alignment.Bottom) {
-                ScreenTitle(LocalDate.now().format(dateFmt), L("Heute", "Today"), Modifier.weight(1f))
+                ScreenTitle(today.format(dateFmt), L("Heute", "Today"), Modifier.weight(1f))
                 RoundButton(Icons.Rounded.Settings, L("Einstellungen", "Settings"), size = 44.dp) { nav.navigate("settings") }
             }
         }
 
-        item { WeekStrip(Stats.weekDays(history)) }
+        item { WeekStrip(Stats.weekDays(history), today) }
 
         // On expanded windows the cards below pack into two columns; on phones each is its own row.
         cards(twoColumns, 14.dp, key = "cards") {
@@ -163,7 +165,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
             }
 
             recovery?.let { r -> item { ReadinessCard(r, onShort = next?.let { n -> { App.store.startWorkout(n, short = true); nav.navigate("workout") } }.takeIf { data.active == null && r.score < 50 }) } }
-            if (cycle.on) item { CycleCard(cycle) { nav.navigate("settings") } }
+            if (cycle.on) item { CycleCard(cycle, today) { nav.navigate("settings") } }
             Coach.blockWeek(data)?.let { b -> item { BlockCard(b) } }
 
             if (data.active == null && next != null) item {
@@ -179,7 +181,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
                     Stat("$thisWeek/$goal", L("diese Woche", "this week"), Modifier.weight(1f).fillMaxHeight(), if (thisWeek >= goal) Ink.accent else Ink.text)
                     StreakStat(streak, data.freezes, Modifier.weight(1f).fillMaxHeight())
                     // A week of push-ups and pull-ups is reps, not "0 kg".
-                    val weekReps = history.filter { Stats.weekStart(Stats.day(it.startedAt)) == Stats.weekStart(java.time.LocalDate.now()) }
+                    val weekReps = history.filter { Stats.weekStart(Stats.day(it.startedAt)) == Stats.weekStart(today) }
                         .sumOf { w -> w.doneSets.sumOf { it.second.reps } }
                     if (volume.last().second <= 0 && weekReps > 0) Stat("$weekReps", L("Wiederholungen", "reps"), Modifier.weight(1f).fillMaxHeight())
                     else Stat(Stats.fmtVolume(volume.last().second), L("Volumen", "volume"), Modifier.weight(1f).fillMaxHeight())
@@ -187,8 +189,8 @@ fun HomeScreen(data: AppData, nav: NavController) {
             }
 
             // Monday and Tuesday: how last week went, before the new one takes over.
-            if (LocalDate.now().dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
-                ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
+            if (today.dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
+                ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal, weekKey) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
             }
             item { ChallengeCard(challenge, data.challengesDone.size) }
 
@@ -239,8 +241,7 @@ fun ChallengeCard(c: Motivation.Challenge, completed: Int, modifier: Modifier = 
 
 /** Monday to Sunday; trained days filled, today ringed. */
 @Composable
-private fun WeekStrip(trained: Set<LocalDate>) {
-    val today = LocalDate.now()
+private fun WeekStrip(trained: Set<LocalDate>, today: LocalDate) {
     val monday = Stats.weekStart(today)
     val names = if (I18n.german) listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So") else listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

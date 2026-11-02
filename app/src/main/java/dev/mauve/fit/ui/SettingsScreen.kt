@@ -535,7 +535,7 @@ private fun RecoverySection() {
     val scope = rememberCoroutineScope()
     var granted by remember { mutableStateOf<Boolean?>(null) }
     val today by Recovery.today.collectAsState()
-    LaunchedEffect(Unit) { granted = Recovery.granted(context) }
+    OnResume { granted = Recovery.granted(context) }
     val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
         granted = got.containsAll(Recovery.permissions)
         if (granted == true) { Haptics.success(); scope.launch { Recovery.refresh(context) } }
@@ -577,6 +577,7 @@ private fun HealthWriteSection() {
     val status by HealthSync.status.collectAsState()
     var granted by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(on) { HealthSync.load(context); granted = HealthSync.granted(context) }
+    OnResume { granted = HealthSync.granted(context) }
     val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
         granted = got.containsAll(HealthSync.permissions)
         if (granted == true) {
@@ -631,6 +632,7 @@ private fun CycleSection() {
             if (granted == true) CycleHealth.sync(context)
         }
     }
+    OnResume { if (c.on && c.source == "health") granted = CycleHealth.granted(context) }
     val ask = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { got ->
         granted = got.containsAll(CycleHealth.permissions)
         if (granted == true) { Haptics.success(); scope.launch { CycleHealth.sync(context) } }

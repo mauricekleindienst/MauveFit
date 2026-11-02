@@ -328,9 +328,12 @@ private fun LazyListScope.achievements(data: AppData) {
     }
     item(key = "level") {
         Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-            LevelRow(Quests.level(Quests.xp(data)))
+            LevelRow(Quests.level(Quests.xp(data)), data.title)
             Spacer(Modifier.height(8.dp))
-            Text(L("${data.questsDone} Quests erledigt", "${data.questsDone} quests done"), style = MaterialTheme.typography.bodySmall, color = Ink.muted)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(L("${data.questsDone} Quests erledigt", "${data.questsDone} quests done"), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = Ink.muted)
+                CoinBadge(dev.mauve.fit.data.Shop.balance(data) { App.repo[it]?.target })
+            }
         }
     }
     item {

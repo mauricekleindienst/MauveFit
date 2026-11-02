@@ -209,7 +209,10 @@ fun HomeScreen(data: AppData, nav: NavController) {
             if (today.dayOfWeek.value <= 2 && data.history.isNotEmpty()) item {
                 ReportCard(remember(data.history, data.cardio, data.settings.weeklyGoal, weekKey) { WeeklyReport.of(data, WeeklyReport.lastWeekStart(), App.repo::get) })
             }
-            item { QuestCard(Quests.level(Quests.xp(data)), quests, sideQuests) }
+            item {
+                QuestCard(Quests.level(Quests.xp(data)), quests, sideQuests, data.title,
+                    coins = dev.mauve.fit.data.Shop.balance(data) { App.repo[it]?.target }) { nav.navigate("shop") }
+            }
             item { ChallengeCard(challenge, data.challengesDone.size) }
 
             if (data.active == null) item {
@@ -238,9 +241,21 @@ private fun StreakStat(streak: Int, freezes: Int, modifier: Modifier) {
 
 /** Level with its XP bar, today's three quests and the week's two side quests. */
 @Composable
-fun QuestCard(rank: Quests.Rank, daily: List<Quests.Quest>, weekly: List<Quests.Quest>, modifier: Modifier = Modifier) {
+fun QuestCard(
+    rank: Quests.Rank, daily: List<Quests.Quest>, weekly: List<Quests.Quest>, title: String = "",
+    coins: Int? = null, modifier: Modifier = Modifier, onShop: (() -> Unit)? = null,
+) {
     Card(modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-        LevelRow(rank)
+        LevelRow(rank, title)
+        if (coins != null && onShop != null) {
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CoinBadge(coins)
+                Spacer(Modifier.weight(1f))
+                Text(L("Shop, Skills und Sammlungen", "Shop, skills and collections"), color = Ink.accent, style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.clip(Pill).clickable { Haptics.tick(); onShop() }.padding(horizontal = 8.dp, vertical = 6.dp))
+            }
+        }
         Spacer(Modifier.height(16.dp))
         Eyebrow(L("Quests heute", "Today's quests"), color = Ink.muted)
         Spacer(Modifier.height(6.dp))
@@ -256,14 +271,15 @@ fun QuestCard(rank: Quests.Rank, daily: List<Quests.Quest>, weekly: List<Quests.
 
 /** "Level 4 · Athlete" with the bar to the next level. */
 @Composable
-fun LevelRow(rank: Quests.Rank) {
+fun LevelRow(rank: Quests.Rank, title: String = "") {
+    val shown = dev.mauve.fit.data.Shop.titleLabel(title) ?: rank.title
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(44.dp).clip(Pill).background(Ink.accent), contentAlignment = Alignment.Center) {
             Text("${rank.level}", color = Ink.bg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(L("Level ${rank.level} · ${rank.title}", "Level ${rank.level} · ${rank.title}"), style = MaterialTheme.typography.titleMedium)
+            Text(L("Level ${rank.level} · $shown", "Level ${rank.level} · $shown"), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(6.dp))
             Meter(rank.fraction, Modifier.fillMaxWidth())
             Spacer(Modifier.height(4.dp))

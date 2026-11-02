@@ -61,6 +61,12 @@ enum class Accent(val key: String, private val de: String, private val en: Strin
     Blue("blue", "Blau", "Blue", Color(0xFF8FB3D2), Color(0xFF3D6180)),
     Mauve("mauve", "Mauve", "Mauve", Color(0xFFC5A9E6), Color(0xFF7955A0)),
     Lime("lime", "Lime", "Lime", Color(0xFFD5F64E), Color(0xFF557100)),
+    // Bought in the shop (Shop.premiumAccents); light variants tuned to 4.5:1 like the rest.
+    Gold("gold", "Gold", "Gold", Color(0xFFE8C15A), Color(0xFF826412)),
+    Ruby("ruby", "Rubin", "Ruby", Color(0xFFEE7F8E), Color(0xFFCB1B33)),
+    Emerald("emerald", "Smaragd", "Emerald", Color(0xFF5FD3A2), Color(0xFF207652)),
+    Ocean("ocean", "Ozean", "Ocean", Color(0xFF5FC4E8), Color(0xFF156F8F)),
+    Rose("rose", "Rosé", "Rose", Color(0xFFE6A0C4), Color(0xFFB83076)),
     /** Taken from the wallpaper (Android 12+); the colours here are only the swatch fallback. */
     Wallpaper("wallpaper", "Hintergrund", "Wallpaper", Color(0xFFA6ACB4), Color(0xFF4E555E)),
     ;

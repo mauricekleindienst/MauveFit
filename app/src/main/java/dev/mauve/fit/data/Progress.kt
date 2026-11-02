@@ -33,9 +33,19 @@ object Progress {
             (((now - at) / 3_600_000f) / needHours).coerceIn(0f, 1f)
         }
 
-    data class Achievement(val title: String, val detail: String, val progress: Float) {
+    /** Bronze to diamond; [tier] 0 for one-off achievements. */
+    data class Achievement(val title: String, val detail: String, val progress: Float, val tier: Int = 0) {
         val unlocked get() = progress >= 1f
     }
+
+    /** Tier names, Bronze (1) to Diamond (5). */
+    fun tierName(tier: Int) = when (tier) {
+        1 -> L("Bronze", "Bronze"); 2 -> L("Silber", "Silver"); 3 -> L("Gold", "Gold"); 4 -> L("Platin", "Platinum"); 5 -> L("Diamant", "Diamond")
+        else -> ""
+    }
+
+    /** Coins an unlocked achievement pays: 50 for a one-off, more for each tier. */
+    fun coins(a: Achievement) = if (a.tier == 0) 50 else 25 * a.tier * a.tier
 
     fun achievements(d: AppData): List<Achievement> {
         val h = d.history
@@ -49,36 +59,41 @@ object Progress {
         val hours = h.map { Instant.ofEpochMilli(it.startedAt).atZone(zone).hour }
         val distinct = h.flatMap { w -> w.entries.map { it.exerciseId } }.distinct().size
         // Exercises with a record actually broken (an earlier best beaten), not every exercise done once.
-        val records = Insights.prTimeline(h, Int.MAX_VALUE).map { it.exerciseId }.distinct().size
+        val prs = Insights.prTimeline(h, Int.MAX_VALUE)
+        val records = prs.map { it.exerciseId }.distinct().size
         val level = Quests.level(Quests.xp(d)).level
+        val cardioMin = d.cardio.sumOf { it.minutes }
+        val maxCollection = Shop.collections(d).count { it.tier >= 5 }
+        val weekend = h.count { Stats.day(it.startedAt).dayOfWeek.value >= 6 }
         fun p(v: Number, goal: Number) = (v.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
+
+        /** Five tiers of one goal; each tier is its own achievement with its own target. */
+        fun ladder(de: String, en: String, unitDe: (Long) -> String, unitEn: (Long) -> String, value: Number, steps: List<Long>) =
+            steps.mapIndexed { k, t ->
+                Achievement("${L(de, en)} · ${tierName(k + 1)}", L(unitDe(t), unitEn(t)), p(value, t), k + 1)
+            }
+
         return listOf(
             Achievement(L("Erster Schritt", "First step"), L("Erstes Training abgeschlossen", "First workout completed"), p(h.size, 1)),
-            Achievement(L("Dranbleiben", "Keep going"), L("10 Trainings", "10 workouts"), p(h.size, 10)),
-            Achievement(L("Gewohnheit", "Habit"), L("50 Trainings", "50 workouts"), p(h.size, 50)),
-            Achievement(L("Hundert", "Hundred"), L("100 Trainings", "100 workouts"), p(h.size, 100)),
-            Achievement(L("Satz um Satz", "Set by set"), L("500 Sätze", "500 sets"), p(sets, 500)),
-            Achievement(L("Tonnen bewegt", "Tons moved"), L("10 Tonnen Volumen", "10 tons of volume"), p(volume, 10_000)),
-            Achievement(L("Schwerlast", "Heavy duty"), L("100 Tonnen Volumen", "100 tons of volume"), p(volume, 100_000)),
-            Achievement(L("Serie", "Streak"), L("4 Wochen in Folge das Wochenziel", "Weekly goal 4 weeks in a row"), p(bestStreak, 4)),
-            Achievement(L("Unaufhaltsam", "Unstoppable"), L("12 Wochen in Folge das Wochenziel", "Weekly goal 12 weeks in a row"), p(bestStreak, 12)),
             Achievement(L("Frühaufsteher", "Early bird"), L("Training vor 8 Uhr", "Workout before 8 am"), p(hours.count { it < 8 }, 1)),
             Achievement(L("Nachteule", "Night owl"), L("Training nach 21 Uhr", "Workout after 9 pm"), p(hours.count { it >= 21 }, 1)),
-            Achievement(L("Vielseitig", "Versatile"), L("30 verschiedene Übungen", "30 different exercises"), p(distinct, 30)),
-            Achievement(L("Rekordjäger", "Record hunter"), L("In 15 Übungen den eigenen Bestwert verbessert", "Beat your own best in 15 exercises"), p(records, 15)),
             Achievement(L("Ausdauer", "Endurance"), L("Ein Training über 90 Minuten", "A workout over 90 minutes"), p(h.maxOfOrNull { it.durationMs } ?: 0L, 90 * 60_000L)),
-            Achievement(L("Marathon", "Marathon"), L("250 Trainings", "250 workouts"), p(h.size, 250)),
-            Achievement(L("Satzmaschine", "Set machine"), L("2000 Sätze", "2000 sets"), p(sets, 2000)),
-            Achievement(L("Halbes Jahr", "Half a year"), L("26 Wochen in Folge das Wochenziel", "Weekly goal 26 weeks in a row"), p(bestStreak, 26)),
             Achievement(L("Erster Rekord", "First record"), L("Einen eigenen Bestwert verbessert", "Beat one of your own bests"), p(records, 1)),
-            Achievement(L("Herausforderer", "Challenger"), L("10 Wochen-Challenges geschafft", "10 weekly challenges done"), p(d.challengesDone.size, 10)),
-            Achievement(L("Questjäger", "Quest hunter"), L("50 Quests erledigt", "50 quests done"), p(d.questsDone, 50)),
-            Achievement(L("Aufsteiger", "Climber"), L("Level 10 erreicht", "Reach level 10"), p(level, 10)),
-            Achievement(L("Veteran", "Veteran"), L("Level 25 erreicht", "Reach level 25"), p(level, 25)),
-            Achievement(L("Wochenendkrieger", "Weekend warrior"), L("10 Trainings am Wochenende", "10 workouts on a weekend"),
-                p(h.count { Stats.day(it.startedAt).dayOfWeek.value >= 6 }, 10)),
-            Achievement(L("Ausdauerläufer", "Cardio fan"), L("10 Cardio-Einheiten", "10 cardio sessions"), p(d.cardio.size, 10)),
-        )
+        ) +
+            ladder("Trainings", "Workouts", { "$it Trainings" }, { "$it workouts" }, h.size, listOf(10, 50, 150, 500, 1000)) +
+            ladder("Sätze", "Sets", { "$it Sätze" }, { "$it sets" }, sets, listOf(250, 1000, 5000, 15000, 40000)) +
+            ladder("Tonnen", "Tons", { "$it Tonnen Volumen" }, { "$it tons of volume" }, volume / 1000, listOf(10, 100, 500, 2000, 10000)) +
+            ladder("Serie", "Streak", { "$it Wochen in Folge das Wochenziel" }, { "Weekly goal $it weeks in a row" }, bestStreak, listOf(4, 12, 26, 52, 104)) +
+            ladder("Rekordjäger", "Record hunter", { "In $it Übungen den Bestwert verbessert" }, { "Beat your best in $it exercises" }, records, listOf(5, 15, 40, 80, 150)) +
+            ladder("Rekordflut", "Record streak", { "$it Rekorde gebrochen" }, { "$it records broken" }, prs.size, listOf(10, 50, 150, 400, 1000)) +
+            ladder("Vielseitig", "Versatile", { "$it verschiedene Übungen" }, { "$it different exercises" }, distinct, listOf(15, 30, 60, 120, 250)) +
+            ladder("Questjäger", "Quest hunter", { "$it Quests erledigt" }, { "$it quests done" }, d.questsDone, listOf(25, 100, 300, 1000, 2500)) +
+            ladder("Herausforderer", "Challenger", { "$it Wochen-Challenges" }, { "$it weekly challenges" }, d.challengesDone.size, listOf(5, 15, 40, 100, 200)) +
+            ladder("Aufsteiger", "Climber", { "Level $it erreicht" }, { "Reach level $it" }, level, listOf(5, 15, 30, 50, 75)) +
+            ladder("Cardio", "Cardio", { "$it Minuten Cardio" }, { "$it minutes of cardio" }, cardioMin, listOf(300, 1500, 5000, 15000, 40000)) +
+            ladder("Wochenendkrieger", "Weekend warrior", { "$it Trainings am Wochenende" }, { "$it weekend workouts" }, weekend, listOf(10, 30, 75, 150, 300)) +
+            ladder("Sammler", "Collector", { "$it Sammlungen auf Stufe V" }, { "$it collections at tier V" }, maxCollection, listOf(1, 5, 15, 30, 60)) +
+            ladder("Quest-Serie", "Quest streak", { "$it Tage in Folge alle Tagesquests" }, { "All daily quests $it days in a row" }, d.questStreakBest, listOf(3, 7, 30, 100, 365))
     }
 
     // --- Body measurements, heatmap and monthly recap --------------------------------

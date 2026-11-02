@@ -32,10 +32,14 @@ Most training apps are either a blank logbook or a subscription. Mauve Fit sits 
 - **Training blocks and light weeks**: base, build, peak and deload phases adjust the plan week by week.
 - **Edit afterwards**: correct a weight, reps or remove a set in a finished workout.
 
-### Motivation
-- **XP and levels**: every workout, set, record, challenge and quest pays XP. Titles from Rookie to Legend.
-- **Daily quests**: three new ones each day from twelve kinds (train, sets, records, water, protein, RPE, a new exercise, cardio, weigh-in, warm-ups, supersets, rating).
-- **Weekly challenge plus two side quests**, streaks with freezes, 24 achievements.
+### Motivation, built for the long run
+- **XP and levels** with no cap: every workout, set, record, challenge and quest pays XP. Titles from Rookie to Legend.
+- **Daily quests**: three new ones each day from twelve kinds (train, sets, records, water, protein, RPE, a new exercise, cardio, weigh-in, warm-ups, supersets, rating), plus a quest streak that pays more every day.
+- **Weekly challenge plus two side quests**, week streaks with freezes.
+- **Coins and a shop**: coins for training, records, quests, achievements, skill levels and collection tiers. Spend them on streak freezes, quest rerolls, XP boosters, premium accent colours and 16 titles, each with its own drawn icon and rarity (Common to Mythic). The better items unlock at higher levels, up to level 75.
+- **Skills**: every muscle group levels up with its working sets.
+- **Collections**: every exercise fills a collection from tier I to X (10 to 2,000 sets).
+- **About 75 achievements** in Bronze, Silver, Gold, Platinum and Diamond, from the first workout to 1,000 workouts, 10,000 tons, two-year streaks and 365 days of quests.
 
 ### Progress
 - Records, estimated 1RM charts, weekly volume, muscle heatmap, monthly recap and a weekly report every Monday.

@@ -30,7 +30,9 @@ object Quests {
 
     /** The three quests of [day]: a training one, a nutrition or body one, and one of either. */
     fun daily(d: AppData, day: LocalDate = LocalDate.now()): List<Quest> {
-        val rnd = Random(day.toEpochDay())
+        // A reroll bought in the shop draws the day's quests anew.
+        val rerolls = if (d.rerollDay == day.toString()) d.rerollCount else 0
+        val rnd = Random(day.toEpochDay() * 7919 + rerolls)
         val training = listOf(Daily.Train, Daily.Sets, Daily.Record, Daily.Rpe, Daily.NewExercise, Daily.Warmup, Daily.Superset, Daily.Rate)
         val body = listOfNotNull(Daily.Water, if (targets(d) != null) Daily.Protein else null, Daily.Cardio, Daily.Weigh)
         val first = training.random(rnd)
@@ -87,6 +89,8 @@ object Quests {
         }
 
     const val WEEKLY_XP = 60
+    /** Coins per day of the quest streak, growing to seven times that. */
+    const val STREAK_COINS = 15
     const val CHALLENGE_XP = 100
 
     /** Banks the XP of quests finished today and this week; returns the data unchanged when nothing new. */
@@ -97,7 +101,17 @@ object Quests {
         if (fresh.isEmpty()) return d
         // Only recent keys matter (today and this week); older ones can go.
         val kept = (d.questsClaimed + fresh.map { it.key }).takeLast(120)
-        return d.copy(questsClaimed = kept, questXp = d.questXp + fresh.sumOf { it.xp }, questsDone = d.questsDone + fresh.size)
+        // A running XP booster doubles quest XP; coins are half the base XP.
+        val boost = if (System.currentTimeMillis() < d.boostUntil) 2 else 1
+        val xp = fresh.sumOf { it.xp }
+        var out = d.copy(questsClaimed = kept, questXp = d.questXp + xp * boost, questsDone = d.questsDone + fresh.size, questCoins = d.questCoins + xp / 2)
+        // All three of today done: the quest streak grows, and pays more each day up to a week.
+        if (daily(d, today).all { it.done } && d.questStreakDay != today.toString()) {
+            val run = if (d.questStreakDay == today.minusDays(1).toString()) d.questStreak + 1 else 1
+            out = out.copy(questStreak = run, questStreakDay = today.toString(), questStreakBest = maxOf(d.questStreakBest, run),
+                questCoins = out.questCoins + STREAK_COINS * run.coerceAtMost(7))
+        }
+        return out
     }
 
     // --- XP and levels -------------------------------------------------------------------

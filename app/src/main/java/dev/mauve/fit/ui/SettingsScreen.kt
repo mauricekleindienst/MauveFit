@@ -246,8 +246,15 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Spacer(Modifier.height(14.dp))
                 Eyebrow(L("Akzentfarbe", "Accent colour"))
                 Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Accent.entries.filter { it != Accent.Wallpaper || android.os.Build.VERSION.SDK_INT >= 31 }.forEach { a ->
+                // The plain colours in one row, the ones bought in the shop in a second.
+                val premium = dev.mauve.fit.data.Shop.premiumAccents
+                val rows = listOf(
+                    Accent.entries.filter { it.key !in premium && (it != Accent.Wallpaper || android.os.Build.VERSION.SDK_INT >= 31) },
+                    Accent.entries.filter { it.key in premium && "accent:${it.key}" in data.owned },
+                ).filter { it.isNotEmpty() }
+                rows.forEachIndexed { r, row -> if (r > 0) Spacer(Modifier.height(10.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = if (r == 0) Arrangement.SpaceBetween else Arrangement.spacedBy(14.dp)) {
+                    row.forEach { a ->
                         val on = Ink.accentChoice == a
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
@@ -266,6 +273,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                             Text(a.label, style = MaterialTheme.typography.labelSmall, color = if (on) Ink.text else Ink.muted)
                         }
                     }
+                }
                 }
             }
         }

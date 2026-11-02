@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.20.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.21.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,16 @@ Stand: Version 1.20.1 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.21.0
+
+- Münzen und Shop: Münzen für Trainings, Rekorde, Quests, Erfolge, Skill-Level und Sammlungsstufen; im Shop Joker, Quest neu würfeln, XP-Booster, fünf Premium-Farben und 16 Titel
+- Eigene gezeichnete Icons für alle Shop-Artikel mit Seltenheit (Gewöhnlich bis Mythisch); bessere Artikel ab bestimmten Leveln bis Level 75
+- Skills: jede Muskelgruppe steigt mit ihren Sätzen im Level
+- Sammlungen: jede Übung von Stufe I bis X (10 bis 2000 Sätze)
+- Rund 75 Erfolge in Bronze, Silber, Gold, Platin und Diamant, jeder bringt Münzen
+- Quest-Serie: Tage in Folge mit allen Tagesquests bringen täglich mehr Bonus-Münzen
+- Gekaufter Titel steht neben dem Level
 
 ## Erledigt in 1.20.1
 

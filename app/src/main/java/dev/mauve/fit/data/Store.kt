@@ -450,6 +450,16 @@ class Store(private val context: Context) {
         return added
     }
 
+    /** Buys [item] from the shop; true when it went through (enough coins, still available). */
+    fun buy(item: Shop.Item): Boolean {
+        var ok = false
+        update { d -> Shop.buy(d, item, { App.repo[it]?.target }).also { ok = it !== d } }
+        if (ok) flush()
+        return ok
+    }
+
+    fun setTitle(key: String) = update { it.copy(title = key) }
+
     /** Banks the XP of quests just finished; true when something new was claimed. */
     fun claimQuests(): Boolean {
         var gained = false

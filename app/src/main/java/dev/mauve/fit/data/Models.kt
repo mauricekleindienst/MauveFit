@@ -263,6 +263,20 @@ data class AppData(
     val questsClaimed: List<String> = emptyList(),
     val questXp: Int = 0,
     val questsDone: Int = 0,
+    /** Shop: coins banked from quests, coins spent, things bought ("accent:gold", "title:iron"). */
+    val questCoins: Int = 0,
+    val coinsSpent: Int = 0,
+    val owned: Set<String> = emptySet(),
+    /** Title bought in the shop and shown next to the level, by key; "" for the level's own. */
+    val title: String = "",
+    /** Rerolls of today's quests and the day they belong to; end of a bought XP booster. */
+    val rerollDay: String = "",
+    val rerollCount: Int = 0,
+    val boostUntil: Long = 0,
+    /** Days in a row with all three daily quests done: the current run, its last day and the best. */
+    val questStreak: Int = 0,
+    val questStreakDay: String = "",
+    val questStreakBest: Int = 0,
     /** Cardio sessions, logged by hand or taken over from the watch, newest first. */
     val cardio: List<CardioSession> = emptyList(),
 )

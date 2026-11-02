@@ -372,6 +372,8 @@ object Coach {
      */
     fun startReps(d: AppData, repo: ExerciseRepo, exerciseId: String, planned: Int): Int {
         if (repo[exerciseId]?.bodyweight != true) return planned
+        // A light week or a comeback is no day to add reps.
+        if (loadFactor(d) < 1.0 || longBreak(d, exerciseId)) return planned
         val last = Stats.lastSets(d.history, exerciseId).filter { !it.warmup }
         if (last.isEmpty() || last.any { it.weight > 0 }) return planned
         val target = last.firstOrNull { it.target > 0 }?.target ?: planned
@@ -450,12 +452,15 @@ object Coach {
         val now = System.currentTimeMillis()
         val h = d.history
         val goal = d.settings.weeklyGoal
-        // Without a plan there is no suggestion below to point at.
-        if (Stats.nextRoutine(d.routines, h, repo) == null) return Tip(
+        // Without a plan there is no suggestion below to point at; said instead of the welcome and
+        // the closing "Ready", never in place of the tips that matter more.
+        val noPlan = Stats.nextRoutine(d.routines, h, repo) == null
+        val planTip = Tip(
             L("Kein Plan", "No plan"),
             L("Leg unter Training einen Plan an oder starte ein Schnelltraining.", "Create a plan under Training or start a quick workout."),
             Tone.Info,
         )
+        if (h.isEmpty() && noPlan) return planTip
         if (h.isEmpty()) return Tip(
             L("Willkommen", "Welcome"),
             if (d.profile.setup == Setup.Home) L(
@@ -491,7 +496,9 @@ object Coach {
         }
 
         // Lighter on purpose is no plateau.
-        if (!deloadActive(d) && blockWeek(d)?.phase != Phase.Deload) plateau(h, repo)?.let { return it }
+        // Lighter on purpose is no plateau: a light week, and a block whose peak and deload weeks
+        // lift less than its build week by design.
+        if (!deloadActive(d) && blockWeek(d) == null) plateau(h, repo)?.let { return it }
 
         val done = Stats.workoutsThisWeek(h)
         val daysLeft = 7 - java.time.LocalDate.now().dayOfWeek.value + 1
@@ -542,6 +549,7 @@ object Coach {
         imbalanceTip(d, repo)?.let { return it }
         balanceTip(d, repo)?.let { return it }
 
+        if (noPlan) return planTip
         return Tip(
             L("Bereit", "Ready"),
             L("Der Vorschlag unten trainiert die Muskeln, die sich am längsten erholt haben.", "The suggestion below trains the muscles that have rested longest."),

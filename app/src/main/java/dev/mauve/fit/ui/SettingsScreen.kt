@@ -272,7 +272,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val steps = listOf(0.5, 1.0, 1.25, 2.5, 5.0)
+                    val steps = listOf(0.5, 1.0, 1.25, 2.0, 2.5, 5.0)
                     Stepper(L("Schritt kg", "Step kg"), Stats.fmtKg(s.weightStep), Modifier.weight(1f),
                         { set { it.copy(weightStep = steps.lastOrNull { x -> x < it.weightStep } ?: steps.first()) } },
                         { set { it.copy(weightStep = steps.firstOrNull { x -> x > it.weightStep } ?: steps.last()) } })

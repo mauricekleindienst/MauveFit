@@ -163,7 +163,9 @@ fun IntroScreen(initial: Profile, redo: Boolean = false, onDone: () -> Unit) {
         if (kg != null && kg != App.store.data.value.bodyWeights.firstOrNull()?.kg) App.store.addBodyWeight(kg)
         App.store.updateSettings {
             it.copy(
-                goalWeight = kilos(goalWeight) ?: 0.0,
+                goalWeight = (kilos(goalWeight) ?: 0.0),
+                // A new goal counts from today; the same one keeps its start.
+                goalSetAt = (kilos(goalWeight) ?: 0.0).let { g -> if (kotlin.math.abs(it.goalWeight - g) < 1e-6) it.goalSetAt else System.currentTimeMillis() },
                 reminder = remind, reminderDays = remindDays.ifEmpty { it.reminderDays },
                 reminderHour = remindHour, reminderMinute = remindMinute,
             )

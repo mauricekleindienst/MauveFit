@@ -152,7 +152,15 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
 
     // The page count must follow exercises added during the workout, so read it through state.
     val pageCount by rememberUpdatedState(w.entries.size + 1)
-    val pager = rememberPagerState { pageCount }
+    // Opens where the workout stands, not on exercise 1.
+    val pager = rememberPagerState(initialPage = Supersets.current(w.entries).coerceAtLeast(0)) { pageCount }
+    // Sets ticked on the watch or in the notification: once the page on screen has nothing left,
+    // move on to the exercise that is next.
+    val current = Supersets.current(w.entries)
+    LaunchedEffect(current) {
+        val shown = w.entries.getOrNull(pager.currentPage) ?: return@LaunchedEffect
+        if (current >= 0 && current != pager.currentPage && shown.sets.none { !it.done }) pager.animateScrollToPage(current)
+    }
     val scope = rememberCoroutineScope()
     var finishDialog by remember { mutableStateOf(false) }
     var leaveDialog by remember { mutableStateOf(false) }
@@ -427,7 +435,9 @@ private fun ExercisePage(
                 Spacer(Modifier.height(16.dp))
                 Row(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(L("Satz", "Set"), Modifier.width(36.dp), maxLines = 1, style = MaterialTheme.typography.labelSmall, color = Ink.faint)
-                    if (!bodyweight) Text("kg", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
+                    // A dumbbell weight is per hand, which the starting estimate assumes too.
+                    if (!bodyweight) Text(if (e?.equipment == "dumbbell") L("kg je Hand", "kg / hand") else "kg", Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center, maxLines = 1)
                     Text(L("Wdh.", "Reps"), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = Ink.faint, textAlign = TextAlign.Center)
                     Spacer(Modifier.width(48.dp))
                 }

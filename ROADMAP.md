@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.13 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.14 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,14 @@ Stand: Version 1.19.13 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.14 (Fix-Runde 13)
+
+- Abgeschlossene Trainings korrigieren: Übung im Verlauf antippen, Gewicht und Wiederholungen ändern oder einen Satz entfernen (ein Tippfehler bleibt kein Rekord mehr)
+- Laufendes Training öffnet bei der aktuellen Übung und blättert weiter, wenn auf der Uhr oder in der Benachrichtigung abgehakt wird
+- Gewichtsschritt 2 kg für Kurzhanteln zu Hause; Kurzhantelgewicht als "kg je Hand" beschriftet
+- Zielgewicht aus "Plan neu erstellen" zählt ab dann
+- Korrekturen an Runde 12: Rekordkarte zeigt Wiederholungen statt "0 kg × 15", "Kein Plan" verdrängt keine wichtigeren Tipps, kein Plateau-Tipp innerhalb eines Blocks, keine Wiederholungssteigerung in der leichten Woche oder nach einer Pause, keine Volumen-Prozente neben Wiederholungen
 
 ## Erledigt in 1.19.13 (Fix-Runde 12)
 

@@ -287,6 +287,19 @@ class Store(private val context: Context) {
             ?.forEach { runCatching { it.delete() } }
     }
 
+    /**
+     * Replaces the sets of one exercise in a saved workout (a typo corrected, a set removed). With
+     * no sets left the exercise goes; with no working set left anywhere, the workout goes too.
+     */
+    fun editSavedSets(workoutId: String, index: Int, sets: List<SetEntry>) = update { d ->
+        d.copy(history = d.history.mapNotNull { w ->
+            if (w.id != workoutId || index !in w.entries.indices) return@mapNotNull w
+            val entries = w.entries.toMutableList()
+            if (sets.isEmpty()) entries.removeAt(index) else entries[index] = entries[index].copy(sets = sets)
+            if (entries.none { e -> e.sets.any { !it.warmup } }) null else w.copy(entries = entries)
+        })
+    }
+
     fun setFeel(workoutId: String, feel: Int, note: String) = update { d ->
         d.copy(history = d.history.map { if (it.id == workoutId) it.copy(feel = feel, note = note) else it })
     }

@@ -59,7 +59,8 @@ object WeeklyReport {
             sets = week.sumOf { it.doneSets.size },
             volume = volume,
             reps = week.sumOf { w -> w.doneSets.sumOf { it.second.reps } },
-            volumeChange = if (previous > 0) ((volume / previous - 1) * 100).roundToInt() else null,
+            // Against reps (a body-weight week) a volume change in percent means nothing.
+            volumeChange = if (previous > 0 && volume > 0) ((volume / previous - 1) * 100).roundToInt() else null,
             records = records,
             cardioMinutes = d.cardio.filter { inWeek(weekStart, it.at) }.sumOf { it.minutes },
             topMuscle = muscles.maxByOrNull { it.value }?.key,

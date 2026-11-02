@@ -193,7 +193,7 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
                 records.forEach { (exId, s) ->
                     Row(Modifier.padding(vertical = 4.dp)) {
                         Text(App.repo[exId]?.title ?: exId, Modifier.weight(1f), color = Ink.bg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text("${Stats.fmtKg(s.weight)} kg × ${s.reps}", color = Ink.bg)
+                        Text(ShareImage.setText(s), color = Ink.bg)
                     }
                 }
             }

@@ -5,9 +5,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Training history as CSV, one row per set, for spreadsheets and other apps. Comma separated with a
- * decimal point and fixed English column names, so Excel, Google Sheets and Numbers all read it the
- * same way regardless of the phone's language.
+ * Training history as CSV, one row per set, for spreadsheets and other apps, with fixed English
+ * column names. Separator and decimal mark follow the app language as Excel expects them: comma
+ * and point in English, semicolon and comma in German.
  */
 object CsvExport {
     private val date = DateTimeFormatter.ofPattern("yyyy-MM-dd")

@@ -420,7 +420,7 @@ private fun ReportCard(r: WeeklyReport.Report) {
             }
             Column {
                 Text(Stats.amount(r.volume, r.reps), style = MaterialTheme.typography.headlineSmall)
-                Text(r.volumeChange?.let { (if (it >= 0) "+" else "") + "$it %" } ?: L("Volumen", "volume"),
+                Text(r.volumeChange?.let { (if (it >= 0) "+" else "") + "$it %" } ?: if (r.volume > 0) L("Volumen", "volume") else L("Wiederholungen", "reps"),
                     style = MaterialTheme.typography.labelSmall, color = when { (r.volumeChange ?: 0) > 0 -> Ink.accent; (r.volumeChange ?: 0) < 0 -> Ink.coral; else -> Ink.muted })
             }
             Column {

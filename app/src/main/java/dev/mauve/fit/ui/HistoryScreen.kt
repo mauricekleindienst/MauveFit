@@ -223,11 +223,13 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
                     }
                 }
                 if (open) {
+                    var correcting by remember(w.id) { mutableStateOf<Int?>(null) }
                     Spacer(Modifier.height(12.dp))
                     if (w.note.isNotBlank()) Text(w.note, color = Ink.text, modifier = Modifier.padding(bottom = 8.dp))
-                    w.entries.forEach { e ->
+                    w.entries.forEachIndexed { i, e ->
                         val ex = App.repo[e.exerciseId]
-                        Row(Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        // Tap to correct a set: a typo would otherwise stay a record and set the next weight.
+                        Row(Modifier.fillMaxWidth().clip(RowShape).clickable { correcting = i }.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Thumb(ex, 44.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
@@ -242,6 +244,7 @@ private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (
                     Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.End) {
                         RoundButton(Icons.Rounded.DeleteOutline, L("Training löschen", "Delete workout")) { onDelete(w) }
                     }
+                    correcting?.let { i -> w.entries.getOrNull(i)?.let { e -> SavedSetsDialog(w.id, i, e) { correcting = null } } }
                 }
             }
         }
@@ -714,4 +717,50 @@ private fun WeightGoalCard(data: AppData) {
             containerColor = Ink.raised,
         )
     }
+}
+
+/** Corrects the sets of one exercise in a finished workout: weight, reps, or the set removed. */
+@Composable
+private fun SavedSetsDialog(workoutId: String, index: Int, entry: dev.mauve.fit.data.ExerciseEntry, onDismiss: () -> Unit) {
+    val bodyweight = App.repo[entry.exerciseId]?.bodyweight == true
+    class Row(val set: dev.mauve.fit.data.SetEntry) {
+        var kg by mutableStateOf(if (set.weight > 0) Stats.fmtKg(set.weight) else "")
+        var reps by mutableStateOf("${set.reps}")
+        var keep by mutableStateOf(true)
+    }
+    val rows = remember(entry) { entry.sets.map { Row(it) } }
+    fun parsedKg(r: Row) = if (r.kg.isBlank()) 0.0 else r.kg.replace(',', '.').trim().toDoubleOrNull()?.takeIf { it.isFinite() && it in 0.0..1000.0 }
+    fun parsedReps(r: Row) = r.reps.trim().toIntOrNull()?.takeIf { it in 0..200 }
+    val valid = rows.filter { it.keep }.all { parsedKg(it) != null && parsedReps(it) != null }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(App.repo[entry.exerciseId]?.title ?: entry.exerciseId) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                rows.forEachIndexed { j, r ->
+                    if (!r.keep) return@forEachIndexed
+                    androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (r.set.warmup) "W" else "${entry.sets.take(j + 1).count { !it.warmup }}", Modifier.width(24.dp), color = Ink.muted)
+                        if (!bodyweight) OutlinedTextField(r.kg, { r.kg = it }, Modifier.weight(1f), label = { Text("kg") }, singleLine = true,
+                            isError = parsedKg(r) == null, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                        Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(r.reps, { r.reps = it }, Modifier.weight(1f), label = { Text(L("Wdh.", "Reps")) }, singleLine = true,
+                            isError = parsedReps(r) == null, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        Icon(Icons.Rounded.Close, L("Satz entfernen", "Remove set"), tint = Ink.faint,
+                            modifier = Modifier.padding(start = 4.dp).clip(Pill).clickable { Haptics.tick(); r.keep = false })
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = valid, onClick = {
+                App.store.editSavedSets(workoutId, index, rows.filter { it.keep }.map { r ->
+                    r.set.copy(weight = parsedKg(r) ?: r.set.weight, reps = parsedReps(r) ?: r.set.reps)
+                })
+                Haptics.success(); onDismiss()
+            }) { Text(L("Speichern", "Save")) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L("Abbrechen", "Cancel")) } },
+        containerColor = Ink.raised,
+    )
 }

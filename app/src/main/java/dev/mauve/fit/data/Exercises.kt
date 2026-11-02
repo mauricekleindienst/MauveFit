@@ -118,7 +118,9 @@ object Labels {
         "leverage machine" to "Maschine", "band" to "Band", "resistance band" to "Widerstandsband", "smith machine" to "Multipresse",
         "kettlebell" to "Kettlebell", "weighted" to "Zusatzgewicht", "stability ball" to "Gymnastikball", "ez barbell" to "SZ-Stange",
         "sled machine" to "Beinpresse", "assisted" to "Assistiert", "medicine ball" to "Medizinball", "olympic barbell" to "Olympiastange",
-        "trap bar" to "Trap Bar", "rope" to "Seil", "roller" to "Roller", "bosu ball" to "Bosu",
+        "trap bar" to "Trap Bar", "rope" to "Seil", "roller" to "Faszienrolle", "bosu ball" to "Bosu", "wheel roller" to "Bauchroller",
+        "upper body ergometer" to "Armergometer", "skierg machine" to "Ski-Ergometer", "hammer" to "Hammer", "stationary bike" to "Ergometer",
+        "tire" to "Reifen", "elliptical machine" to "Crosstrainer", "stepmill machine" to "Treppensteiger",
     )
 
     // English: the dataset's own words, with a few made friendlier.
@@ -130,7 +132,7 @@ object Labels {
     private val categoriesEn = mapOf(
         "upper arms" to "Arms", "upper legs" to "Legs", "lower arms" to "Forearms", "lower legs" to "Calves", "waist" to "Core",
     )
-    private val equipmentEn = mapOf("leverage machine" to "Machine", "sled machine" to "Leg press", "ez barbell" to "EZ bar")
+    private val equipmentEn = mapOf("leverage machine" to "Machine", "sled machine" to "Leg press", "ez barbell" to "EZ bar", "wheel roller" to "Ab wheel", "roller" to "Foam roller", "skierg machine" to "SkiErg")
 
     private fun cap(s: String) = s.replaceFirstChar { it.uppercase() }
 

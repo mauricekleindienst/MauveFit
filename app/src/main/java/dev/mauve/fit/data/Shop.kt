@@ -53,13 +53,17 @@ object Shop {
 
     /** Coins earned in all: training, records, challenges, collection tiers, skill levels, quests. */
     fun earned(d: AppData, targetOf: (String) -> String?): Int =
-        d.history.sumOf { w -> 20 + w.doneSets.size.coerceAtMost(30) } +
-            Insights.prTimeline(d.history, Int.MAX_VALUE).size * 15 +
+        d.history.sumOf(::workoutCoins) +
+            Insights.prTimeline(d.history, Int.MAX_VALUE).size * RECORD_COINS +
             d.challengesDone.size * 50 +
             collections(d).sumOf { c -> (1..c.tier).sum() * 25 } +
             skills(d, targetOf).sumOf { it.level * 10 } +
             Progress.achievements(d).filter { it.unlocked }.sumOf(Progress::coins) +
             d.questCoins
+
+    /** Coins for one workout: 20, plus one per set up to 30. */
+    fun workoutCoins(w: Workout) = 20 + w.doneSets.size.coerceAtMost(30)
+    const val RECORD_COINS = 15
 
     fun balance(d: AppData, targetOf: (String) -> String?): Int = earned(d, targetOf) - d.coinsSpent
 

@@ -220,8 +220,12 @@ fun Stat(value: String, label: String, modifier: Modifier = Modifier, accent: Co
         // The wide face runs out of room fast in a third of the screen; long values step down a size.
         val style = if (value.length > 5) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium
         // Shrinks to fit: "1340 kg" in a third of the screen ran past the tile's edge.
-        Text(value, style = style, color = accent, maxLines = 1, softWrap = false,
-            autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = style.fontSize))
+        // A fixed line height keeps tiles in a row the same height when one value shrinks.
+        val line = with(androidx.compose.ui.platform.LocalDensity.current) { MaterialTheme.typography.headlineMedium.lineHeight.toDp() }
+        Box(Modifier.height(line), contentAlignment = Alignment.CenterStart) {
+            Text(value, style = style, color = accent, maxLines = 1, softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = style.fontSize))
+        }
         // Two lines: with large system text "diese Woche" was cut to "diese".
         Text(label, style = MaterialTheme.typography.labelSmall, color = Ink.muted, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }

@@ -169,10 +169,10 @@ private fun Modifier.clickableTick(onClick: () -> Unit) = this.then(Modifier.cli
 
 /** Coin balance as a small pill. */
 @Composable
-fun CoinBadge(coins: Int, modifier: Modifier = Modifier) {
+fun CoinBadge(coins: Int, modifier: Modifier = Modifier, gain: Boolean = false) {
     Row(modifier.clip(Pill).background(Ink.raised).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.Toll, null, tint = Ink.accent, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(6.dp))
-        Text("$coins", fontWeight = FontWeight.Bold)
+        Text(if (gain) "+$coins" else "$coins", fontWeight = FontWeight.Bold)
     }
 }

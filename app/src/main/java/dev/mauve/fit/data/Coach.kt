@@ -602,8 +602,8 @@ object Coach {
             .maxByOrNull { score(it, d.profile.level, main = true) } ?: return null
         return Tip(
             L("$group kommt zu kurz", "$group is falling behind"),
-            L("Nur $sets Sätze in zwei Wochen, andere Gruppen bis zu $max. Vorschlag: ${pick.title}.",
-                "Only $sets sets in two weeks, other groups up to $max. Suggestion: ${pick.title}."),
+            L("Nur ${Stats.sets(sets)} in zwei Wochen, andere Gruppen bis zu $max. Vorschlag: ${pick.title}.",
+                "Only ${Stats.sets(sets)} in two weeks, other groups up to $max. Suggestion: ${pick.title}."),
             Tone.Push, Action.AddExercise(routine.id, pick.id, routine.name),
         )
     }

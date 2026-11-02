@@ -882,12 +882,13 @@ private fun FinishDialog(w: Workout, data: AppData, onDismiss: () -> Unit, onFin
         title = { Text(L("Training beenden?", "Finish workout?")) },
         text = {
             Column {
-                Text(
-                    L(
-                        "${w.doneSets.size} Sätze · ${Stats.headline(w)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
-                        "${w.doneSets.size} sets · ${Stats.headline(w)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
-                    )
-                )
+                Text("${Stats.sets(w.doneSets.size)} · ${Stats.headline(w)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}")
+                // Sets still open are dropped on save; say so before they are gone.
+                val open = w.entries.sumOf { e -> e.sets.count { !it.done } }
+                if (open > 0 && w.doneSets.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(L("${Stats.sets(open)} noch offen", "${Stats.sets(open)} still open"), color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                }
                 if (records.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Eyebrow(L("Neue Rekorde", "New records"), color = Ink.accent)

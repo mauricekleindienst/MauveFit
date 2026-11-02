@@ -173,7 +173,11 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
             val gained = dev.mauve.fit.data.Quests.workoutXp(w) + records.size * dev.mauve.fit.data.Quests.RECORD_XP
             val rank = dev.mauve.fit.data.Quests.level(dev.mauve.fit.data.Quests.xp(data))
             Card(Modifier.fillMaxWidth(), padding = PaddingValues(18.dp)) {
-                Text("+$gained XP", style = MaterialTheme.typography.headlineSmall, color = Ink.accent)
+                val coins = dev.mauve.fit.data.Shop.workoutCoins(w) + records.size * dev.mauve.fit.data.Shop.RECORD_COINS
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("+$gained XP", Modifier.weight(1f), style = MaterialTheme.typography.headlineSmall, color = Ink.accent)
+                    CoinBadge(coins, gain = true)
+                }
                 Spacer(Modifier.height(10.dp))
                 LevelRow(rank)
             }

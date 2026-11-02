@@ -7,6 +7,8 @@ import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -138,6 +140,10 @@ fun RoutinesScreen(data: AppData, nav: NavController) {
                     Spacer(Modifier.height(14.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         r.exercises.take(5).forEach { Thumb(App.repo[it.exerciseId], 50.dp) }
+                        // The rest as a count, so a 7-exercise plan doesn't look like five.
+                        if (r.exercises.size > 5) Box(Modifier.size(50.dp).clip(RoundedCornerShape(16.dp)).background(Ink.raised), contentAlignment = Alignment.Center) {
+                            Text("+${r.exercises.size - 5}", style = MaterialTheme.typography.titleSmall, color = Ink.muted)
+                        }
                     }
                     Spacer(Modifier.height(12.dp))
                     Text(

@@ -115,8 +115,8 @@ object HealthSync {
         val end = Instant.ofEpochMilli(w.finishedAt ?: w.startedAt)
         val sets = w.doneSets.size
         // Reps for body-weight sessions, not "0 kg volume".
-        val summary = if (w.volume > 0) L("$sets Sätze · ${w.volume.toInt()} kg Volumen", "$sets sets · ${w.volume.toInt()} kg volume")
-        else L("$sets Sätze · ${Stats.headline(w)}", "$sets sets · ${Stats.headline(w)}")
+        val summary = if (w.volume > 0) "${Stats.sets(sets)} · " + L("${w.volume.toInt()} kg Volumen", "${w.volume.toInt()} kg volume")
+        else "${Stats.sets(sets)} · ${Stats.headline(w)}"
         return ExerciseSessionRecord(
             startTime = start, startZoneOffset = offset(start),
             endTime = end, endZoneOffset = offset(end),

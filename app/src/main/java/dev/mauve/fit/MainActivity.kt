@@ -25,6 +25,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -249,10 +250,12 @@ private fun AppRoot(open: String?, onOpened: () -> Unit) {
                             // Tabs: the new tab fades in over the old one, which stays put until it is covered.
                             // Pushed screens move edge to edge like pages, so they never overlap; that keeps it
                             // clean whichever of the two is drawn on top (also while the back gesture scrubs).
-                            enterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { it } },
-                            exitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { -it } },
-                            popEnterTransition = { if (isTabSwitch()) fadeIn(tween(180)) else slideInHorizontally(tween(280)) { -it } },
-                            popExitTransition = { if (isTabSwitch()) ExitTransition.KeepUntilTransitionsFinished else slideOutHorizontally(tween(280)) { it } },
+                            // Tabs switch at once: a fade laid both screens over each other for a moment,
+                            // which read as buttons and text flickering.
+                            enterTransition = { if (isTabSwitch()) EnterTransition.None else slideInHorizontally(tween(280)) { it } },
+                            exitTransition = { if (isTabSwitch()) ExitTransition.None else slideOutHorizontally(tween(280)) { -it } },
+                            popEnterTransition = { if (isTabSwitch()) EnterTransition.None else slideInHorizontally(tween(280)) { -it } },
+                            popExitTransition = { if (isTabSwitch()) ExitTransition.None else slideOutHorizontally(tween(280)) { it } },
                         ) {
                             screen(Tab.Home.route, GridWidth) { HomeScreen(data, nav) }
                             screen("library", GridWidth) { LibraryPanes(data, nav) }

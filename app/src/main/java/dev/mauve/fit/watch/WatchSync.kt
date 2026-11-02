@@ -157,6 +157,16 @@ object WatchSync {
                     "r-" -> s.copy(reps = (s.reps - 1).coerceAtLeast(0))
                     else -> s.copy(done = true)
                 }
+                // Like the phone's stepper: the change carries down to the open sets below that
+                // still had the old value, so 62.5 kg stays for set 2 and 3.
+                if (cmd != "done") for (k in j + 1 until sets.size) {
+                    val o = sets[k]
+                    if (o.done || o.warmup != s.warmup) continue
+                    sets[k] = when (cmd) {
+                        "w+", "w-" -> if (o.weight == s.weight) o.copy(weight = sets[j].weight) else o
+                        else -> if (o.reps == s.reps) o.copy(reps = sets[j].reps) else o
+                    }
+                }
                 val updated = w.copy(entries = w.entries.toMutableList().also { it[i] = entry.copy(sets = sets) })
                 if (cmd == "done") {
                     // Inside a superset the partner follows straight away; the rest comes after the round.

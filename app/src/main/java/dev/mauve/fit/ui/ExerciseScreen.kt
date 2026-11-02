@@ -180,6 +180,8 @@ fun Sparkline(values: List<Float>, modifier: Modifier = Modifier) {
 /** The personal setup note, edited in place; it shows up at the top of this exercise in workouts. */
 @Composable
 private fun NoteCard(note: String, onChange: (String) -> Unit) {
+    // Local text: sending each key through the store dropped letters when typing fast.
+    var text by remember { mutableStateOf(note) }
     Card(Modifier.padding(horizontal = 20.dp, vertical = 8.dp).fillMaxWidth(), padding = PaddingValues(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.EditNote, null, tint = Ink.accent, modifier = Modifier.size(18.dp))
@@ -188,11 +190,11 @@ private fun NoteCard(note: String, onChange: (String) -> Unit) {
         }
         Spacer(Modifier.height(8.dp))
         BasicTextField(
-            note, onChange,
+            text, { text = it; onChange(it) },
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = Ink.text),
             cursorBrush = SolidColor(Ink.accent), modifier = Modifier.fillMaxWidth(),
             decorationBox = { inner ->
-                if (note.isEmpty()) Text(L("Sitzhöhe, Griff, Einstellungen", "Seat height, grip, settings"), color = Ink.faint, style = MaterialTheme.typography.bodyMedium)
+                if (text.isEmpty()) Text(L("Sitzhöhe, Griff, Einstellungen", "Seat height, grip, settings"), color = Ink.faint, style = MaterialTheme.typography.bodyMedium)
                 inner()
             },
         )

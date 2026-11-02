@@ -48,13 +48,14 @@ class StreakWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // Readiness is only read when the app comes to the front; try once if the process is fresh.
-        if (Recovery.today.value == null) {
+        if (Recovery.today.value?.day != LocalDate.now()) {
             runCatching { withTimeoutOrNull(4000) { Recovery.refresh(context.applicationContext) } }
         }
         provideContent {
             val data by App.store.data.collectAsState()
             val readiness by Recovery.today.collectAsState()
-            Content(data, readiness?.score)
+            // Yesterday's score is not today's readiness; the week line stands in until a fresh one.
+            Content(data, readiness?.takeIf { it.day == LocalDate.now() }?.score)
         }
     }
 

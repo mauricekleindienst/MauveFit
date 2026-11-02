@@ -341,7 +341,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                         }
                     }
                 }
-                items(list, key = { "s" + it.name + it.unit }) { item ->
+                items(list, key = { "s" + it.key }) { item ->
                     val done = item.key in data.shoppingDone
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surface)

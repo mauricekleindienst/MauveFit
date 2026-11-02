@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.10 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.11 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,16 @@ Stand: Version 1.19.10 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.11 (Fix-Runde 10, Alltags-Durchlauf)
+
+- "Pause vorbei" kommt wieder als Benachrichtigung (mit Ton und auf der Uhr), wenn der Trainingsbildschirm im Hintergrund offen blieb
+- Uhr: Gewicht oder Wiederholungen geändert gilt auch für die folgenden Sätze, wie am Handy
+- Bewertung und Notiz nach dem Training bleiben auch beim Verlassen mit der Zurück-Geste gespeichert
+- Übungsnotiz tippen verliert keine Buchstaben mehr
+- Satz-Dialog und TalkBack nennen den Satz wie die Zeile ("Satz 1" nach den Aufwärmsätzen, nicht "Satz 4")
+- Serien-Widget zeigt keinen Erholungswert von gestern
+- Korrekturen an Runde 9: Einkaufsliste mit gleich benannten Zutaten stürzt nicht ab, nach einer Pause wird nicht doppelt gesteigert, Analysen folgen dem Datum, Zielgewicht-Startdatum wird sicher gespeichert
 
 ## Erledigt in 1.19.10 (Fix-Runde 9)
 

@@ -320,7 +320,9 @@ object Coach {
         val step = d.settings.weightStep
         // Drop and failure sets end a session on purpose; the straight sets say whether to go up.
         val last = lastFullSets(d, exerciseId).let { all -> all.filter { it.type == SetType.Normal }.ifEmpty { all } }
-        var w = if (last.isNotEmpty() && scaled && longBreak(d, exerciseId)) last.maxOf { it.weight } * 0.8
+        // After a break the full weight is last time's, not one step past it: the comeback session
+        // does not count as progress.
+        var w = if (last.isNotEmpty() && longBreak(d, exerciseId)) last.maxOf { it.weight } * (if (scaled) 0.8 else 1.0)
         else if (last.isNotEmpty()) rpeWeight(last, reps, step) ?: Stats.suggestWeight(last, reps, step) else {
             val e = repo[exerciseId]
             val similar = Stats.records(d.history).filter { r ->

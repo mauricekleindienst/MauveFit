@@ -142,7 +142,10 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
     LaunchedEffect(w.restEndsAt) {
         val end = w.restEndsAt ?: return@LaunchedEffect
         delay((end - System.currentTimeMillis()).coerceAtLeast(0))
-        // A rest that ran out while the screen was away is just cleared, not buzzed minutes late.
+        // In the background the workout service ends the rest and posts the "rest over" alert;
+        // clearing it here first made the service skip that alert. A rest that ran out while the
+        // screen was away is just cleared, not buzzed minutes late.
+        if (!dev.mauve.fit.system.Foreground.visible) return@LaunchedEffect
         if (System.currentTimeMillis() - end < 3_000) Haptics.restOver()
         App.store.endRest(end)
     }
@@ -427,6 +430,8 @@ private fun ExercisePage(
                 Spacer(Modifier.height(6.dp))
             }
             itemsIndexed(entry.sets) { i, s ->
+                // The same name the row shows: warm-ups are not numbered with the working sets.
+                val setName = setName(entry, i)
                 val bg by animateColorAsState(if (s.done) Ink.raised else Ink.surface, label = "set")
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(18.dp)).background(bg)
@@ -445,18 +450,18 @@ private fun ExercisePage(
                         onMinus = { edit(i, weight = (s.weight - step).coerceAtLeast(0.0)) },
                         onPlus = { edit(i, weight = s.weight + step) },
                         onEdit = { editing = i },
-                        spoken = L("Satz ${i + 1}, Gewicht ${Stats.fmtKg(s.weight)} Kilo", "Set ${i + 1}, weight ${Stats.fmtKg(s.weight)} kilos"))
+                        spoken = "$setName, " + L("Gewicht ${Stats.fmtKg(s.weight)} Kilo", "weight ${Stats.fmtKg(s.weight)} kilos"))
                     ValueCell("${s.reps}", Modifier.weight(1f),
                         onMinus = { edit(i, reps = (s.reps - 1).coerceAtLeast(0)) },
                         onPlus = { edit(i, reps = s.reps + 1) },
                         onEdit = { editing = i },
-                        spoken = L("Satz ${i + 1}, ${s.reps} Wiederholungen", "Set ${i + 1}, ${s.reps} reps"))
+                        spoken = "$setName, " + L("${s.reps} Wiederholungen", "${s.reps} reps"))
                     Box(
                         Modifier.size(48.dp).clip(Pill)
                             .background(if (s.done) Ink.accent else Ink.raised)
                             // A toggle for TalkBack: it reads "done" or "not done" with the set number.
                             .toggleable(value = s.done, role = Role.Checkbox) { toggleDone(i) }
-                            .semantics { contentDescription = L("Satz ${i + 1} erledigt", "Set ${i + 1} done") },
+                            .semantics { contentDescription = "$setName " + L("erledigt", "done") },
                         contentAlignment = Alignment.Center,
                     ) { Icon(Icons.Rounded.Check, null, tint = if (s.done) Ink.bg else Ink.muted) }
                 }
@@ -537,7 +542,7 @@ private fun ExercisePage(
         var toAll by remember(i) { mutableStateOf(true) }
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text(L("Satz ${i + 1}", "Set ${i + 1}")) },
+            title = { Text(setName(entry, i)) },
             text = {
                 Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -897,3 +902,8 @@ private fun HowTo(steps: List<String>) {
         }
     }
 }
+
+/** "Set 2" counting working sets only, or "Warm-up set", as the set rows label them. */
+private fun setName(entry: dev.mauve.fit.data.ExerciseEntry, i: Int): String =
+    if (entry.sets.getOrNull(i)?.warmup == true) L("Aufwärmsatz", "Warm-up set")
+    else entry.sets.take(i + 1).count { !it.warmup }.let { n -> L("Satz $n", "Set $n") }

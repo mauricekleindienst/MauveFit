@@ -40,6 +40,8 @@ class Store(private val context: Context) {
         // A goal set before goals had a start date counts from now on, not from the oldest weigh-in.
         if (_data.value.settings.let { it.goalWeight > 0 && it.goalSetAt == 0L }) {
             update { it.copy(settings = it.settings.copy(goalSetAt = System.currentTimeMillis())) }
+            // Written at once: the autosave may subscribe after this update and skip it.
+            flush()
         }
     }
 

@@ -68,6 +68,12 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
     val w = data.history.firstOrNull { it.id == id } ?: return
     var feel by rememberSaveable { mutableIntStateOf(w.feel) }
     var note by rememberSaveable { mutableStateOf(w.note) }
+    // Saved when the summary goes away, not only on "Done": leaving with Back lost both.
+    val latestFeel by androidx.compose.runtime.rememberUpdatedState(feel)
+    val latestNote by androidx.compose.runtime.rememberUpdatedState(note)
+    androidx.compose.runtime.DisposableEffect(w.id) {
+        onDispose { if (latestFeel != w.feel || latestNote.trim() != w.note) App.store.setFeel(w.id, latestFeel, latestNote.trim()) }
+    }
     val earlier = data.history.filter { it.startedAt < w.startedAt }
     val records = w.entries.mapNotNull { e ->
         val best = e.sets.filter { !it.warmup && it.weight > 0 }.maxByOrNull { Stats.e1rm(it) } ?: return@mapNotNull null

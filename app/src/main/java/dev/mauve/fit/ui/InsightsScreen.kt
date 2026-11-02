@@ -111,7 +111,7 @@ private fun HeadCell(value: String, label: String, color: Color, modifier: Modif
 fun InsightsScreen(data: AppData, nav: NavController) {
     val today by rememberToday()
     // One pass over the whole history; only redone when the data behind it changes.
-    val r = remember(data.history, data.food, data.water, data.bodyWeights, data.settings.weeklyGoal, data.frozenWeeks, data.profile.goal) {
+    val r = remember(data.history, data.food, data.water, data.bodyWeights, data.settings.weeklyGoal, data.frozenWeeks, data.profile.goal, today) {
         Insights.report(data, lookup, today)
     }
     val twoColumns = LocalWidth.current.expanded

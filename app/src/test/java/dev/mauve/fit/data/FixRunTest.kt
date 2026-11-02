@@ -37,4 +37,16 @@ class FixRunTest {
         val r = Stats.records(listOf(w(2_000_000_000, 0.0, 30), w(1_000_000_000, 20.0, 8))).single()
         assertEquals(20.0, r.best.weight, 0.0)
     }
+
+    @Test fun aSingleRepIsTheMaxItself() {
+        assertEquals(100.0, Stats.e1rm(SetEntry(100.0, 1)), 0.0)
+        assertEquals(116.67, Stats.e1rm(SetEntry(100.0, 5)), 0.01)
+    }
+
+    @Test fun macrosNeverExceedTheCalorieTarget() {
+        for (kg in listOf(40.0, 55.0, 82.0)) for (goal in Goal.values()) {
+            val t = Nutrition.targets(kg, goal)
+            assertTrue("$kg $goal", t.protein * 4 + t.fat * 9 + t.carbs * 4 <= t.kcal + 6)
+        }
+    }
 }

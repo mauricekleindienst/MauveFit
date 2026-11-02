@@ -108,6 +108,8 @@ private val colors = Colors(
 class Ambient {
     var on by mutableStateOf(false)
     var tick by mutableLongStateOf(0L)
+    /** End time of the rest that already buzzed, so it buzzes once whichever path gets there first. */
+    var buzzedFor = 0L
 }
 
 class WatchActivity : ComponentActivity() {
@@ -125,9 +127,23 @@ class WatchActivity : ComponentActivity() {
             override fun onEnterAmbient(ambientDetails: AmbientLifecycleObserver.AmbientDetails) {
                 ambient.tick = System.currentTimeMillis()
                 ambient.on = true
+                // Nothing shows the pulse while dimmed; the sensor would only drain the battery.
+                heart.stop()
             }
-            override fun onUpdateAmbient() { ambient.tick = System.currentTimeMillis() }
-            override fun onExitAmbient() { ambient.on = false }
+            override fun onUpdateAmbient() {
+                val now = System.currentTimeMillis()
+                ambient.tick = now
+                // While dimmed the CPU may sleep through the countdown; the minute tick catches the end.
+                val s = link.state.value
+                if (s.active && s.restEndsAt in 1..now && now - s.restEndsAt < 90_000 && ambient.buzzedFor != s.restEndsAt) {
+                    ambient.buzzedFor = s.restEndsAt
+                    buzz(this@WatchActivity)
+                }
+            }
+            override fun onExitAmbient() {
+                ambient.on = false
+                if (link.state.value.active) heart.start()
+            }
         }))
 
         // The sensor only runs while a workout is open on screen.
@@ -206,7 +222,10 @@ private fun WatchApp(link: PhoneLink, heart: HeartRate, ambient: Ambient, onHear
         if (!state.active || wait <= 0) return@LaunchedEffect
         delay(wait)
         now = System.currentTimeMillis()
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) buzz(context)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && ambient.buzzedFor != state.restEndsAt) {
+            ambient.buzzedFor = state.restEndsAt
+            buzz(context)
+        }
     }
 
     val resting = state.active && state.restEndsAt > now
@@ -225,7 +244,7 @@ private fun WatchApp(link: PhoneLink, heart: HeartRate, ambient: Ambient, onHear
         positionIndicator = { if (!ambient.on && !resting) PositionIndicator(scalingLazyListState = listState) },
     ) {
         when {
-            state.active && resting -> Rest(state, now, bpm, ambient.on, onPlus = { send("plus15") }, onSkip = { send("skip") })
+            state.active && resting -> Rest(state, now, bpm, ambient.on, status != Link.Ready, onPlus = { send("plus15") }, onSkip = { send("skip") })
             state.active -> Screen(listState) { active(state, now, bpm, status != Link.Ready, ambient.on, ::send) }
             status == Link.Checking -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(indicatorColor = Ink.copper, trackColor = Ink.surface, modifier = Modifier.size(36.dp))
@@ -333,7 +352,7 @@ private fun ScalingLazyListScope.active(
     if (ambient) return
     item {
         Chip(
-            onClick = { send("done", HapticFeedbackConstants.CONFIRM) },
+            onClick = { send("done:${s.ticked}", HapticFeedbackConstants.CONFIRM) },
             label = { Text(L("Satz erledigt", "Set done"), fontWeight = FontWeight.Bold) },
             icon = { Icon(Icons.Rounded.Check, null, modifier = Modifier.size(24.dp)) },
             colors = ChipDefaults.primaryChipColors(),
@@ -349,7 +368,7 @@ private fun ScalingLazyListScope.active(
 }
 
 @Composable
-private fun Rest(s: WatchState, now: Long, bpm: Int, ambient: Boolean, onPlus: () -> Unit, onSkip: () -> Unit) {
+private fun Rest(s: WatchState, now: Long, bpm: Int, ambient: Boolean, offline: Boolean, onPlus: () -> Unit, onSkip: () -> Unit) {
     val left = (s.restEndsAt - now).coerceAtLeast(0)
     val context = LocalContext.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -370,6 +389,8 @@ private fun Rest(s: WatchState, now: Long, bpm: Int, ambient: Boolean, onPlus: (
                 Text(clock(left + 999), color = Ink.text, fontSize = 38.sp, fontWeight = FontWeight.Bold)
             }
             if (bpm > 0 && !ambient) HeartBadge(bpm)
+            // +15 and Skip go to the phone; say so when it cannot be reached.
+            if (offline) Text(L("Handy getrennt", "Phone disconnected"), color = Ink.red, fontSize = 11.sp)
             if (s.last.isNotBlank()) Text(s.last, color = if (ambient) Ink.muted else Ink.copper, fontSize = 11.sp, maxLines = 1,
                 overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
             Text(L("Nächster: ${s.exercise}", "Up next: ${s.exercise}"), color = Ink.muted, fontSize = 11.sp, maxLines = 1,

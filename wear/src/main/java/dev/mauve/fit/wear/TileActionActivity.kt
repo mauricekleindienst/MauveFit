@@ -18,7 +18,7 @@ class TileActionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val cmd = intent?.getStringExtra(EXTRA_CMD)
-        if (cmd !in COMMANDS) {
+        if (cmd?.substringBefore(':') !in COMMANDS) {
             startActivity(Intent(this, WatchActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             finish()
             return
@@ -31,8 +31,8 @@ class TileActionActivity : ComponentActivity() {
             } else {
                 Toast.makeText(this@TileActionActivity, tileText("Handy nicht erreichbar", "Phone not reachable"), Toast.LENGTH_SHORT).show()
             }
-            // The phone answers with a new state item; the listener service then redraws the tile.
-            TileCache.requestTileUpdate(this@TileActionActivity)
+            // The phone answers with a new state item and the listener service redraws the tile then;
+            // redrawing now would only show the old state again.
             finish()
         }
     }

@@ -228,7 +228,8 @@ object Coach {
     /** Plates per side for a barbell load; null if the load is below the bar. */
     fun plates(total: Double, bar: Double): List<Double>? {
         if (total < bar) return null
-        var side = (total - bar) / 2
+        // Nearest load the smallest plate allows, up or down: 102 kg is 102.5, not 100.
+        var side = Math.round((total - bar) / 2 / 1.25) * 1.25
         val out = mutableListOf<Double>()
         for (p in plateSizes) while (side >= p - 1e-6) { out += p; side -= p }
         return out
@@ -501,6 +502,7 @@ object Coach {
      * suggestion for an exercise to add to the next plan.
      */
     private fun balanceTip(d: AppData, repo: ExerciseRepo): Tip? {
+        if (addTipTaken(d)) return null
         val since = System.currentTimeMillis() - 14 * Stats.DAY_MS
         val recent = d.history.filter { it.startedAt >= since }
         if (recent.size < 3) return null
@@ -616,7 +618,14 @@ object Coach {
      * the upper body (or the reverse). Suggests a fitting exercise for the plan that already trains
      * that side, so the gap closes without a new plan.
      */
+    /**
+     * The gap behind an "add exercise" tip is measured over two weeks of history, so it outlives
+     * the tap: without this the card offered another exercise for the same plan on every tap.
+     */
+    private fun addTipTaken(d: AppData) = d.addTipWeek == Stats.weekKey(java.time.LocalDate.now())
+
     private fun imbalanceTip(d: AppData, repo: ExerciseRepo): Tip? {
+        if (addTipTaken(d)) return null
         val since = System.currentTimeMillis() - 14 * Stats.DAY_MS
         val recent = d.history.filter { it.startedAt >= since }
         if (recent.size < 3) return null

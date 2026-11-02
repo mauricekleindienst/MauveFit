@@ -257,16 +257,19 @@ fun RoutineEditScreen(id: String, data: AppData, nav: NavController) {
         }
         item {
             Eyebrow(L("Plan bearbeiten", "Edit plan"))
+            // Local text state: round-tripping each key through the store dropped letters when typing fast.
+            var name by remember(r.id) { mutableStateOf(r.name) }
+            var note by remember(r.id) { mutableStateOf(r.note) }
             BasicTextField(
-                r.name, { v -> save { it.copy(name = v) } },
+                name, { v -> name = v; save { it.copy(name = v) } },
                 textStyle = MaterialTheme.typography.displaySmall.copy(color = Ink.text),
                 cursorBrush = SolidColor(Ink.accent), singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
             )
             BasicTextField(
-                r.note, { v -> save { it.copy(note = v) } },
+                note, { v -> note = v; save { it.copy(note = v) } },
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = Ink.muted),
                 cursorBrush = SolidColor(Ink.accent), singleLine = true, modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                decorationBox = { inner -> if (r.note.isEmpty()) Text(L("Notiz hinzufügen", "Add a note"), color = Ink.faint); inner() },
+                decorationBox = { inner -> if (note.isEmpty()) Text(L("Notiz hinzufügen", "Add a note"), color = Ink.faint); inner() },
             )
         }
         itemsIndexed(r.exercises, key = { i, p -> "$i-${p.exerciseId}" }) { i, p ->

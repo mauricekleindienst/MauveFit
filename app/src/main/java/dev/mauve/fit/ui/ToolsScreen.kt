@@ -40,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,21 +74,22 @@ import kotlinx.coroutines.delay
 @Composable
 fun ToolsScreen(data: AppData, nav: NavController) {
     val s = data.settings
-    LazyColumn(
-        Modifier.statusBarsPadding().imePadding(),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        stickyHeader {
-            Row(Modifier.fillMaxWidth().stickyScrim().padding(top = 8.dp, bottom = 16.dp)) {
-                RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
-            }
+    // A plain scrolling column, not a lazy list: a running interval timer scrolled out of view
+    // would otherwise leave composition and fall silent, and let the screen sleep.
+    Column(Modifier.statusBarsPadding().imePadding()) {
+        Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 16.dp)) {
+            RoundButton(Icons.AutoMirrored.Rounded.ArrowBack, L("Zurück", "Back"), size = 44.dp) { nav.popBackStack() }
         }
-        item { ScreenTitle(L("Timer und Rechner fürs Training", "Timer and calculators for training"), L("Werkzeuge", "Tools")) }
-        item { IntervalCard(s.sound) }
-        item { OneRmCard(s.weightStep) }
-        item { PlateCard(s.barWeight) }
-        item { WarmupCard(s.weightStep, s.barWeight) }
+        Column(
+            Modifier.verticalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, bottom = 40.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            ScreenTitle(L("Timer und Rechner fürs Training", "Timer and calculators for training"), L("Werkzeuge", "Tools"))
+            IntervalCard(s.sound)
+            OneRmCard(s.weightStep)
+            PlateCard(s.barWeight)
+            WarmupCard(s.weightStep, s.barWeight)
+        }
     }
 }
 
@@ -339,7 +341,11 @@ private fun PlateCard(defaultBar: Double) {
         val plates = Coach.plates(total, bar)
         when {
             plates == null -> Text(L("Weniger als die Stange (${Stats.fmtKg(bar)} kg)", "Less than the bar (${Stats.fmtKg(bar)} kg)"), color = Ink.muted)
-            plates.isEmpty() -> Text(L("Nur die Stange", "Just the bar"), color = Ink.muted)
+            plates.isEmpty() -> Text(
+                if (total - bar > 1e-6) L("Nur die Stange. Nächstmöglich: ${Stats.fmtKg(bar)} kg", "Just the bar. Closest possible: ${Stats.fmtKg(bar)} kg")
+                else L("Nur die Stange", "Just the bar"),
+                color = Ink.muted,
+            )
             else -> {
                 Eyebrow(L("Pro Seite", "Per side"))
                 Spacer(Modifier.height(10.dp))
@@ -348,7 +354,7 @@ private fun PlateCard(defaultBar: Double) {
                 Text(plates.joinToString(" + ") { Stats.fmtKg(it) } + " kg", style = MaterialTheme.typography.titleMedium)
                 // Plates go down to 1.25 kg; a load in between can only be met approximately.
                 val loaded = bar + 2 * plates.sum()
-                if (loaded < total - 1e-6) Text(
+                if (kotlin.math.abs(loaded - total) > 1e-6) Text(
                     L("Nächstmöglich: ${Stats.fmtKg(loaded)} kg", "Closest possible: ${Stats.fmtKg(loaded)} kg"),
                     style = MaterialTheme.typography.bodySmall, color = Ink.muted,
                 )

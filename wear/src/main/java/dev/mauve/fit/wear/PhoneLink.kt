@@ -43,6 +43,8 @@ data class WatchState(
     val suggestion: String = "",
     /** The set just done, "Set 2 done · 80 kg × 8"; empty before the first. */
     val last: String = "",
+    /** Every ticked set, warm-ups included; "done:<ticked>" from the watch only counts once. */
+    val ticked: Int = 0,
     val week: Int = 0,
     val goal: Int = 0,
 )

@@ -103,7 +103,8 @@ class MauveTileService : TileService() {
             )
             .setPrimaryChipContent(chip(tileText("Öffnen", "Open"), openApp(), device))
             .build()
-        return tile(layout, 15 * 60_000L)
+        // Short: once the phone is back the tile should show the workout, not this hint.
+        return tile(layout, if (phoneConnected) 15 * 60_000L else 60_000L)
     }
 
     private fun activeLayout(device: DeviceParameters, s: WatchState, resting: Boolean): LayoutElementBuilders.LayoutElement {
@@ -123,7 +124,7 @@ class MauveTileService : TileService() {
         return PrimaryLayout.Builder(device)
             .setPrimaryLabelTextContent(label(top, if (resting) TileInk.COPPER else TileInk.MUTED))
             .setContent(content)
-            .setPrimaryChipContent(chip(tileText("Satz erledigt", "Set done"), command("done"), device))
+            .setPrimaryChipContent(chip(tileText("Satz erledigt", "Set done"), command("done:${s.ticked}"), device))
             .build()
     }
 

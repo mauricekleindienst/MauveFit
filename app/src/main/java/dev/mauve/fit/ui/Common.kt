@@ -245,9 +245,9 @@ fun Tag(text: String, color: Color = Ink.muted, modifier: Modifier = Modifier) {
 
 /** Primary action: the accent at full strength. */
 @Composable
-fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, onClick: () -> Unit) {
+fun PrimaryButton(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, enabled: Boolean = true, onClick: () -> Unit) {
     Row(
-        modifier.pressable { Haptics.click(); onClick() }.clip(Pill).background(Ink.accent)
+        (if (enabled) modifier.pressable { Haptics.click(); onClick() } else modifier.alpha(0.4f)).clip(Pill).background(Ink.accent)
             .padding(horizontal = 18.dp, vertical = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,

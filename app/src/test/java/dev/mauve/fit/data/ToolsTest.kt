@@ -73,5 +73,8 @@ class ToolsTest {
         assertEquals(listOf(25.0, 10.0, 2.5), Coach.plates(95.0, 20.0))
         assertEquals(emptyList<Double>(), Coach.plates(20.0, 20.0))
         assertEquals(null, Coach.plates(15.0, 20.0))
+        // Rounds to the nearest load the plates allow, not always down.
+        assertEquals(listOf(25.0, 15.0, 1.25), Coach.plates(102.0, 20.0))
+        assertEquals(listOf(25.0, 15.0), Coach.plates(100.6, 20.0))
     }
 }

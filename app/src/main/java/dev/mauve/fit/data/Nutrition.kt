@@ -27,7 +27,9 @@ object Nutrition {
         }
         val fat = kg * 0.9
         val carbs = ((kcal - protein * 4 - fat * 9) / 4).coerceAtLeast(kg * 1.5)
-        return Targets(kcal.roundToInt(), protein.roundToInt(), carbs.roundToInt(), fat.roundToInt(), (kg * 35 / 250).roundToInt() * 250)
+        // With very low body weights the carb floor kicks in; the target then has to cover it.
+        val total = maxOf(kcal, protein * 4 + fat * 9 + carbs * 4)
+        return Targets(total.roundToInt(), protein.roundToInt(), carbs.roundToInt(), fat.roundToInt(), (kg * 35 / 250).roundToInt() * 250)
     }
 
     @Serializable
@@ -833,10 +835,10 @@ object Nutrition {
         val unit = unitLabel(item.unit)
         val v = item.amount
         val n = when {
-            item.unit == "g" && v >= 1000 -> return "%.1f kg".format(v / 1000).replace('.', if (I18n.german) ',' else '.')
-            item.unit == "ml" && v >= 1000 -> return "%.1f l".format(v / 1000).replace('.', if (I18n.german) ',' else '.')
+            item.unit == "g" && v >= 1000 -> return String.format(java.util.Locale.ROOT, "%.1f kg", v / 1000).replace('.', if (I18n.german) ',' else '.')
+            item.unit == "ml" && v >= 1000 -> return String.format(java.util.Locale.ROOT, "%.1f l", v / 1000).replace('.', if (I18n.german) ',' else '.')
             v % 1.0 == 0.0 -> v.toInt().toString()
-            else -> "%.1f".format(v).replace('.', if (I18n.german) ',' else '.')
+            else -> String.format(java.util.Locale.ROOT, "%.1f", v).replace('.', if (I18n.german) ',' else '.')
         }
         return "$n $unit"
     }

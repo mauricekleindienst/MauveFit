@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -44,15 +45,20 @@ object Media {
         var done = 0
         val total = exercises.size
         if (report) _progress.value = 0 to total
-        val jobs = exercises.map { e ->
-            scope.launch {
-                gate.withPermit { urls(e).forEach { fetch(context, it) } }
-                synchronized(this@Media) { done++ }
-                if (report) _progress.value = done to total
+        // Children of this call, not of the object's scope: cancelling the download stops them all.
+        try {
+            coroutineScope {
+                exercises.forEach { e ->
+                    launch {
+                        gate.withPermit { urls(e).forEach { fetch(context, it) } }
+                        synchronized(this@Media) { done++ }
+                        if (report) _progress.value = done to total
+                    }
+                }
             }
+        } finally {
+            if (report) _progress.value = null
         }
-        jobs.forEach { it.join() }
-        if (report) _progress.value = null
     }
 
     /** At start: every exercise in the plans, so workouts run without a connection. */

@@ -234,6 +234,8 @@ data class AppData(
     val shoppingDone: Set<String> = emptySet(),
     /** Start times of Health Connect sessions deleted in the app, so an import skips them. */
     val cardioDismissed: List<Long> = emptyList(),
+    /** ISO week in which a coach "add exercise" tip was taken; no further one that week. */
+    val addTipWeek: String = "",
     /** Body measurements, newest first. */
     val measurements: List<Measurement> = emptyList(),
     /** Personal setup notes per exercise id (seat height, grip...). */

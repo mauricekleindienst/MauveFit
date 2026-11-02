@@ -16,7 +16,12 @@ object Stats {
     fun weekStart(date: LocalDate): LocalDate = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
 
     /** Epley estimate of the one-rep max. */
-    fun e1rm(s: SetEntry): Double = if (s.reps <= 0) 0.0 else s.weight * (1 + s.reps / 30.0)
+    /** Epley; a single rep is the max itself, not 3 % more. */
+    fun e1rm(s: SetEntry): Double = when {
+        s.reps <= 0 -> 0.0
+        s.reps == 1 -> s.weight
+        else -> s.weight * (1 + s.reps / 30.0)
+    }
 
     /** Working sets of the most recent workout that contained this exercise. */
     fun lastSets(history: List<Workout>, exerciseId: String): List<SetEntry> =
@@ -78,7 +83,9 @@ object Stats {
         val usable = routines.filter { it.exercises.isNotEmpty() }
         if (usable.isEmpty()) return null
         val last = lastTrained(history, repo)
-        val lastId = history.firstOrNull { it.routineId != null }?.routineId
+        // The last workout of a plan still offered: a quick workout or a deleted plan must not
+        // send the rotation back to plan 1.
+        val lastId = history.firstOrNull { w -> usable.any { it.id == w.routineId } }?.routineId
         val start = usable.indexOfFirst { it.id == lastId } + 1
         val ordered = usable.indices.map { usable[(start + it) % usable.size] }
         val now = System.currentTimeMillis()
@@ -142,7 +149,11 @@ object Stats {
     /** Volume for weighted workouts, total reps for body-weight ones. */
     fun headline(w: Workout): String = if (w.volume > 0) fmtVolume(w.volume) else L("${w.doneSets.sumOf { it.second.reps }} Wdh.", "${w.doneSets.sumOf { it.second.reps }} reps")
 
-    fun fmtKg(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else "%.1f".format(java.util.Locale.ROOT, v).let { if (I18n.german) it.replace('.', ',') else it }
+    // Quarter kilos keep both decimals (1.25 kg plates read "1,25", not "1,3"); anything else,
+    // like an average body weight, stays at one.
+    fun fmtKg(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString()
+    else (if (kotlin.math.abs(v * 4 - Math.round(v * 4)) < 1e-9) "%.2f" else "%.1f").format(java.util.Locale.ROOT, v)
+        .trimEnd('0').trimEnd('.').let { if (I18n.german) it.replace('.', ',') else it }
     fun fmtVolume(v: Double): String = when {
         v >= 10_000 -> "%.1f t".format(java.util.Locale.ROOT, v / 1000).let { if (I18n.german) it.replace('.', ',') else it }
         else -> "${v.roundToInt()} kg"

@@ -155,7 +155,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
                         is Coach.Action.StartDeload -> App.store.startDeload()
                         is Coach.Action.EndDeload -> App.store.endDeload()
                         is Coach.Action.StartBlock -> App.store.startBlock(data.settings.blockWeeks)
-                        is Coach.Action.AddExercise -> App.store.addToRoutine(action.routineId, action.exerciseId)
+                        is Coach.Action.AddExercise -> App.store.acceptAddTip(action.routineId, action.exerciseId)
                     }
                 }
             }
@@ -279,7 +279,7 @@ private fun NextWorkoutCard(r: Routine, onShort: () -> Unit, onStart: () -> Unit
                 Figure("${estMinutes(r)}", L("Minuten", "minutes"))
             }
             Spacer(Modifier.height(20.dp))
-            PrimaryButton(L("Training starten", "Start workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow, onStart)
+            PrimaryButton(L("Training starten", "Start workout"), Modifier.fillMaxWidth(), Icons.Rounded.PlayArrow, onClick = onStart)
             Spacer(Modifier.height(8.dp))
             // For days with little time: the coach trims the plan.
             val short = Coach.shortVersion(r)

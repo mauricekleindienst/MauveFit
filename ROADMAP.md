@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.4 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.5 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,22 @@ Stand: Version 1.19.4 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.5 (Fix-Runs 3 und 4)
+
+- Uhr: schnelles Doppeltippen auf "Satz erledigt" hakt nicht mehr zwei Sätze ab (App und Kachel)
+- Uhr: Pulssensor aus im gedimmten Modus (Akku), Pausenende vibriert auch gedimmt pünktlich, "Handy getrennt" auch im Pausenbildschirm, Kachel erholt sich nach 1 statt 15 Minuten
+- "Plan neu erstellen" ersetzt nur die generierten Pläne; eigene Pläne und ein selbst gesetztes Wochenziel bleiben
+- Schnelltraining startet nicht, wenn schon ein Training läuft (vorher ging es still verloren)
+- "Als Nächstes" bleibt nach einem Schnelltraining in der Plan-Reihenfolge
+- Coach-Tipp "Übung hinzufügen" verschwindet nach dem Tippen für die Woche, statt immer neue Übungen anzubieten
+- Plan-Namen tippen verliert keine Buchstaben mehr
+- Drehen des Handys schließt keine offenen Dialoge mehr (Rezept-Editor, Notiz, Barcode)
+- Intervall-Timer läuft weiter und piept, wenn man in den Werkzeugen nach unten scrollt
+- Scheibenrechner rundet zum nächsten machbaren Gewicht (102 kg sind 102,5, nicht 100); 1,25-kg-Scheiben werden als "1,25" angezeigt, nicht "1,3"
+- 1RM eines Einzelwiederholungssatzes ist das Gewicht selbst (vorher 3 % zu hoch)
+- "Alle offline speichern" lässt sich wirklich abbrechen
+- Einkaufsliste nutzt das Dezimalzeichen der App-Sprache; Makroziele passen bei sehr niedrigem Körpergewicht in das Kalorienziel
 
 ## Erledigt in 1.19.4 (Fix-Run 2, Durchlauf auf dem Emulator)
 

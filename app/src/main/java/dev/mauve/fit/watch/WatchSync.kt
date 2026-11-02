@@ -49,6 +49,8 @@ data class WatchState(
     val suggestion: String = "",
     /** The set just done, "Set 2 done · 80 kg × 8"; empty before the first. */
     val last: String = "",
+    /** Every ticked set, warm-ups included; "done:<ticked>" from the watch only counts once. */
+    val ticked: Int = 0,
     /** This week's workouts against the weekly goal, for the tile. */
     val week: Int = 0,
     val goal: Int = 0,
@@ -88,6 +90,7 @@ object WatchSync {
             restEndsAt = w.restEndsAt ?: 0,
             restTotalSec = w.restTotalSec,
             doneSets = w.doneSets.size,
+            ticked = w.entries.sumOf { e -> e.sets.count { it.done } },
             last = Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })?.last.orEmpty(),
         )
     }
@@ -108,8 +111,15 @@ object WatchSync {
     }
 
     /** Applies a command from the watch to the active workout. */
-    fun handle(cmd: String) {
+    fun handle(command: String) {
         val store = App.store
+        // "done:3" means "done, seen with 3 sets ticked": a second tap sent before the watch saw
+        // the first one land carries the same count and would tick the next set too.
+        val cmd = command.substringBefore(':')
+        command.substringAfter(':', "").toIntOrNull()?.let { seen ->
+            val ticked = store.data.value.active?.entries?.sumOf { e -> e.sets.count { it.done } } ?: return
+            if (seen != ticked) return
+        }
         when (cmd) {
             "start" -> {
                 val d = store.data.value

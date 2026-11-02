@@ -307,11 +307,18 @@ fun QuickWorkoutScreen(data: AppData, nav: NavController) {
                 GhostButton(if (saved) L("Gespeichert", "Saved") else L("Als Plan", "Save as plan"), Modifier.weight(1f), Icons.Rounded.BookmarkAdd) {
                     if (!saved) { App.store.saveRoutine(routine.copy(id = dev.mauve.fit.data.newId())); saved = true }
                 }
-                PrimaryButton(L("Starten", "Start"), Modifier.weight(1f), Icons.Rounded.PlayArrow) {
+                // A workout already running would win and this one would be lost silently.
+                val busy = data.active != null
+                PrimaryButton(L("Starten", "Start"), Modifier.weight(1f), Icons.Rounded.PlayArrow, enabled = !busy && routine.exercises.isNotEmpty()) {
                     App.store.startWorkout(routine)
                     nav.navigate("workout") { popUpTo("quick") { inclusive = true } }
                 }
             }
+            if (data.active != null) Text(
+                L("Es läuft schon ein Training. Beende es zuerst oder speichere das hier als Plan.",
+                    "A workout is already running. Finish it first or save this one as a plan."),
+                Modifier.padding(top = 8.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

@@ -210,9 +210,11 @@ class Store(context: Context) {
     fun completeOnboarding(profile: Profile, program: List<Routine>) = update { d ->
         d.copy(
             profile = profile.copy(onboarded = true),
-            routines = program,
+            // Rebuilding replaces the generated plans only; plans of the user's own stay.
+            routines = program + d.routines.filterNot { it.id.startsWith("gen-") },
             settings = d.settings.copy(
-                weeklyGoal = profile.days,
+                // A goal changed in the settings stays unless the training days changed.
+                weeklyGoal = if (d.profile.onboarded && profile.days == d.profile.days) d.settings.weeklyGoal else profile.days,
                 defaultRest = program.firstOrNull()?.exercises?.lastOrNull()?.restSec ?: d.settings.defaultRest,
             ),
         )
@@ -261,6 +263,12 @@ class Store(context: Context) {
     fun saveRoutine(r: Routine) = update { d ->
         val exists = d.routines.any { it.id == r.id }
         d.copy(routines = if (exists) d.routines.map { if (it.id == r.id) r else it } else d.routines + r)
+    }
+
+    /** Adds the coach's suggestion and quiets "add exercise" tips for the rest of the week. */
+    fun acceptAddTip(routineId: String, exerciseId: String) {
+        addToRoutine(routineId, exerciseId)
+        update { it.copy(addTipWeek = Stats.weekKey(java.time.LocalDate.now())) }
     }
 
     fun deleteRoutine(id: String) = update { d -> d.copy(routines = d.routines.filterNot { it.id == id }) }

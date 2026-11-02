@@ -111,6 +111,9 @@
 
         <!-- Redraws the widgets after midnight. -->
         <receiver
+            android:name=".widget.RestEndReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".widget.MidnightReceiver"
             android:exported="false" />
 

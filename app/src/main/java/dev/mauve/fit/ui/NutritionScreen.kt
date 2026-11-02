@@ -317,7 +317,7 @@ fun NutritionScreen(data: AppData, nav: NavController) {
 
             else -> {
                 val list = Nutrition.shoppingList(data.mealPlan, data.ownRecipes)
-                val missing = list.filter { it.name !in data.shoppingDone }
+                val missing = list.filter { it.key !in data.shoppingDone }
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -340,10 +340,10 @@ fun NutritionScreen(data: AppData, nav: NavController) {
                     }
                 }
                 items(list, key = { "s" + it.name + it.unit }) { item ->
-                    val done = item.name in data.shoppingDone
+                    val done = item.key in data.shoppingDone
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Ink.surface)
-                            .clickable { Haptics.tick(); App.store.toggleShopping(item.name) }.padding(14.dp),
+                            .clickable { Haptics.tick(); App.store.toggleShopping(item.key) }.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(

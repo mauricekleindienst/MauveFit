@@ -166,9 +166,13 @@ class WorkoutService : Service() {
                     delay(left + 300)
                     val d = App.store.data.value
                     if (d.active?.restEndsAt != end) return@launch
+                    App.store.endRest(end)
+                    val after = App.store.data.value
                     // Swap the finished countdown for the next set, so the chronometer never runs below zero.
-                    getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
-                    if (!Foreground.visible) restOver(d)
+                    getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(after))
+                    // No alarm for a rest that ended long ago (service restarted later) or after the last set.
+                    val complete = Live.status(after, { null }, { false })?.complete == true
+                    if (!Foreground.visible && !complete && System.currentTimeMillis() - end < 30_000) restOver(after)
                     // The widgets count the rest down on their own; at zero they switch to the next set.
                     dev.mauve.fit.widget.Widgets.restOver(this@WorkoutService)
                     if (wake.isHeld) wake.release()

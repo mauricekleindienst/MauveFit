@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.2 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.3 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,20 @@ Stand: Version 1.19.2 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.3 (Fix-Run 1, Code-Review)
+
+- Backup-Import nimmt nur echte Mauve-Fit-Backups an; vorher hat jede beliebige JSON-Datei alle Daten gelöscht. Der alte Stand wird vor dem Import gesichert
+- Übung tauschen behält bereits erledigte Sätze (vorher gingen sie verloren)
+- Supersatz: Aufwärmsätze zählen nicht als Runde; Uhr, Widget und Benachrichtigung zeigen die richtige Übung
+- Keine Pause und kein "Pause vorbei"-Alarm mehr nach dem letzten Satz
+- Abgelaufene Pause wird sauber beendet: kein verspätetes Vibrieren, kein Alarm nach Neustart, +15 s zählt ab jetzt
+- Supersatz-Partner abgehakt beendet die laufende Pause
+- Widget zählt die Pause nicht mehr ins Minus, wenn der Hintergrunddienst nicht laufen darf
+- Öffnen aus "Zuletzt verwendet" wiederholt keine Shortcut- oder Widget-Aktion mehr (Android 10/11)
+- Vibration funktioniert auf Android 10 und 11
+- Puls importierter Cardio-Einheiten nur aus der Einheit selbst; gelöschte Importe kommen nicht wieder
+- Serien-Erfolge mit eingefrorener Woche bleiben freigeschaltet; Einkaufsliste trennt gleiche Zutat mit anderer Einheit
 
 ## Als Nächstes
 

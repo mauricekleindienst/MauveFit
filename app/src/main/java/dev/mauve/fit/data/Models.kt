@@ -232,6 +232,8 @@ data class AppData(
     /** Meal-prep week: recipe id to portions, and ticked shopping items. */
     val mealPlan: Map<String, Int> = emptyMap(),
     val shoppingDone: Set<String> = emptySet(),
+    /** Start times of Health Connect sessions deleted in the app, so an import skips them. */
+    val cardioDismissed: List<Long> = emptyList(),
     /** Body measurements, newest first. */
     val measurements: List<Measurement> = emptyList(),
     /** Personal setup notes per exercise id (seat height, grip...). */

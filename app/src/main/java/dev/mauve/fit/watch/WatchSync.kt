@@ -116,7 +116,7 @@ object WatchSync {
                 store.startWorkout(Stats.nextRoutine(d.routines, d.history, App.repo))
             }
             "skip" -> store.updateActive { it.copy(restEndsAt = null) }
-            "plus15" -> store.updateActive { it.copy(restEndsAt = (it.restEndsAt ?: System.currentTimeMillis()) + 15_000, restTotalSec = it.restTotalSec + 15) }
+            "plus15" -> store.plus15()
             "done", "w+", "w-", "r+", "r-" -> store.updateActive { w ->
                 val i = Supersets.current(w.entries)
                 if (i < 0 || w.entries[i].sets.all { it.done }) return@updateActive w
@@ -137,6 +137,8 @@ object WatchSync {
                     // Inside a superset the partner follows straight away; the rest comes after the round.
                     val next = if (s.warmup) null else Supersets.afterSet(updated.entries, i)
                     if (next != null && !next.rest) return@updateActive updated.copy(restEndsAt = null)
+                    // Nothing comes after the last set, so no rest and no "rest over" alarm.
+                    if (updated.entries.all { e -> e.sets.all { it.done } }) return@updateActive updated.copy(restEndsAt = null)
                     // Same rule as on the phone: shorter after warm-ups, longer after a set well short of target.
                     val rest = Coach.restFor(entry, s.copy(done = true))
                     updated.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)

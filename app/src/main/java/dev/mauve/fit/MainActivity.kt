@@ -133,7 +133,10 @@ class MainActivity : ComponentActivity() {
     private val openRequest = mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (savedInstanceState == null) openRequest.value = intent.getStringExtra(EXTRA_OPEN)
+        // Reopened from Recents, Android replays the launch intent: a shortcut's "+ glass" or a
+        // widget's "start" would run a second time.
+        val replayed = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
+        if (savedInstanceState == null && !replayed) openRequest.value = intent.getStringExtra(EXTRA_OPEN)
         // Theme and accent are fixed per activity; changing them in the settings recreates it.
         val settings = App.store.data.value.settings
         val systemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES

@@ -67,7 +67,10 @@ object Supersets {
         val first = entries.indexOfFirst { e -> e.sets.any { !it.done } }
         if (first < 0) return entries.lastIndex
         val run = members(entries.map { it.superset }, first) ?: return first
-        return run.filter { j -> entries[j].sets.any { !it.done } }.minBy { j -> entries[j].sets.count { it.done } }
+        val open = run.filter { j -> entries[j].sets.any { !it.done } }
+        // Warm-ups come first and do not count as a round, or A's warm-up would hand over to B.
+        open.firstOrNull { j -> entries[j].sets.any { !it.done && it.warmup } }?.let { return it }
+        return open.minBy { j -> entries[j].sets.count { it.done && !it.warmup } }
     }
 
     fun afterSet(entries: List<ExerciseEntry>, index: Int): Step? {

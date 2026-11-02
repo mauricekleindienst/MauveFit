@@ -142,8 +142,9 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
     LaunchedEffect(w.restEndsAt) {
         val end = w.restEndsAt ?: return@LaunchedEffect
         delay((end - System.currentTimeMillis()).coerceAtLeast(0))
-        Haptics.restOver()
-        App.store.updateActive { it.copy(restEndsAt = null) }
+        // A rest that ran out while the screen was away is just cleared, not buzzed minutes late.
+        if (System.currentTimeMillis() - end < 3_000) Haptics.restOver()
+        App.store.endRest(end)
     }
 
     // The page count must follow exercises added during the workout, so read it through state.
@@ -206,7 +207,10 @@ fun WorkoutScreen(data: AppData, nav: NavController) {
                         val set = entry.sets.lastOrNull { it.done } ?: entry.sets.first()
                         // In a superset the partner comes next without rest; the rest follows the round.
                         val next = if (warmup) null else Supersets.afterSet(entries, page)
-                        if (next == null || next.rest) {
+                        val complete = entries.all { e -> e.sets.all { it.done } }
+                        // Straight on to the partner: a rest still running from the last round ends here.
+                        if (next != null && !next.rest || complete) App.store.updateActive { it.copy(restEndsAt = null) }
+                        else {
                             val rest = Coach.restFor(entry, set)
                             App.store.updateActive {
                                 it.copy(restEndsAt = System.currentTimeMillis() + rest * 1000L, restTotalSec = rest)
@@ -788,7 +792,7 @@ private fun RestBar(leftMs: Long, totalSec: Int) {
         Box(
             Modifier.clip(Pill).background(Ink.surface).clickable {
                 Haptics.tick()
-                App.store.updateActive { it.copy(restEndsAt = (it.restEndsAt ?: System.currentTimeMillis()) + 15_000, restTotalSec = it.restTotalSec + 15) }
+                App.store.plus15()
             }.padding(horizontal = 14.dp, vertical = 10.dp)
         ) { Text("+15 s", fontWeight = FontWeight.SemiBold) }
         Spacer(Modifier.width(8.dp))

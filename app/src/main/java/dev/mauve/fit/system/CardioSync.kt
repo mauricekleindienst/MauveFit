@@ -79,7 +79,8 @@ object CardioSync {
                 val hr = if (HealthPermission.getReadPermission(HeartRateRecord::class) !in have) null
                 else runCatching {
                     client.readRecords(ReadRecordsRequest(HeartRateRecord::class, range)).records
-                        .flatMap { it.samples }.map { it.beatsPerMinute }.takeIf { it.isNotEmpty() }?.average()?.roundToInt()
+                        // A record may run on before or after the session; only its samples inside count.
+                        .flatMap { it.samples }.filter { !it.time.isBefore(r.startTime) && it.time.isBefore(r.endTime) }.map { it.beatsPerMinute }.takeIf { it.isNotEmpty() }?.average()?.roundToInt()
                 }.getOrNull()
                 CardioSession(at = r.startTime.toEpochMilli(), kind = kind, minutes = minutes, distanceKm = km, avgHr = hr, source = "health", note = r.title.orEmpty())
             }.sortedBy { it.at }

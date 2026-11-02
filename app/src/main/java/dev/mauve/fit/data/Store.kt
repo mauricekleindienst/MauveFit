@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
+import kotlinx.serialization.json.jsonObject
 
 /** All app state in one JSON file, written shortly after every change. */
 @OptIn(FlowPreview::class)
@@ -107,6 +108,7 @@ class Store(context: Context) {
         d.copy(mealPlan = if (portions <= 0) d.mealPlan - recipeId else d.mealPlan + (recipeId to portions.coerceAtMost(14)))
     }
 
+    /** Toggles a shopping-list row; keyed by name and unit, so "Eier g" and "Eier Stk" stay apart. */
     fun toggleShopping(item: String) = update { d ->
         d.copy(shoppingDone = if (item in d.shoppingDone) d.shoppingDone - item else d.shoppingDone + item)
     }
@@ -159,17 +161,35 @@ class Store(context: Context) {
         return saved
     }
 
-    /** Replaces the exercise at [index], keeping the planned set count and reps. */
+    /**
+     * Replaces the exercise at [index] for the sets still open, keeping the planned reps. Sets
+     * already done stay logged under the old exercise, right after the new one.
+     */
     fun swapExercise(index: Int, exerciseId: String) = updateActive { w ->
         val d = data.value
-        w.copy(entries = w.entries.mapIndexed { i, e ->
-            if (i != index) e
+        w.copy(entries = w.entries.flatMapIndexed { i, e ->
+            if (i != index) listOf(e)
             else {
                 val reps = e.sets.firstOrNull { !it.warmup }?.let { if (it.target > 0) it.target else it.reps } ?: 10
                 val weight = Coach.startWeight(d, App.repo, exerciseId, reps)
-                e.copy(exerciseId = exerciseId, sets = e.sets.filter { !it.warmup }.map { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d))
+                val open = e.sets.count { !it.done && !it.warmup }.coerceAtLeast(1)
+                val fresh = e.copy(exerciseId = exerciseId, sets = List(open) { SetEntry(weight, reps, target = reps) }, load = Coach.loadFactor(d))
+                val done = e.sets.filter { it.done }
+                if (done.isEmpty()) listOf(fresh) else listOf(fresh, e.copy(sets = done, superset = null))
             }
         })
+    }
+
+    /** Ends the rest that ends at [end], unless it was changed meanwhile; not counted as activity. */
+    fun endRest(end: Long) = update { d ->
+        val w = d.active
+        if (w?.restEndsAt == end) d.copy(active = w.copy(restEndsAt = null)) else d
+    }
+
+    /** Fifteen more seconds of rest, counted from now if the rest already ran out. */
+    fun plus15() = updateActive {
+        val now = System.currentTimeMillis()
+        it.copy(restEndsAt = maxOf(it.restEndsAt ?: now, now) + 15_000, restTotalSec = it.restTotalSec + 15)
     }
 
     /** Puts ramp-up sets in front of the first working set (once). */
@@ -203,8 +223,19 @@ class Store(context: Context) {
     fun export(): String = json.encodeToString(AppData.serializer(), _data.value)
 
     /** Replaces everything with a backup; false if the file is not a Mauve Fit backup. */
-    fun import(text: String): Boolean = runCatching { json.decodeFromString<AppData>(text) }
-        .onSuccess { restored -> update { restored }; flush() }.isSuccess
+    /** Top-level fields a real backup always has; at least one must be there. */
+    private val BACKUP_KEYS = setOf("history", "settings", "routines", "profile")
+
+    fun import(text: String): Boolean = runCatching {
+        // Every field has a default, so any JSON object would decode, and "{}" would wipe everything.
+        val keys = json.parseToJsonElement(text).jsonObject.keys
+        require(keys.any { it in BACKUP_KEYS })
+        json.decodeFromString<AppData>(text)
+    }.onSuccess { restored ->
+        // The current state is kept next to the data, in case the wrong backup was picked.
+        runCatching { file.takeIf { it.exists() }?.copyTo(File(file.parentFile, "data.before-import-${System.currentTimeMillis()}.json")) }
+        update { restored }; flush()
+    }.isSuccess
 
     /** Deletes all data and returns to the intro. */
     fun reset() { update { AppData() }; flush() }
@@ -383,7 +414,12 @@ class Store(context: Context) {
 
     fun addCardio(session: CardioSession) = update { d -> d.copy(cardio = (d.cardio + session).sortedByDescending { it.at }) }
 
-    fun deleteCardio(id: String) = update { d -> d.copy(cardio = d.cardio.filterNot { it.id == id }) }
+    fun deleteCardio(id: String) = update { d ->
+        val gone = d.cardio.firstOrNull { it.id == id }
+        // An imported session deleted here must not come back with the next import.
+        val dismissed = if (gone?.source == "health") (d.cardioDismissed + gone.at).toSortedSet().toList().takeLast(200) else d.cardioDismissed
+        d.copy(cardio = d.cardio.filterNot { it.id == id }, cardioDismissed = dismissed)
+    }
 
     /**
      * Adds sessions from the watch, skipping any that start within a minute of one already
@@ -392,7 +428,7 @@ class Store(context: Context) {
     fun importCardio(sessions: List<CardioSession>): Int {
         var added = 0
         update { d ->
-            val fresh = Cardio.newSessions(d.cardio, sessions)
+            val fresh = Cardio.newSessions(d.cardio, sessions.filter { s -> d.cardioDismissed.none { kotlin.math.abs(it - s.at) < 60_000L } })
             added = fresh.size
             if (fresh.isEmpty()) d else d.copy(cardio = (d.cardio + fresh).sortedByDescending { it.at })
         }

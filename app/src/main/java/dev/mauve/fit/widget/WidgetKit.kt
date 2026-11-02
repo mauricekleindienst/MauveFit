@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import java.time.LocalDate
 import java.time.ZoneId
@@ -145,6 +146,9 @@ object Widgets {
             .debounce { if (App.store.data.value.active != null) 200 else 1000 }
             .onEach { updateAll(app) }
             .launchIn(CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        App.store.data.map { it.active?.restEndsAt }.distinctUntilChanged()
+            .onEach { scheduleRestEnd(app, it) }
+            .launchIn(CoroutineScope(SupervisorJob() + Dispatchers.Default))
         scheduleMidnight(app)
     }
 
@@ -157,6 +161,20 @@ object Widgets {
     }
 
     /**
+     * Redraws the widgets when a rest ends. The workout service does that too, but it may not be
+     * allowed to run (a workout started from the watch), and the widget clock would count below zero.
+     */
+    fun scheduleRestEnd(context: Context, end: Long?) {
+        val am = context.getSystemService(AlarmManager::class.java)
+        val pi = PendingIntent.getBroadcast(
+            context, 3, Intent(context, RestEndReceiver::class.java).putExtra("end", end ?: 0L),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        am.cancel(pi)
+        if (end != null && end > System.currentTimeMillis()) am.setWindow(AlarmManager.RTC, end + 500, 5_000L, pi)
+    }
+
+    /**
      * Wakes the widgets just after midnight: "today" (food, water) and on Mondays the week change
      * then, but nothing in the store does. Not a wake-up alarm, a sleeping screen shows nothing anyway.
      */
@@ -165,6 +183,20 @@ object Widgets {
         val pi = PendingIntent.getBroadcast(context, 2, Intent(context, MidnightReceiver::class.java), PendingIntent.FLAG_IMMUTABLE)
         val at = LocalDate.now().plusDays(1).atTime(0, 1).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         am.setWindow(AlarmManager.RTC, at, 10 * 60_000L, pi)
+    }
+}
+
+/** Ends a rest that ran out and switches the widgets to the next set. */
+class RestEndReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val end = intent.getLongExtra("end", 0L)
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            try {
+                if (end > 0) App.store.endRest(end)
+                Widgets.restOver(context)
+            } finally { pending.finish() }
+        }
     }
 }
 

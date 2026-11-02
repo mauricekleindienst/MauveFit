@@ -42,7 +42,9 @@ object Progress {
         val sets = h.sumOf { it.doneSets.size }
         val volume = h.sumOf { it.volume }
         val streak = Stats.weekStreak(h, d.settings.weeklyGoal, d.frozenWeeks)
-        val bestStreak = bestWeekStreak(h, d.settings.weeklyGoal).coerceAtLeast(streak)
+        // Frozen weeks keep a run alive here as they do for the live streak, or a badge earned
+        // with a freeze would lock again once that streak ends.
+        val bestStreak = Insights.streaks(h, d.settings.weeklyGoal, java.time.LocalDate.now(), d.frozenWeeks).best.coerceAtLeast(streak)
         val zone = ZoneId.systemDefault()
         val hours = h.map { Instant.ofEpochMilli(it.startedAt).atZone(zone).hour }
         val distinct = h.flatMap { w -> w.entries.map { it.exerciseId } }.distinct().size
@@ -64,19 +66,6 @@ object Progress {
             Achievement(L("Rekordjäger", "Record hunter"), L("Bestwerte in 15 Übungen", "Records in 15 exercises"), p(records, 15)),
             Achievement(L("Ausdauer", "Endurance"), L("Ein Training über 90 Minuten", "A workout over 90 minutes"), p(h.maxOfOrNull { it.durationMs } ?: 0L, 90 * 60_000L)),
         )
-    }
-
-    private fun bestWeekStreak(h: List<Workout>, goal: Int): Int {
-        val weeks = h.groupingBy { Stats.weekStart(Stats.day(it.startedAt)) }.eachCount().filterValues { it >= goal }.keys.sorted()
-        var best = 0
-        var run = 0
-        var prev: java.time.LocalDate? = null
-        for (w in weeks) {
-            run = if (prev != null && prev.plusWeeks(1) == w) run + 1 else 1
-            best = maxOf(best, run)
-            prev = w
-        }
-        return best
     }
 
     // --- Body measurements, heatmap and monthly recap --------------------------------

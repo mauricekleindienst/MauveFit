@@ -14,7 +14,9 @@ object Haptics {
     private var vibrator: Vibrator? = null
 
     fun init(context: Context) {
-        vibrator = context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+        // VibratorManager only exists from Android 12; below it every buzz silently did nothing.
+        vibrator = if (android.os.Build.VERSION.SDK_INT >= 31) context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+        else @Suppress("DEPRECATION") context.getSystemService(Vibrator::class.java)
     }
 
     private val enabled get() = App.store.data.value.settings.vibrate

@@ -811,7 +811,10 @@ object Nutrition {
     /** Everything for the recipe list: own recipes first, then the ones that fit the goal, then the rest. */
     fun listFor(goal: Goal, own: List<Recipe>) = own + forGoal(goal) + recipes.filter { goal !in it.goals }
 
-    data class ShoppingItem(val name: String, val amount: Double, val unit: String)
+    data class ShoppingItem(val name: String, val amount: Double, val unit: String) {
+        /** What a tick is stored under. */
+        val key: String get() = "$name|$unit"
+    }
 
     /** Everything needed for the chosen recipes and portions, merged by ingredient. */
     fun shoppingList(plan: Map<String, Int>, own: List<Recipe> = emptyList()): List<ShoppingItem> =

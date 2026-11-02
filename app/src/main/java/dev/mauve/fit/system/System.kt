@@ -423,8 +423,8 @@ class WeeklyReportReceiver : BroadcastReceiver() {
                 .setContentTitle(L("Dein Wochenbericht", "Your weekly report"))
                 .setContentText(r.headline)
                 .setStyle(Notification.BigTextStyle().bigText(r.headline + "\n" + L(
-                    "${r.sets} Sätze · ${Stats.fmtVolume(r.volume)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min Cardio" else "",
-                    "${r.sets} sets · ${Stats.fmtVolume(r.volume)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min cardio" else "",
+                    "${r.sets} Sätze · ${Stats.amount(r.volume, r.reps)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min Cardio" else "",
+                    "${r.sets} sets · ${Stats.amount(r.volume, r.reps)}" + (r.volumeChange?.let { " (${if (it >= 0) "+" else ""}$it %)" } ?: "") + if (r.cardioMinutes > 0) " · ${r.cardioMinutes} min cardio" else "",
                 )))
                 .setContentIntent(openApp(context))
                 .setAutoCancel(true)

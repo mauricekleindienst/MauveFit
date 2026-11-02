@@ -407,7 +407,7 @@ private fun ExercisePage(
                 Spacer(Modifier.height(12.dp))
                 heard?.let { Text(L("Gehört: ", "Heard: ") + it, Modifier.padding(bottom = 8.dp, start = 4.dp), color = Ink.muted, style = MaterialTheme.typography.bodySmall) }
                 // In a light week the numbers are 70 %: say that instead of "one step up".
-                if (Coach.blockWeek(data) == null && Coach.deloadActive(data)) Text(
+                if (Coach.blockWeek(data) == null && Coach.deloadActive(data) && !bodyweight && Stats.lastSets(history, entry.exerciseId).isNotEmpty()) Text(
                     L("Leichte Woche: 70 % deiner Gewichte, damit du dich erholst.", "Light week: 70 % of your weights, so you recover."),
                     Modifier.padding(start = 4.dp, end = 4.dp), color = Ink.mauve, style = MaterialTheme.typography.bodySmall,
                 ) else CoachLine(tip)
@@ -806,7 +806,7 @@ private fun AddPage(w: Workout, nav: NavController) {
         Text(L("Sätze erledigt", "sets done"), color = Ink.muted)
         if (w.volume > 0) {
             Spacer(Modifier.height(12.dp))
-            Text(Stats.fmtVolume(w.volume) + L(" bewegt", " lifted"), style = MaterialTheme.typography.headlineSmall)
+            Text(Stats.headline(w) + L(" bewegt", " lifted"), style = MaterialTheme.typography.headlineSmall)
         }
         Spacer(Modifier.height(32.dp))
         GhostButton(L("Übung hinzufügen", "Add exercise"), Modifier.fillMaxWidth(), Icons.Rounded.Add) { nav.navigate("pick/workout") }
@@ -841,9 +841,10 @@ private fun RestBar(leftMs: Long, totalSec: Int) {
 private fun FinishDialog(w: Workout, data: AppData, onDismiss: () -> Unit, onFinish: () -> Unit) {
     // A record is a done set whose estimated 1RM beats every earlier session of that exercise.
     val records = w.entries.mapNotNull { e ->
-        val best = e.sets.filter { it.done && it.weight > 0 }.maxByOrNull { Stats.e1rm(it) } ?: return@mapNotNull null
-        val previous = Stats.sessions(data.history, e.exerciseId).maxOfOrNull { it.e1rm } ?: return@mapNotNull null
-        if (Stats.e1rm(best) > previous) (App.repo[e.exerciseId]?.title ?: e.exerciseId) to best else null
+        val best = e.sets.filter { it.done && !it.warmup }.maxByOrNull { Stats.recordScore(it) } ?: return@mapNotNull null
+        val previous = data.history.flatMap { o -> o.entries.filter { it.exerciseId == e.exerciseId }.flatMap { it.sets } }
+            .filter { it.done && !it.warmup }.maxOfOrNull { Stats.recordScore(it) } ?: return@mapNotNull null
+        if (Stats.recordScore(best) > previous + 0.01) (App.repo[e.exerciseId]?.title ?: e.exerciseId) to best else null
     }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -853,14 +854,14 @@ private fun FinishDialog(w: Workout, data: AppData, onDismiss: () -> Unit, onFin
             Column {
                 Text(
                     L(
-                        "${w.doneSets.size} Sätze · ${Stats.fmtVolume(w.volume)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
-                        "${w.doneSets.size} sets · ${Stats.fmtVolume(w.volume)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
+                        "${w.doneSets.size} Sätze · ${Stats.headline(w)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
+                        "${w.doneSets.size} sets · ${Stats.headline(w)} · ${Stats.fmtDuration(System.currentTimeMillis() - w.startedAt)}",
                     )
                 )
                 if (records.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Eyebrow(L("Neue Rekorde", "New records"), color = Ink.accent)
-                    records.forEach { (name, s) -> Text("$name — ${Stats.fmtKg(s.weight)} kg × ${s.reps}") }
+                    records.forEach { (name, s) -> Text("$name — " + if (s.weight > 0) "${Stats.fmtKg(s.weight)} kg × ${s.reps}" else L("${s.reps} Wdh.", "${s.reps} reps")) }
                 }
                 if (w.doneSets.isEmpty()) {
                     Spacer(Modifier.height(8.dp))

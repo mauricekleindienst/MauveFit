@@ -46,6 +46,9 @@ class ExerciseRepo(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
 
     val all: List<Exercise> by lazy {
+        // The German names come with the list: a widget drawn by a freshly started process must
+        // not read the titles before they are there and show English ones.
+        loadNames()
         context.assets.open("exercises.json").bufferedReader().use { json.decodeFromString<List<Exercise>>(it.readText()) }
             .sortedBy { it.name }
     }

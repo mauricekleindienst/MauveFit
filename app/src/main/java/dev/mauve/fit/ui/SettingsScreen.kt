@@ -198,6 +198,7 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                                     if (!on) {
                                         App.store.updateSettings { it.copy(language = value) }
                                         I18n.apply(value)
+                                        App.store.relocalizePlans()
                                         // Channel names show in the system settings; they follow the language too.
                                         dev.mauve.fit.system.createChannels(context)
                                         (context as? android.app.Activity)?.recreate()

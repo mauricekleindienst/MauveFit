@@ -75,10 +75,12 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
         onDispose { if (latestFeel != w.feel || latestNote.trim() != w.note) App.store.setFeel(w.id, latestFeel, latestNote.trim()) }
     }
     val earlier = data.history.filter { it.startedAt < w.startedAt }
+    // Scored like every record list: more reps count for body-weight exercises too.
     val records = w.entries.mapNotNull { e ->
-        val best = e.sets.filter { !it.warmup && it.weight > 0 }.maxByOrNull { Stats.e1rm(it) } ?: return@mapNotNull null
-        val previous = Stats.sessions(earlier, e.exerciseId).maxOfOrNull { it.e1rm } ?: return@mapNotNull null
-        if (Stats.e1rm(best) > previous + 0.01) e.exerciseId to best else null
+        val best = e.sets.filter { !it.warmup && it.done }.maxByOrNull { Stats.recordScore(it) } ?: return@mapNotNull null
+        val previous = earlier.flatMap { o -> o.entries.filter { it.exerciseId == e.exerciseId }.flatMap { it.sets } }
+            .filter { it.done && !it.warmup }.maxOfOrNull { Stats.recordScore(it) } ?: return@mapNotNull null
+        if (Stats.recordScore(best) > previous + 0.01) e.exerciseId to best else null
     }
     val muscles = w.entries.groupBy { App.repo[it.exerciseId]?.target ?: "" }
         .mapValues { (_, es) -> es.sumOf { e -> e.sets.count { !it.warmup } } }.entries.sortedByDescending { it.value }
@@ -118,9 +120,8 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
     }
     fun share() {
         val lines = buildList {
-            add("${w.name} · ${Stats.day(w.startedAt).format(java.time.format.DateTimeFormatter.ofPattern(if (dev.mauve.fit.data.I18n.german) "d. MMMM" else "MMMM d"))}")
-            add(L("${Stats.fmtDuration(w.durationMs)} · ${Stats.sets(w.doneSets.size)} · ${Stats.fmtVolume(w.volume)} bewegt",
-                "${Stats.fmtDuration(w.durationMs)} · ${Stats.sets(w.doneSets.size)} · ${Stats.fmtVolume(w.volume)} lifted"))
+            add("${w.name} · ${Stats.day(w.startedAt).format(java.time.format.DateTimeFormatter.ofPattern(if (dev.mauve.fit.data.I18n.german) "d. MMMM" else "MMMM d", dev.mauve.fit.data.I18n.locale))}")
+            add("${Stats.fmtDuration(w.durationMs)} · ${Stats.sets(w.doneSets.size)} · ${Stats.headline(w)}" + if (w.volume > 0) L(" bewegt", " lifted") else "")
             add("")
             w.entries.filter { e -> e.sets.any { it.done } }.forEach { e ->
                 val ex = App.repo[e.exerciseId]
@@ -162,7 +163,7 @@ fun SummaryScreen(id: String, data: AppData, nav: NavController) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Stat(Stats.fmtDuration(w.durationMs), L("Dauer", "Duration"), Modifier.weight(1f))
                 Stat("${w.doneSets.size}", if (w.doneSets.size == 1) L("Satz", "Set") else L("Sätze", "Sets"), Modifier.weight(1f))
-                Stat(Stats.fmtVolume(w.volume), L("Volumen", "Volume"), Modifier.weight(1f), Ink.accent)
+                Stat(Stats.headline(w), if (w.volume > 0) L("Volumen", "Volume") else L("Gesamt", "Total"), Modifier.weight(1f), Ink.accent)
             }
         }
         item {

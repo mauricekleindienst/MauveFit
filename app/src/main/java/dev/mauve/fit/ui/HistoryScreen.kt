@@ -187,7 +187,9 @@ fun HistoryScreen(data: AppData, nav: NavController) {
 private fun LazyListScope.workouts(data: AppData, expanded: String?, onExpand: (String?) -> Unit, onDelete: (Workout) -> Unit, onDeleteCardio: (CardioSession) -> Unit) {
     item {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Stat(Stats.fmtVolume(data.history.sumOf { it.volume }), L("bewegt", "lifted"), Modifier.weight(1f), Ink.accent)
+            val total = data.history.sumOf { it.volume }
+            Stat(Stats.amount(total, data.history.sumOf { w -> w.doneSets.sumOf { it.second.reps } }),
+                if (total > 0) L("bewegt", "lifted") else L("geschafft", "done"), Modifier.weight(1f), Ink.accent)
             Stat(data.history.sumOf { it.doneSets.size }.toString(), L("Sätze", "sets"), Modifier.weight(1f))
             Stat(Stats.fmtDuration(data.history.sumOf { it.durationMs }), L("Zeit", "time"), Modifier.weight(1f))
         }
@@ -265,7 +267,8 @@ private fun LazyListScope.records(data: AppData, nav: NavController) {
                 stats = listOf(
                     "${data.history.size}" to L("Trainings", "Workouts"),
                     "${records.size}" to L("Rekorde", "Records"),
-                    Stats.fmtVolume(data.history.sumOf { it.volume }) to L("Volumen", "Volume"),
+                    Stats.amount(data.history.sumOf { it.volume }, data.history.sumOf { w -> w.doneSets.sumOf { it.second.reps } }) to
+                        if (data.history.sumOf { it.volume } > 0) L("Volumen", "Volume") else L("Gesamt", "Total"),
                 ),
                 heading = L("Neueste Rekorde", "Latest records"),
                 rows = records.take(4).map { (App.repo[it.exerciseId]?.title ?: it.exerciseId) to ShareImage.setText(it.best) },

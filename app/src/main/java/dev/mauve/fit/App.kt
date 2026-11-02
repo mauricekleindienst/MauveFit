@@ -28,6 +28,7 @@ class App : Application(), SingletonImageLoader.Factory {
         super.onConfigurationChanged(newConfig)
         I18n.apply(store.data.value.settings.language)
         dev.mauve.fit.system.createChannels(this)
+        store.relocalizePlans()
     }
 
     override fun onCreate() {
@@ -36,6 +37,8 @@ class App : Application(), SingletonImageLoader.Factory {
         CrashLog.install(this)
         store = Store(this)
         I18n.apply(store.data.value.settings.language)
+        // Generated plans named in another language (made before a language switch) follow along.
+        store.relocalizePlans()
         repo = ExerciseRepo(this)
         // Parse the exercise list now so the first screen that needs it doesn't stall.
         createChannels(this)

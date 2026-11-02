@@ -50,7 +50,8 @@ object Cardio {
         return incoming.filter { s ->
             val dup = seen.any { o ->
                 abs(o.at - s.at) < 60_000L ||
-                    (o.source == "manual" && o.kind == s.kind && Stats.day(o.at) == Stats.day(s.at))
+                    // ...and started before that entry ended: an evening run after a logged morning run is new.
+                    (o.source == "manual" && o.kind == s.kind && Stats.day(o.at) == Stats.day(s.at) && s.at < end(o) + 60_000L)
             }
             if (dup) false else { seen += s; true }
         }

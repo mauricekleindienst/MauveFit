@@ -107,20 +107,36 @@ object Coach {
         "Ganzkörper C" to listOf("hamstrings", "lats", "delts", "quads", "pectorals", "abs"),
     )
 
-    private fun note(day: String) = when (day) {
-        "Push" -> L("Brust · Schultern · Trizeps", "Chest · Shoulders · Triceps")
-        "Pull" -> L("Rücken · Bizeps", "Back · Biceps")
-        "Beine", "Unterkörper" -> L("Beine · Gesäß · Bauch", "Legs · Glutes · Core")
-        "Oberkörper" -> L("Brust · Rücken · Schultern · Arme", "Chest · Back · Shoulders · Arms")
-        else -> L("Alle großen Muskelgruppen", "All major muscle groups")
+    private fun notes(day: String) = when (day) {
+        "Push" -> "Brust · Schultern · Trizeps" to "Chest · Shoulders · Triceps"
+        "Pull" -> "Rücken · Bizeps" to "Back · Biceps"
+        "Beine", "Unterkörper" -> "Beine · Gesäß · Bauch" to "Legs · Glutes · Core"
+        "Oberkörper" -> "Brust · Rücken · Schultern · Arme" to "Chest · Back · Shoulders · Arms"
+        else -> "Alle großen Muskelgruppen" to "All major muscle groups"
     }
 
-    /** Day keys stay German internally; this is what the user sees. */
-    private fun dayName(day: String) = if (I18n.german) day else when (day) {
+    private fun note(day: String) = notes(day).let { (de, en) -> L(de, en) }
+
+    private fun nameEn(day: String) = when (day) {
         "Beine" -> "Legs"
         "Oberkörper" -> "Upper body"
         "Unterkörper" -> "Lower body"
         else -> day.replace("Ganzkörper", "Full body")
+    }
+
+    /** Day keys stay German internally; this is what the user sees. */
+    private fun dayName(day: String) = if (I18n.german) day else nameEn(day)
+
+    /**
+     * A generated plan whose name and note are still the generated ones gets them in the current
+     * language; anything the user renamed or rewrote stays as it is.
+     */
+    fun relocalize(r: Routine): Routine {
+        if (!r.id.startsWith("gen-")) return r
+        val day = dayTemplates.keys.firstOrNull { "gen-" + it.lowercase().replace(' ', '-') == r.id } ?: return r
+        val name = if (r.name == day || r.name == nameEn(day)) dayName(day) else r.name
+        val note = if (r.note in notes(day).toList()) note(day) else r.note
+        return if (name == r.name && note == r.note) r else r.copy(name = name, note = note)
     }
 
     /** The split that fits the number of training days. */
@@ -349,6 +365,19 @@ object Coach {
      * The comeback cut as a load factor, recorded on the entry like a light week, so the next
      * session progresses from the full weight again, not from the 80 %.
      */
+    /**
+     * Reps to prefill: the plan's, except for a body-weight exercise done without extra weight
+     * where last time every set reached the target: then one more than the best set, so the
+     * "add a rep" advice shows in the numbers too.
+     */
+    fun startReps(d: AppData, repo: ExerciseRepo, exerciseId: String, planned: Int): Int {
+        if (repo[exerciseId]?.bodyweight != true) return planned
+        val last = Stats.lastSets(d.history, exerciseId).filter { !it.warmup }
+        if (last.isEmpty() || last.any { it.weight > 0 }) return planned
+        val target = last.firstOrNull { it.target > 0 }?.target ?: planned
+        return if (last.all { it.reps >= target }) maxOf(planned, last.maxOf { it.reps } + 1) else planned
+    }
+
     /** The full-load weight to remember on an entry started at [load] below 1, else 0 (nothing to remember). */
     fun fullTop(d: AppData, repo: ExerciseRepo, exerciseId: String, reps: Int, load: Double): Double =
         if (abs(load - 1.0) < 1e-6) 0.0 else startWeight(d, repo, exerciseId, reps, scaled = false)
@@ -421,9 +450,18 @@ object Coach {
         val now = System.currentTimeMillis()
         val h = d.history
         val goal = d.settings.weeklyGoal
+        // Without a plan there is no suggestion below to point at.
+        if (Stats.nextRoutine(d.routines, h, repo) == null) return Tip(
+            L("Kein Plan", "No plan"),
+            L("Leg unter Training einen Plan an oder starte ein Schnelltraining.", "Create a plan under Training or start a quick workout."),
+            Tone.Info,
+        )
         if (h.isEmpty()) return Tip(
             L("Willkommen", "Welcome"),
-            L(
+            if (d.profile.setup == Setup.Home) L(
+                "Starte mit dem vorgeschlagenen Training. Hör jeden Satz auf, wenn noch 2 bis 3 saubere Wiederholungen gingen.",
+                "Start with the suggested workout. End each set with 2 to 3 clean reps still in the tank.",
+            ) else L(
                 "Starte mit dem vorgeschlagenen Training. Wähle Gewichte, bei denen noch 2 bis 3 Wiederholungen Reserve bleiben.",
                 "Start with the suggested workout. Pick weights that leave 2 to 3 reps in reserve.",
             ),
@@ -453,7 +491,7 @@ object Coach {
         }
 
         // Lighter on purpose is no plateau.
-        if (!deloadActive(d) && blockWeek(d) == null) plateau(h, repo)?.let { return it }
+        if (!deloadActive(d) && blockWeek(d)?.phase != Phase.Deload) plateau(h, repo)?.let { return it }
 
         val done = Stats.workoutsThisWeek(h)
         val daysLeft = 7 - java.time.LocalDate.now().dayOfWeek.value + 1

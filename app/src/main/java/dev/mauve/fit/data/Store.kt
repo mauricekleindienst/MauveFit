@@ -102,7 +102,8 @@ class Store(private val context: Context) {
         val entries = plan?.exercises.orEmpty().map { Coach.applyBlock(d, it) }.map { p ->
             val weight = Coach.startWeight(d, App.repo, p.exerciseId, p.reps, load)
             val f = Coach.loadFactor(d) * load * Coach.breakLoad(d, p.exerciseId)
-            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = p.reps, target = p.reps) }, p.superset,
+            val reps = Coach.startReps(d, App.repo, p.exerciseId, p.reps)
+            ExerciseEntry(p.exerciseId, p.restSec, List(p.sets) { SetEntry(weight = weight, reps = reps, target = p.reps) }, p.superset,
                 load = f, fullTop = Coach.fullTop(d, App.repo, p.exerciseId, p.reps, f))
         }.withSupersetsCleaned()
         d.copy(active = Workout(
@@ -315,6 +316,12 @@ class Store(private val context: Context) {
     fun acceptAddTip(routineId: String, exerciseId: String) {
         addToRoutine(routineId, exerciseId)
         update { it.copy(addTipWeek = Stats.weekKey(java.time.LocalDate.now())) }
+    }
+
+    /** Puts generated plan names and notes into the current language (after a language switch). */
+    fun relocalizePlans() = update { d ->
+        val rs = d.routines.map(Coach::relocalize)
+        if (rs == d.routines) d else d.copy(routines = rs)
     }
 
     fun deleteRoutine(id: String) = update { d -> d.copy(routines = d.routines.filterNot { it.id == id }) }

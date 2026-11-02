@@ -14,6 +14,8 @@ object WeeklyReport {
         val goal: Int,
         val sets: Int,
         val volume: Double,
+        /** Working reps done, for weeks of body-weight training without volume. */
+        val reps: Int = 0,
         /** Change against the week before in percent; null when that week had no volume. */
         val volumeChange: Int?,
         val records: Int,
@@ -56,6 +58,7 @@ object WeeklyReport {
             goal = d.settings.weeklyGoal,
             sets = week.sumOf { it.doneSets.size },
             volume = volume,
+            reps = week.sumOf { w -> w.doneSets.sumOf { it.second.reps } },
             volumeChange = if (previous > 0) ((volume / previous - 1) * 100).roundToInt() else null,
             records = records,
             cardioMinutes = d.cardio.filter { inWeek(weekStart, it.at) }.sumOf { it.minutes },

@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.19.12 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.19.13 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,16 @@ Stand: Version 1.19.12 (November 2026). Sortiert nach Nutzen für das Training, 
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.19.13 (Fix-Runde 12)
+
+- Körpergewichtstraining: Zusammenfassung, Abschluss-Dialog, Verlauf, Wochenbericht und Teilen zeigen Wiederholungen statt "0 kg"
+- Wiederholungsrekorde (z. B. 12 statt 10 Liegestütze) erscheinen in Zusammenfassung und Abschluss-Dialog
+- Körpergewichtsübungen steigern sich: nach geschafften Wiederholungen ist der nächste Satz mit einer Wiederholung mehr vorbelegt
+- Generierte Plannamen und Notizen wechseln mit der App-Sprache (eigene Umbenennungen bleiben)
+- Tipp auf "Heute" ohne Plan verweist auf Plan oder Schnelltraining; ohne Geräte ist von Wiederholungen statt Gewichten die Rede
+- Geteilter Text nutzt Monatsnamen der App-Sprache; deutsche Übungsnamen auch im Widget direkt nach einem App-Neustart
+- Korrekturen an Runde 11: zweiter Lauf am selben Tag wird importiert, CSV ohne "sep="-Zeile (in Deutsch mit Semikolon und Dezimalkomma), Leichte-Woche-Hinweis nur wo er Gewichte erklärt, Plateau-Tipp im Block wieder aktiv (außer in der Entlastungswoche)
 
 ## Erledigt in 1.19.12 (Fix-Runde 11)
 

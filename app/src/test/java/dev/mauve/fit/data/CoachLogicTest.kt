@@ -127,12 +127,13 @@ class CoachLogicTest {
     // --- CSV ----------------------------------------------------------------------------------
 
     @Test fun csvHasOneRowPerDoneSetAndQuotesCommas() {
+        I18n.apply("en")
         val w = workout(1, ExerciseEntry("e1", sets = listOf(done(60.0, 8), done(62.5, 6), SetEntry(65.0, 5))))
             .copy(name = "Push, heavy")
         val csv = CsvExport.sets(AppData(history = listOf(w))) { Exercise(it, "bench press", target = "pectorals") }
-        // BOM and "sep=," come first so Excel opens it right.
-        assertTrue(csv.startsWith("﻿sep=,"))
-        val lines = csv.trim().lines().drop(1)
+        // A BOM first so Excel reads the umlauts.
+        assertTrue(csv.startsWith("﻿date,"))
+        val lines = csv.removePrefix("﻿").trim().lines()
         assertEquals(3, lines.size)
         assertTrue(lines[0].startsWith("date,time,workout,exercise"))
         assertTrue(lines[1].contains("\"Push, heavy\",bench press,e1,pectorals,1,normal,60,8"))

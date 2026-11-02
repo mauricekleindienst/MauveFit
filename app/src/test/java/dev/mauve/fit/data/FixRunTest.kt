@@ -126,4 +126,9 @@ class FixRunTest {
         val d2 = AppData(history = listOf(Workout(name = "W", finishedAt = 1L, entries = listOf(e2))))
         assertEquals(100.0, Coach.lastFullSets(d2, "bench").first().weight, 0.0)
     }
+
+    @Test fun recordsInTheSummaryCountRepsForBodyweight() {
+        assertTrue(Stats.recordScore(SetEntry(0.0, 12)) > Stats.recordScore(SetEntry(0.0, 10)))
+        assertEquals("120 reps", run { I18n.apply("en"); Stats.amount(0.0, 120) })
+    }
 }

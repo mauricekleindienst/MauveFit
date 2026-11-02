@@ -19,11 +19,10 @@ object CsvExport {
 
     /** [exercise] looks up names and muscles by id (the repo in the app, a stub in tests). */
     fun sets(d: AppData, exercise: (String) -> Exercise?): String = buildString {
-        // Excel reads UTF-8 only with a BOM (umlauts otherwise garble) and, in German, splits on ";"
-        // unless the separator is named; Sheets and Numbers ignore both.
+        // A BOM so Excel reads UTF-8 (umlauts garble otherwise). German Excel splits on ";" and reads
+        // decimal commas; a "sep=" line would show up as a data row in Sheets and Numbers instead.
         append('\uFEFF')
-        appendLine("sep=,")
-        appendLine(header.joinToString(","))
+        appendLine(header.joinToString(SEP))
         // Oldest first reads naturally in a spreadsheet.
         d.history.sortedBy { it.startedAt }.forEach { w ->
             val start = Instant.ofEpochMilli(w.startedAt).atZone(ZoneId.systemDefault())
@@ -44,7 +43,7 @@ object CsvExport {
                         if (s.warmup) "" else "$n", type, num(s.weight), "${s.reps}", if (s.rpe > 0) "${s.rpe}" else "",
                         if (s.warmup || s.weight <= 0) "" else num(Stats.e1rm(s)), minutes,
                     )
-                    appendLine(row.joinToString(",") { cell(it) })
+                    appendLine(row.joinToString(SEP) { cell(it) })
                 }
             }
         }
@@ -53,9 +52,11 @@ object CsvExport {
     /** Whole numbers without ".0", otherwise one decimal; always with a point. */
     private fun num(v: Double): String = if (v % 1.0 == 0.0) v.toLong().toString()
     // Quarter kilos keep both decimals (11.25 kg stays 11.25), like Stats.fmtKg.
-    else (if (kotlin.math.abs(v * 4 - Math.round(v * 4)) < 1e-9) "%.2f" else "%.1f").format(java.util.Locale.ROOT, v).trimEnd('0').trimEnd('.')
+    else (if (kotlin.math.abs(v * 4 - Math.round(v * 4)) < 1e-9) "%.2f" else "%.1f").format(java.util.Locale.ROOT, v).trimEnd('0').trimEnd('.').let { if (I18n.german) it.replace('.', ',') else it }
 
     /** Quotes a cell when it contains a comma, quote or line break (RFC 4180). */
     private fun cell(s: String): String =
-        if (s.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + s.replace("\"", "\"\"") + "\"" else s
+        if (s.any { it == ',' || it == ';' || it == '"' || it == '\n' || it == '\r' }) "\"" + s.replace("\"", "\"\"") + "\"" else s
+
+    private val SEP get() = if (I18n.german) ";" else ","
 }

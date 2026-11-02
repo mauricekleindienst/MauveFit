@@ -147,6 +147,9 @@ object Stats {
     fun sets(n: Int) = if (n == 1) L("1 Satz", "1 set") else L("$n Sätze", "$n sets")
 
     /** Volume for weighted workouts, total reps for body-weight ones. */
+    /** "4,2 t", or "120 Wdh." for body-weight training where nothing was lifted with weight. */
+    fun amount(volume: Double, reps: Int): String = if (volume > 0) fmtVolume(volume) else L("$reps Wdh.", "$reps reps")
+
     fun headline(w: Workout): String = if (w.volume > 0) fmtVolume(w.volume) else L("${w.doneSets.sumOf { it.second.reps }} Wdh.", "${w.doneSets.sumOf { it.second.reps }} reps")
 
     // Quarter kilos keep both decimals (1.25 kg plates read "1,25", not "1,3"); anything else,

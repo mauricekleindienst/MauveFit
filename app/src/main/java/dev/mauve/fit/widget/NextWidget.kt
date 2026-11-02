@@ -42,6 +42,7 @@ import dev.mauve.fit.data.AppData
 import dev.mauve.fit.data.Coach
 import dev.mauve.fit.data.I18n
 import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Live
 import dev.mauve.fit.data.Motivation
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.watch.WatchSync
@@ -58,15 +59,19 @@ class NextWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val data by App.store.data.collectAsState()
-            Content(data)
+            // Read so the end of a rest redraws the widget, see Widgets.restOver.
+            val tick by Widgets.tick.collectAsState()
+            Content(data, tick)
         }
     }
 
     @Composable
-    private fun Content(d: AppData) {
+    private fun Content(d: AppData, @Suppress("UNUSED_PARAMETER") tick: Long) {
         val context = LocalContext.current
         val size = LocalSize.current
         val active = d.active
+        val live = Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })
+        if (live != null) return Running(live, size)
         val next = if (active == null) Stats.nextRoutine(d.routines, d.history, App.repo) else null
         val week = Stats.workoutsThisWeek(d.history)
         val goal = d.settings.weeklyGoal.coerceAtLeast(1)
@@ -92,7 +97,75 @@ class NextWidget : GlanceAppWidget() {
         }
     }
 
-    /** 2x1: name of the next (or running) workout and the week count. */
+    /**
+     * A workout runs: the rest counting down with the set just done and the next one, or the set
+     * to do now with a button to tick it off. Clocks run on their own between redraws.
+     */
+    @Composable
+    private fun Running(st: Live.Status, size: DpSize) {
+        val open = openApp(LocalContext.current, "workout")
+        val button = when {
+            st.resting -> L("Weiter", "Skip") to actionRunCallback<SkipRestAction>()
+            st.complete -> L("Öffnen", "Open") to open
+            else -> L("Erledigt", "Done") to actionRunCallback<SetDoneAction>()
+        }
+        if (size.height < MEDIUM.height || size.width < MEDIUM.width) {
+            Row(
+                GlanceModifier.fillMaxSize().background(Bg).cornerRadius(20.dp).padding(horizontal = 14.dp, vertical = 6.dp).clickable(open),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(GlanceModifier.defaultWeight()) {
+                    Eyebrow(if (st.resting) L("Pause", "Rest") else st.exercise)
+                    Text(if (st.resting) st.last ?: st.exercise else st.next, style = style(TextColor, 13.sp, FontWeight.Medium), maxLines = 1)
+                }
+                Spacer(GlanceModifier.width(8.dp))
+                if (st.resting) Clock(st.restEndsAt!!, down = true, color = Copper, size = 20f)
+                else Text("${st.done}/${st.total}", style = style(Copper, 16.sp, FontWeight.Bold), maxLines = 1)
+            }
+            return
+        }
+        Column(GlanceModifier.fillMaxSize().background(Bg).cornerRadius(24.dp).padding(16.dp).clickable(open)) {
+            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                // The eyebrow takes its own width: a weighted text next to the clock view was squeezed to nothing.
+                Eyebrow(if (st.resting) L("Pause · nächster Satz in", "Rest · next set in") else st.workout)
+                // A spacer does not push the clock view over; a weighted box holding it at its end does.
+                Box(GlanceModifier.defaultWeight(), contentAlignment = Alignment.CenterEnd) {
+                    Clock(st.startedAt, down = false, color = Muted, size = 13f)
+                }
+            }
+            Spacer(GlanceModifier.height(2.dp))
+            Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(GlanceModifier.defaultWeight()) {
+                    if (st.resting) Clock(st.restEndsAt!!, down = true, color = TextColor, size = 30f)
+                    else Text(st.exercise, style = style(TextColor, 18.sp, FontWeight.Bold), maxLines = 2)
+                }
+                Spacer(GlanceModifier.width(8.dp))
+                Pill(button.first, button.second)
+            }
+            Spacer(GlanceModifier.height(4.dp))
+            if (st.resting) {
+                st.last?.let { Text(it, style = style(Copper, 13.sp, FontWeight.Medium), maxLines = 1) }
+                Text(L("Als Nächstes: ${st.exercise} · ${st.next}", "Up next: ${st.exercise} · ${st.next}"), style = style(Muted, 13.sp), maxLines = 2)
+            } else {
+                Text(st.next, style = style(Copper, 14.sp, FontWeight.Medium), maxLines = 1)
+                st.last?.let { Text(L("Zuletzt: $it", "Last: $it"), style = style(Muted, 12.sp), maxLines = 1) }
+            }
+            Spacer(GlanceModifier.defaultWeight())
+            Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(16.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(L("Sätze", "Sets"), GlanceModifier.defaultWeight(), style = style(Muted, 13.sp))
+                    Text("${st.done}/${st.total}", style = style(Copper, 15.sp, FontWeight.Bold))
+                }
+                Spacer(GlanceModifier.height(6.dp))
+                LinearProgressIndicator(
+                    if (st.total == 0) 0f else (st.done / st.total.toFloat()).coerceIn(0f, 1f), GlanceModifier.fillMaxWidth(),
+                    color = ColorProvider(Copper), backgroundColor = ColorProvider(Raised),
+                )
+            }
+        }
+    }
+
+    /** 2x1: name of the next workout and the week count. */
     @Composable
     private fun Small(d: AppData, nextName: String?, week: Int, goal: Int, open: Action) {
         Row(

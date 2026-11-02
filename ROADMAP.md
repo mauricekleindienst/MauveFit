@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.16.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.17.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -66,6 +66,12 @@ Stand: Version 1.16.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.16
 
 - Startgewicht beim ersten Mal aus Körpergewicht und Erfahrung geschätzt (Langhantel und Kurzhantel, vorsichtig)
+
+## Erledigt in 1.17
+
+- Benachrichtigung und Widget zeigen das Training live: Pausen-Countdown, zuletzt erledigter Satz mit Gewicht und Wiederholungen, nächster Satz
+- Widget-Knöpfe "Erledigt" und "Weiter" haken den Satz ab oder beenden die Pause, ohne die App zu öffnen
+- Laufende Trainingszeit und Satzfortschritt im Widget; nach der Pause springt es von selbst zum nächsten Satz
 
 ## Als Nächstes
 

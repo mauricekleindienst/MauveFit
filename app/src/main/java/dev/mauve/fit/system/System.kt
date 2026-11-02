@@ -21,6 +21,7 @@ import dev.mauve.fit.MainActivity
 import dev.mauve.fit.R
 import dev.mauve.fit.data.AppData
 import dev.mauve.fit.data.L
+import dev.mauve.fit.data.Live
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.watch.WatchSync
 import kotlinx.coroutines.CoroutineScope
@@ -161,12 +162,15 @@ class WorkoutService : Service() {
                     }
                 }
                 scope.launch {
-                    delay(left)
+                    // A little past the end: woken a few ms early, everything would still read as resting.
+                    delay(left + 300)
                     val d = App.store.data.value
                     if (d.active?.restEndsAt != end) return@launch
                     // Swap the finished countdown for the next set, so the chronometer never runs below zero.
                     getSystemService(NotificationManager::class.java).notify(ID_WORKOUT, build(d))
                     if (!Foreground.visible) restOver(d)
+                    // The widgets count the rest down on their own; at zero they switch to the next set.
+                    dev.mauve.fit.widget.Widgets.restOver(this@WorkoutService)
                     if (wake.isHeld) wake.release()
                 }
             }.launchIn(scope)
@@ -181,8 +185,7 @@ class WorkoutService : Service() {
 
     private fun build(d: AppData): Notification {
         val w = d.active
-        val s = WatchSync.state(d)
-        val resting = w?.restEndsAt?.let { it > System.currentTimeMillis() } == true
+        val st = Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })
         val b = Notification.Builder(this, CH_WORKOUT)
             .setSmallIcon(R.drawable.ic_stat_fit)
             .setContentIntent(openWorkout(this))
@@ -192,22 +195,40 @@ class WorkoutService : Service() {
             .setColor(0xFFDB9062.toInt())
         // Android 16: a live update, shown like a timer on the lock screen and in the status bar.
         if (Build.VERSION.SDK_INT >= 36) b.setRequestPromotedOngoing(true)
-        if (w == null) return b.setContentTitle("Mauve Fit").build()
+        if (w == null || st == null) return b.setContentTitle("Mauve Fit").build()
+        val resting = st.resting
         if (Build.VERSION.SDK_INT >= 36) b.setStyle(progress(w, resting))
-        return if (resting) b.setContentTitle(L("Pause · ${w.name}", "Rest · ${w.name}"))
-            .setContentText(L("Als Nächstes: ${s.exercise}", "Up next: ${s.exercise}"))
-            .setUsesChronometer(true).setChronometerCountDown(true).setWhen(w.restEndsAt!!).setShowWhen(true)
-            .addAction(action("plus15", "+15 s", 1)).addAction(action("skip", L("Überspringen", "Skip"), 2))
-            .build()
-        else b.setContentTitle(s.exercise)
-            .setContentText(
-                (if (s.warmup) L("Aufwärmen", "Warm-up") else L("Satz ${s.setNumber} von ${s.setCount}", "Set ${s.setNumber} of ${s.setCount}")) +
-                    if (s.bodyweight) L(" · ${s.reps} Wdh.", " · ${s.reps} reps") else " · ${Stats.fmtKg(s.weight)} kg × ${s.reps}",
-            )
-            .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
-            .addAction(action("done", L("Satz erledigt", "Set done"), 3))
-            .build()
+        val sets = L("${st.done} von ${st.total} Sätzen", "${st.done} of ${st.total} sets")
+        return when {
+            // Rest: what was just done, the countdown in the header and what comes next.
+            resting -> {
+                val next = L("Als Nächstes: ${st.exercise} · ${st.next}", "Up next: ${st.exercise} · ${st.next}")
+                b.setContentTitle(st.last ?: L("Pause · ${w.name}", "Rest · ${w.name}"))
+                    .setContentText(next)
+                    .setSubText(L("Pause", "Rest"))
+                    .bigText(next)
+                    .setUsesChronometer(true).setChronometerCountDown(true).setWhen(st.restEndsAt!!).setShowWhen(true)
+                    .addAction(action("plus15", "+15 s", 1)).addAction(action("skip", L("Überspringen", "Skip"), 2))
+                    .build()
+            }
+            st.complete -> b.setContentTitle(L("Alle Sätze erledigt", "All sets done"))
+                .setContentText(st.last ?: L("Tippen, um das Training abzuschließen", "Tap to finish the workout"))
+                .setSubText(sets)
+                .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
+                .build()
+            else -> b.setContentTitle(st.exercise)
+                .setContentText(st.next)
+                .setSubText(sets)
+                .bigText(listOfNotNull(st.next, st.last?.let { L("Zuletzt: $it", "Last: $it") }).joinToString("\n"))
+                .setUsesChronometer(true).setWhen(w.startedAt).setShowWhen(true)
+                .addAction(action("done", L("Satz erledigt", "Set done"), 3))
+                .build()
+        }
     }
+
+    /** Two lines when expanded; Android 16 keeps its progress bar instead. */
+    private fun Notification.Builder.bigText(text: String) =
+        if (Build.VERSION.SDK_INT >= 36) this else setStyle(Notification.BigTextStyle().bigText(text))
 
     /**
      * Android 16 progress bar of the live update: during a rest the time running out, otherwise
@@ -240,7 +261,7 @@ class WorkoutService : Service() {
         val n = Notification.Builder(this, channel)
             .setSmallIcon(R.drawable.ic_stat_fit)
             .setContentTitle(L("Pause vorbei", "Rest over"))
-            .setContentText("${s.exercise} · " + if (s.warmup) L("Aufwärmen", "Warm-up") else L("Satz ${s.setNumber} von ${s.setCount}", "Set ${s.setNumber} of ${s.setCount}"))
+            .setContentText(Live.status(d, { App.repo[it]?.title }, { App.repo[it]?.bodyweight == true })?.let { "${it.exercise} · ${it.next}" } ?: s.exercise)
             .setContentIntent(openWorkout(this))
             .setAutoCancel(true)
             .setTimeoutAfter(60_000)

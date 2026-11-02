@@ -40,6 +40,10 @@ data class SetEntry(
     val rpe: Int = 0,
 )
 
+/** A ticked-off set as it was logged; [number] counts working sets from 1, 0 for a warm-up. */
+@Serializable
+data class LastSet(val exerciseId: String, val weight: Double, val reps: Int, val number: Int = 0, val at: Long = 0)
+
 @Serializable
 enum class SetType { Normal, Drop, Failure }
 
@@ -77,6 +81,8 @@ data class Workout(
     /** Percent the starting weights were lowered for poor recovery (0 = not adjusted), and the score behind it. */
     val readinessCut: Int = 0,
     val readinessScore: Int = 0,
+    /** The set ticked off last, for the notification and the widget ("Set 2 done · 80 kg × 8"). */
+    val lastSet: LastSet? = null,
 ) {
     /** When the workout was last touched, falling back to its start. */
     val lastActive: Long get() = lastActivityAt.takeIf { it > 0 } ?: startedAt

@@ -5,6 +5,15 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
+import android.util.TypedValue
+import android.widget.RemoteViews
+import androidx.compose.ui.graphics.toArgb
+import androidx.glance.LocalContext
+import androidx.glance.appwidget.AndroidRemoteViews
+import dev.mauve.fit.R
+import dev.mauve.fit.watch.WatchSync
+import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.TextUnit
@@ -58,8 +67,8 @@ internal fun style(color: Color, size: TextUnit, weight: FontWeight = FontWeight
 
 /** Small copper caption above a widget's main line. */
 @Composable
-internal fun Eyebrow(text: String, color: Color = Copper) =
-    Text(text, style = style(color, 12.sp, FontWeight.Medium), maxLines = 1)
+internal fun Eyebrow(text: String, modifier: GlanceModifier = GlanceModifier, color: Color = Copper) =
+    Text(text, modifier, style = style(color, 12.sp, FontWeight.Medium), maxLines = 1)
 
 /** A rounded button in the accent colour. */
 @Composable
@@ -70,6 +79,23 @@ internal fun Pill(label: String, action: Action, modifier: GlanceModifier = Glan
     ) {
         Text(label, style = style(Bg, 13.sp, FontWeight.Bold), maxLines = 1)
     }
+}
+
+/**
+ * A clock that runs by itself on the home screen (a RemoteViews chronometer), so the rest counts
+ * down without the widget being redrawn every second. [at] is wall-clock time: the end of the rest
+ * when counting [down], the start when counting up.
+ */
+@Composable
+internal fun Clock(at: Long, down: Boolean, color: Color, size: Float, modifier: GlanceModifier = GlanceModifier) {
+    val context = LocalContext.current
+    val views = RemoteViews(context.packageName, R.layout.widget_clock).apply {
+        setChronometer(R.id.clock, SystemClock.elapsedRealtime() + (at - System.currentTimeMillis()), null, true)
+        setChronometerCountDown(R.id.clock, down)
+        setTextColor(R.id.clock, color.toArgb())
+        setTextViewTextSize(R.id.clock, TypedValue.COMPLEX_UNIT_SP, size)
+    }
+    AndroidRemoteViews(views, modifier)
 }
 
 /** Opens the app, optionally asking for a screen through [MainActivity.EXTRA_OPEN]. */
@@ -101,7 +127,7 @@ object Widgets {
             val food = d.food.filter { it.date == today }
             listOf(
                 // Next workout: the running one down to its sets, the plans, the week.
-                d.active?.name, d.active?.entries, d.routines, d.history.size, d.history.firstOrNull()?.id,
+                d.active?.name, d.active?.entries, d.active?.restEndsAt, d.active?.lastSet, d.routines, d.history.size, d.history.firstOrNull()?.id,
                 d.settings.weeklyGoal, d.settings.blockStart, d.settings.blockWeeks, d.settings.language,
                 // Weekly challenge and streak.
                 d.challengesDone, d.freezes, d.frozenWeeks, d.profile.level, d.profile.setup,
@@ -115,10 +141,19 @@ object Widgets {
             )
         }
             .distinctUntilChanged()
-            .debounce(1000)
+            // Short while a workout runs, so a ticked set shows up right away.
+            .debounce { if (App.store.data.value.active != null) 200 else 1000 }
             .onEach { updateAll(app) }
             .launchIn(CoroutineScope(SupervisorJob() + Dispatchers.Default))
         scheduleMidnight(app)
+    }
+
+    /** Bumped when a rest runs out: nothing in the store changes then, but the widget must. */
+    val tick = MutableStateFlow(0L)
+
+    suspend fun restOver(context: Context) {
+        tick.value = System.currentTimeMillis()
+        runCatching { NextWidget().updateAll(context) }
     }
 
     /**
@@ -162,6 +197,24 @@ class StartNextAction : ActionCallback {
         Widgets.updateAll(context)
         // Opening from a broadcast may be refused on newer Android; the widget then shows "Open".
         runCatching { context.startActivity(appIntent(context, "workout")) }
+    }
+}
+
+/** Ticks off the current set from the widget; the rest starts like on the phone and the watch. */
+class SetDoneAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        WatchSync.handle("done")
+        App.store.flush()
+        Widgets.updateAll(context)
+    }
+}
+
+/** Ends the rest early. */
+class SkipRestAction : ActionCallback {
+    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        WatchSync.handle("skip")
+        App.store.flush()
+        Widgets.updateAll(context)
     }
 }
 

@@ -68,6 +68,19 @@ struct SettingsView: View {
                 .listRowBackground(Ink.surface)
 
                 Section {
+                    Toggle(isOn: Binding(get: { s.healthWrite }, set: { v in Task { await store.setHealth(v) } })) {
+                        Label(L("Mit Apple Health synchronisieren", "Sync with Apple Health"), systemImage: "heart.fill")
+                    }
+                    .accessibilityIdentifier("healthToggle")
+                } header: { header("Apple Health") } footer: {
+                    Text(L("Schreibt fertige Trainings als Krafttraining und dein Körpergewicht in Apple Health und liest dein Gewicht für die Ernährungsziele. Die Daten bleiben auf deinem iPhone.",
+                           "Writes finished workouts as strength training and your body weight to Apple Health, and reads your weight for the nutrition targets. The data stays on your iPhone."))
+                        .font(.fit(.bodySmall))
+                }
+                .font(.fit(.body))
+                .listRowBackground(Ink.surface)
+
+                Section {
                     // Guideline 1.4.1: the targets and suggestions are rough guidance only.
                     Label {
                         Text(L("Trainingsvorschläge und Ernährungsziele sind allgemeine Richtwerte und keine medizinische Beratung. Sprich bei Beschwerden, Vorerkrankungen oder in der Schwangerschaft vorher mit einer Ärztin oder einem Arzt.",

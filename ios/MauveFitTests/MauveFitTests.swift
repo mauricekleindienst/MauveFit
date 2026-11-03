@@ -320,6 +320,37 @@ final class MauveFitTests: XCTestCase {
         XCTAssertEqual(Store(file: file).data.routines.count, Templates.routines.count)
     }
 
+    /** Only finished workouts with a real time span go to Apple Health, and only plausible weights. */
+    func testHealthMapping() {
+        var w = Workout(name: "Push")
+        w.startedAt = 1_760_000_000_000
+        XCTAssertNil(HealthMapping.interval(w))
+        w.finishedAt = w.startedAt
+        XCTAssertNil(HealthMapping.interval(w))
+        w.finishedAt = w.startedAt + 3_600_000
+        let span = HealthMapping.interval(w)
+        XCTAssertEqual(span?.duration, 3600)
+        XCTAssertEqual(span?.start, Date(ms: 1_760_000_000_000))
+        XCTAssertEqual(HealthMapping.metadata(w)["HKExternalUUID"] as? String, w.id)
+        XCTAssertTrue(HealthMapping.validKg(82.5))
+        XCTAssertFalse(HealthMapping.validKg(5))
+        XCTAssertFalse(HealthMapping.validKg(.nan))
+    }
+
+    /** The setting keeps Android's key, and test runs never switch Health on. */
+    func testHealthSetting() async throws {
+        let json = #"{"settings":{"healthWrite":true}}"#
+        let d = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+        XCTAssertTrue(d.settings.healthWrite)
+        XCTAssertFalse(AppData().settings.healthWrite)
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        await store.setHealth(true)
+        XCTAssertFalse(store.data.settings.healthWrite)
+        XCTAssertNil(store.bodyWeight)
+        store.logWeight(80)
+        XCTAssertEqual(store.bodyWeight, 80)
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

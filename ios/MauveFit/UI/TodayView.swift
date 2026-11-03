@@ -112,7 +112,7 @@ struct TodayView: View {
     private func foodCard(_ d: AppData) -> some View {
         let day = Stats.isoDay()
         let entries = d.food.filter { $0.date == day }
-        let t = Nutrition.targets(kg: Stats.latestWeight(d) ?? Nutrition.defaultKg, goal: d.profile.goal)
+        let t = Nutrition.targets(kg: store.bodyWeight ?? Nutrition.defaultKg, goal: d.profile.goal)
         let kcal = entries.reduce(0) { $0 + $1.kcal }
         let protein = entries.reduce(0) { $0 + $1.protein }
         let water = d.water[day] ?? 0

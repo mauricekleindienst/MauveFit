@@ -1,0 +1,3 @@
+/* Apple Health, asked when sync is switched on in Settings. */
+"NSHealthShareUsageDescription" = "Mauve Fit reads your latest body weight from Apple Health to set your daily calorie and protein targets.";
+"NSHealthUpdateUsageDescription" = "Mauve Fit saves your finished workouts as strength training and the body weights you log to Apple Health.";

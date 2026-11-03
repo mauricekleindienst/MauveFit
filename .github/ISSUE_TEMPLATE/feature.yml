@@ -1,0 +1,20 @@
+name: Feature
+description: Something new or changed in the app
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What and why
+    validations:
+      required: true
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms
+      description: Features ship on both phones. Only the platform services differ (Apple Health / Health Connect, Apple Watch / Wear OS).
+      options:
+        - label: Android
+        - label: iOS
+        - label: Watch (Wear OS / Apple Watch)
+        - label: Health (Health Connect / Apple Health)

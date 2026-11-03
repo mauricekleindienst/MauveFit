@@ -9,6 +9,12 @@ on:
       - "!ios/fastlane/**"
       - "app/src/main/assets/exercise*.json"
       - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+      - "!ios/fastlane/**"
+      - "app/src/main/assets/exercise*.json"
+      - ".github/workflows/ios.yml"
   workflow_dispatch:
 
 concurrency:

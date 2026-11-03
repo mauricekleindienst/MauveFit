@@ -34,6 +34,12 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # The Android launcher icon, rendered at 1024 px (App Store Connect refuses builds without one).
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    # Apple Health: workouts and body weight, only when switched on in Settings.
+    entitlements:
+      path: MauveFit/MauveFit.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
     info:
       path: MauveFit/Info.plist
       properties:
@@ -44,6 +50,9 @@ targets:
           UIColorName: LaunchBackground
         # Only HTTPS from the system: no export compliance questions per TestFlight build.
         ITSAppUsesNonExemptEncryption: false
+        # English defaults; de.lproj/InfoPlist.strings has the German texts.
+        NSHealthShareUsageDescription: Mauve Fit reads your latest body weight from Apple Health to set your daily calorie and protein targets.
+        NSHealthUpdateUsageDescription: Mauve Fit saves your finished workouts as strength training and the body weights you log to Apple Health.
     postCompileScripts:
       - name: Copy exercise data
         basedOnDependencyAnalysis: false

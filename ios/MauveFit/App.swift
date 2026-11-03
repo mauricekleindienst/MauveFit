@@ -9,7 +9,10 @@ struct MauveFitApp: App {
     init() {
         let store = Demo.enabled ? Demo.store() : Store()
         // A workout left open for hours is saved (or dropped when empty) instead of resumed.
-        if !Demo.enabled { store.closeIdleWorkout() }
+        if !Demo.enabled {
+            store.closeIdleWorkout()
+            store.refreshHealthWeight()
+        }
         Ink.accentChoice = Accent.of(store.data.settings.accent)
         _store = State(initialValue: store)
         // On iOS 26 the tab bar and toolbars are Liquid Glass by themselves; any appearance set
@@ -39,7 +42,12 @@ struct MauveFitApp: App {
                 .environment(store)
                 .environment(router)
                 .onChange(of: phase) { _, p in
-                    if p != .active { store.flush() } else if !Demo.enabled { store.closeIdleWorkout() }
+                    if p != .active {
+                        store.flush()
+                    } else if !Demo.enabled {
+                        store.closeIdleWorkout()
+                        store.refreshHealthWeight()
+                    }
                 }
         }
     }

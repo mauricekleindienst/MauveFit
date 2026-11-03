@@ -180,6 +180,8 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         Foreground.visible = false
         App.store.flush()
+        // Not while the settings recreate the activity for a new accent: only once the app is left.
+        if (!isChangingConfigurations) dev.mauve.fit.system.LauncherIcon.apply(this, Accent.of(App.store.data.value.settings.accent))
     }
 
     companion object {

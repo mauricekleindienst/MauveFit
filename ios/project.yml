@@ -26,14 +26,17 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Mauve Fit
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         CODE_SIGN_STYLE: Automatic
+        # The Android launcher icon, rendered at 1024 px (App Store Connect refuses builds without one).
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: MauveFit/Info.plist
       properties:
         CFBundleLocalizations: [de, en]
         CFBundleAllowMixedLocalizations: true
+        # Only HTTPS from the system: no export compliance questions per TestFlight build.
+        ITSAppUsesNonExemptEncryption: false
     postCompileScripts:
       - name: Copy exercise data
         basedOnDependencyAnalysis: false

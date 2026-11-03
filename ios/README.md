@@ -119,4 +119,8 @@ The Apple Developer Program costs 99 USD a year and would allow:
   devices, and capabilities such as App Groups (needed for widgets sharing data with the app),
   HealthKit, push notifications and later the App Store.
 
-None of this is set up yet; the workflow only builds the unsigned ipa.
+TestFlight is set up: after the tests pass, the `testflight` job archives the app with automatic
+signing through the App Store Connect API key (secrets `ASC_KEY_P8`, `ASC_KEY_ID`,
+`ASC_ISSUER_ID`, `APPLE_TEAM_ID`) and uploads it. The version is the Android `versionName`, the
+build number the workflow's run number. The app declares no non-exempt encryption, so builds
+do not wait for export compliance.

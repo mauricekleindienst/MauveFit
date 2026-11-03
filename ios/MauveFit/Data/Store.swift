@@ -76,6 +76,8 @@ final class Store {
         enc.outputFormatting = [.sortedKeys]
         // Written beside and swapped in, so a crash mid-write never leaves a truncated file.
         if let bytes = try? enc.encode(data) { try? bytes.write(to: file, options: .atomic) }
+        // The home screen widget shows the real data only, never a test's or the sample data.
+        if file == Store.defaultFile() { WidgetSync.publish(data) }
     }
 
     // MARK: - Workout flow

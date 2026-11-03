@@ -483,6 +483,35 @@ final class MauveFitTests: XCTestCase {
         XCTAssertEqual(Set(kinds).count, 6)
     }
 
+    /** The widget shows the next plan, or the running workout with the set to do now (#12). */
+    func testWidgetSnapshot() throws {
+        I18n.apply("de")
+        defer { I18n.apply("en") }
+        var d = AppData()
+        var s = WidgetSync.snapshot(d)
+        XCTAssertFalse(s.running)
+        XCTAssertEqual(s.eyebrow, "Als Nächstes")
+        XCTAssertEqual(s.title, Stats.nextRoutine(d)?.name)
+        XCTAssertEqual(s.buttonLink, "mauvefit://start-next")
+        XCTAssertEqual(s.week, 0)
+        XCTAssertEqual(s.trained.count, 7)
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.startWorkout(Routine(name: "Push", exercises: [PlanExercise(exerciseId: "0025", sets: 3, reps: 8)]))
+        store.toggleDone(0, 0)
+        d = store.data
+        s = WidgetSync.snapshot(d)
+        XCTAssertTrue(s.running)
+        XCTAssertEqual(s.title, "Push")
+        XCTAssertEqual(s.setsDone, 1)
+        XCTAssertEqual(s.setsTotal, 3)
+        XCTAssertTrue(s.line.hasSuffix("Satz 2 von 3"))
+        XCTAssertNotNil(s.restEndsAt)
+        XCTAssertEqual(s.buttonLink, "mauvefit://workout")
+        // The snapshot survives the trip through JSON, as the widget reads it.
+        let back = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(back, s)
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

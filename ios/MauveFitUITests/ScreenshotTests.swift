@@ -169,6 +169,17 @@ final class ScreenshotTests: XCTestCase {
         snap(app, "20-grosse-schrift-training")
     }
 
+    /** The home screen widget in its three sizes, drawn in the app (#12). */
+    func testWidgets() {
+        var app = launch(["-demoWidgets"])
+        XCTAssertTrue(element(app, "widgetGallery").waitForExistence(timeout: 15))
+        snap(app, "23-widgets")
+        app.terminate()
+        app = launch(["-demoWidgets", "-demoWorkout"])
+        XCTAssertTrue(element(app, "widgetGallery").waitForExistence(timeout: 15))
+        snap(app, "24-widgets-training")
+    }
+
     func testLightWorkout() {
         let app = launch(["-demoLight", "-demoWorkout"])
         XCTAssertTrue(app.otherElements["restBar"].waitForExistence(timeout: 15))

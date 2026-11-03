@@ -40,6 +40,10 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
 - Apple Health (Settings, off by default): finished workouts are written as traditional
   strength training and logged body weights as body mass; the newest body mass in Health sets
   the nutrition targets when none is logged in the app. Access is asked when it is switched on.
+- Home screen widget (small, medium, large): the next plan with a start link, or the running
+  workout with the rest counting down and the sets done, and this week with the challenge. The
+  app writes a snapshot into the App Group `group.dev.mauve.fit` after every save; the widget
+  extension (`MauveFitWidget/`, views in `Shared/`) only reads it.
 - German and English, following the system or the setting (Today, gear icon), with German
   plurals and decimal commas.
 - Apple's Liquid Glass design on iOS 26: the native tab bar and toolbars with large titles, a
@@ -56,7 +60,7 @@ Compared with the Android app, these are not ported yet:
 - Intro / onboarding (goal, level, days, setup, equipment, focus, limits) and the coach
   (generated plans, block periodisation, deload, readiness, swap suggestions)
 - Quests, XP, coins, shop, titles and premium accents
-- Widgets (streak, nutrition, next workout) and Live Activities for the rest timer
+- Widgets for streak and nutrition, Live Activities for the rest timer
 - Apple Watch app (the Android side has a Wear OS app)
 - Supersets in the workout screen (the data field is kept), drop / failure set types and RPE
 - Cardio sessions

@@ -20,6 +20,7 @@ struct TrainingView: View {
                             .disabled(d.active != nil)
                         NavigationLink { LibraryView() } label: { Label(L("Übungen", "Exercises"), systemImage: "books.vertical") }
                             .buttonStyle(.pillOutline)
+                            .accessibilityIdentifier("library")
                         Spacer()
                     }
                     SectionTitle(text: L("Pläne", "Plans"))

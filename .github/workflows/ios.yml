@@ -41,13 +41,19 @@ jobs:
           import json, sys
           devs = json.load(sys.stdin)["devices"]
           ios = sorted((k for k in devs if "iOS" in k), key=lambda k: [int(x) for x in k.rsplit("iOS-", 1)[1].split("-")])
-          for runtime in reversed(ios):
-              for d in devs[runtime]:
-                  if d["name"].startswith("iPhone"):
-                      print(d["udid"]); sys.exit()
+          # An iPhone 16 Pro on the newest runtime, else any iPhone.
+          for want in ("iPhone 16 Pro", "iPhone"):
+              for runtime in reversed(ios):
+                  for d in devs[runtime]:
+                      if d["name"] == want or (want == "iPhone" and d["name"].startswith("iPhone")):
+                          print(d["udid"]); sys.exit()
           ')
           echo "Simulator: $udid"
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          # Screenshots are taken in dark mode.
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl ui "$udid" appearance dark
 
       - name: Build and test
         run: |
@@ -56,8 +62,42 @@ jobs:
             -project MauveFit.xcodeproj -scheme MauveFit \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build/test \
+            -only-testing:MauveFitTests \
             CODE_SIGNING_ALLOWED=NO | tee build-test.log | grep -E "error:|warning: .*MauveFit|Test Case|Executed|\*\* TEST" || true
           grep -q "\*\* TEST SUCCEEDED \*\*" build-test.log
+
+      - name: Take screenshots
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MauveFit.xcodeproj -scheme MauveFit \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build/test \
+            -only-testing:MauveFitUITests \
+            -resultBundlePath build/screens.xcresult \
+            -testLanguage de -testRegion DE | tee build-screens.log | grep -E "error:|Test Case|Executed|\*\* TEST" || true
+          grep -q "\*\* TEST SUCCEEDED \*\*" build-screens.log
+          mkdir -p build/attachments build/screenshots
+          xcrun xcresulttool export attachments --path build/screens.xcresult --output-path build/attachments
+          # Files come out under generated names; manifest.json maps them to the names the test gave.
+          python3 - <<'PY'
+          import json, re, shutil
+          for test in json.load(open("build/attachments/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  if not name.endswith(".png"):
+                      name += ".png"
+                  shutil.copy("build/attachments/" + a["exportedFileName"], "build/screenshots/" + name)
+          PY
+          ls -l build/screenshots
+          test "$(ls build/screenshots/*.png | wc -l)" -ge 6
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: MauveFit-iOS-screenshots
+          path: ios/build/screenshots/*.png
+          if-no-files-found: error
 
       - name: Build unsigned ipa
         run: |

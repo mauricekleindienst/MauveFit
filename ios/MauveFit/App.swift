@@ -2,8 +2,8 @@ import SwiftUI
 
 @main
 struct MauveFitApp: App {
-    @State private var store = Store()
-    @State private var router = Router()
+    @State private var store = Demo.enabled ? Demo.store() : Store()
+    @State private var router = Router(showWorkout: Demo.workout)
     @Environment(\.scenePhase) private var phase
 
     init() {
@@ -19,7 +19,8 @@ struct MauveFitApp: App {
         nav.titleTextAttributes = [.foregroundColor: UIColor(Ink.text)]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
-        RestAlarm.requestPermission()
+        // Screenshot runs must not be covered by the permission prompt.
+        if !Demo.enabled { RestAlarm.requestPermission() }
     }
 
     var body: some Scene {
@@ -38,7 +39,9 @@ struct MauveFitApp: App {
 @Observable
 final class Router {
     var tab: AppTab = .today
-    var showWorkout = false
+    var showWorkout: Bool
+
+    init(showWorkout: Bool = false) { self.showWorkout = showWorkout }
 }
 
 enum AppTab: Hashable { case today, training, food, progress }

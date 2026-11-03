@@ -55,6 +55,10 @@ CI does everything (`.github/workflows/ios.yml`): on every push to `main` that t
 `project.yml`, runs the unit tests on an iOS simulator, and builds an unsigned Release
 `MauveFit-unsigned.ipa`, uploaded as the workflow artifact **MauveFit-unsigned-ipa**.
 
+A UI test (`MauveFitUITests`) also starts the app with sample data (launch argument `-demoData`,
+plus `-demoWorkout` for a running workout) on an iPhone 16 Pro simulator in German and dark mode,
+and saves a screenshot of each main screen. They are uploaded as **MauveFit-iOS-screenshots**.
+
 The `.xcodeproj` is never edited or committed; change `project.yml` instead. On a Mac:
 
 ```bash

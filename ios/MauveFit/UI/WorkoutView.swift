@@ -262,6 +262,8 @@ private struct RestBar: View {
                 .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Ink.line, lineWidth: 1))
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("restBar")
                 .onChange(of: left <= 0) { _, over in
                     // Clears the finished timer a few seconds after it ran out.
                     if over { Task { try? await Task.sleep(for: .seconds(4)); if (store.data.active?.restEndsAt ?? 0) <= nowMs() { store.skipRest() } } }

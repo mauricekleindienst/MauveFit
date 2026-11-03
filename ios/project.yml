@@ -66,13 +66,27 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/MauveFit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MauveFit
         BUNDLE_LOADER: $(TEST_HOST)
+  MauveFitUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MauveFitUITests
+    dependencies:
+      - target: MauveFit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.mauve.fit.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: MauveFit
 schemes:
   MauveFit:
     build:
       targets:
         MauveFit: all
         MauveFitTests: [test]
+        MauveFitUITests: [test]
     test:
       targets:
         - MauveFitTests
+        - MauveFitUITests
       gatherCoverageData: false

@@ -2,7 +2,7 @@ import SwiftUI
 
 /**
  * The body outline and muscle regions from react-native-body-highlighter (MIT, see
- * THIRD_PARTY_NOTICES.md), converted once into plain move/line/curve commands in bodymap.json.
+ * THIRD_PARTY_NOTICES.md at the repository root), converted once into plain move/line/curve commands in bodymap.json.
  * Both sides share one 724 x 1448 coordinate space.
  */
 enum BodySide: String { case front, back }
@@ -72,40 +72,28 @@ final class BodyMap: @unchecked Sendable {
     }
 }
 
-/** Which map regions a muscle of the exercise data covers. */
+/**
+ * Which map regions a muscle of the exercise data covers, from muscle_regions.json, the file the
+ * Android app reads too. An empty list means "nothing to highlight" on purpose (cardio); a unit
+ * test keeps the file complete for every muscle in exercises.json.
+ */
 enum MuscleRegions {
-    /**
-     * Every muscle name used in exercises.json, as targets or secondary muscles. An empty list
-     * means "nothing to highlight" on purpose (cardio). A unit test keeps this complete.
-     */
-    static let map: [String: [String]] = [
-        "abs": ["abs"], "abdominals": ["abs"], "lower abs": ["abs"], "core": ["abs", "obliques"],
-        "obliques": ["obliques"],
-        "quads": ["quadriceps"], "quadriceps": ["quadriceps"], "hip flexors": ["quadriceps"],
-        "lats": ["upper-back"], "latissimus dorsi": ["upper-back"], "upper back": ["upper-back"],
-        "back": ["upper-back"], "rhomboids": ["upper-back"],
-        "spine": ["lower-back"], "lower back": ["lower-back"],
-        "calves": ["calves"], "soleus": ["calves"], "shins": ["tibialis"],
-        "pectorals": ["chest"], "chest": ["chest"], "upper chest": ["chest"], "serratus anterior": ["chest"],
-        "glutes": ["gluteal"], "abductors": ["gluteal"],
-        "hamstrings": ["hamstring"],
-        "adductors": ["adductors"], "inner thighs": ["adductors"], "groin": ["adductors"],
-        "triceps": ["triceps"],
-        "biceps": ["biceps"], "brachialis": ["biceps"],
-        "delts": ["deltoids"], "shoulders": ["deltoids"], "deltoids": ["deltoids"], "rear deltoids": ["deltoids"],
-        "rotator cuff": ["deltoids"],
-        "forearms": ["forearm"], "wrists": ["forearm"], "wrist flexors": ["forearm"], "wrist extensors": ["forearm"],
-        "grip muscles": ["forearm"],
-        "traps": ["trapezius"], "trapezius": ["trapezius"],
-        "levator scapulae": ["neck"], "sternocleidomastoid": ["neck"],
-        "ankles": ["ankles"], "ankle stabilizers": ["ankles"], "feet": ["feet"], "hands": ["hands"],
-        "cardiovascular system": [],
-    ]
+    private struct File: Decodable {
+        let regions: [String: [String]]
+        let backOnly: [String]
+        let backFirst: [String]
+    }
 
+    private static let file: File = Bundle.main.url(forResource: "muscle_regions", withExtension: "json")
+        .flatMap { try? Data(contentsOf: $0) }
+        .flatMap { try? JSONDecoder().decode(File.self, from: $0) }
+        ?? File(regions: [:], backOnly: [], backFirst: [])
+
+    static var map: [String: [String]] { file.regions }
     /** Regions drawn only on the back of the figure. */
-    private static let backOnly: Set<String> = ["upper-back", "lower-back", "gluteal", "hamstring"]
+    private static var backOnly: Set<String> { Set(file.backOnly) }
     /** Regions on both sides that read better from behind. */
-    private static let backFirst: Set<String> = ["triceps", "trapezius", "calves"]
+    private static var backFirst: Set<String> { Set(file.backFirst) }
 
     static func regions(_ muscles: [String]) -> Set<String> {
         Set(muscles.flatMap { map[$0] ?? [] })

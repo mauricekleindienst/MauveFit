@@ -1,12 +1,14 @@
-# Third-party notices (iOS app)
+# Third-party notices
 
-The iOS app bundles the following third-party material. The same texts are shown in the app
-under Settings → About → Open-source licences.
+Both apps, Android and iOS, bundle the same third-party material below. The files live once in
+`ios/MauveFit/Resources/`; the iOS build copies them into the app bundle and the Android build
+reads the same folder as an assets directory (`app/build.gradle.kts`). The texts are shown in
+both apps under the open-source licences in Settings.
 
 ## Body and muscle shapes: react-native-body-highlighter
 
 Source: https://github.com/HichamELBSI/react-native-body-highlighter
-The SVG paths of the male body (front and back) were converted into `MauveFit/Resources/bodymap.json`
+The SVG paths of the male body (front and back) were converted into `ios/MauveFit/Resources/bodymap.json`
 (arcs and quadratic curves rewritten as cubic curves, coordinates rounded to 0.1).
 
 ```
@@ -40,9 +42,10 @@ License: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0
 https://creativecommons.org/licenses/by-sa/4.0/
 
 Illustrations: Everkinetic, CC BY-SA 4.0. Changes: scaled to at most 640 px and reduced to four
-grey levels (`MauveFit/Resources/Everkinetic/`). These adapted images are shared under the same
+grey levels (`ios/MauveFit/Resources/Everkinetic/`). These adapted images are shared under the same
 license, CC BY-SA 4.0. Which drawing belongs to which exercise is listed in
-`MauveFit/Resources/everkinetic.json`.
+`ios/MauveFit/Resources/everkinetic.json`. Which muscle lights up
+which region of the body map is listed in `ios/MauveFit/Resources/muscle_regions.json`.
 
 ## Exercise data: exercises-dataset
 

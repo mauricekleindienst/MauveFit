@@ -16,7 +16,7 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   from react-native-body-highlighter, MIT) with its target muscles in the accent and the
   secondary ones lighter; thumbnails close in on the trained side. 157 exercises also show
   Everkinetic line drawings of the start and end position (CC BY-SA 4.0, matched by hand in
-  `MauveFit/Resources/everkinetic.json`, about 4 MB). See `THIRD_PARTY_NOTICES.md`. The app
+  `MauveFit/Resources/everkinetic.json`, about 4 MB). See `THIRD_PARTY_NOTICES.md` at the repository root. The app
   makes no network requests at all.
 - **Four tabs**
   - *Heute / Today*: the running workout or the next plan (the one rested longest), the week

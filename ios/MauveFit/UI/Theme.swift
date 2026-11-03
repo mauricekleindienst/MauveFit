@@ -144,11 +144,10 @@ struct Card<Content: View>: View {
  * Capsule button. On iOS 26 it is Liquid Glass: tinted ("prominent") glass for the main action,
  * clear glass otherwise. Earlier systems get a filled or tonal capsule.
  */
-struct PillButtonStyle: ButtonStyle {
+struct PillButtonStyle: PrimitiveButtonStyle {
     var filled = true
     var color: Color = Ink.accent
     var wide = false
-    @Environment(\.isEnabled) private var enabled
 
     func makeBody(configuration: Configuration) -> some View {
         if #available(iOS 26, *) {
@@ -158,30 +157,47 @@ struct PillButtonStyle: ButtonStyle {
                 .frame(maxWidth: wide ? .infinity : nil)
                 .padding(.vertical, wide ? 6 : 0)
             if filled {
-                Button(action: configuration.trigger) { label }
+                Button(role: configuration.role, action: configuration.trigger) { label }
                     .buttonStyle(.glassProminent).tint(color).controlSize(.large)
             } else {
-                Button(action: configuration.trigger) { label.foregroundStyle(color) }
+                Button(role: configuration.role, action: configuration.trigger) { label.foregroundStyle(color) }
                     .buttonStyle(.glass).controlSize(.large)
             }
         } else {
-            configuration.label
-                .font(.fit(.titleMedium).weight(filled ? .bold : .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 18)
-                .padding(.vertical, wide ? 16 : 12)
-                .frame(maxWidth: wide ? .infinity : nil)
-                .foregroundStyle(filled ? Ink.bg : color)
-                .background(Capsule().fill(filled ? color : Ink.raised))
-                .opacity(enabled ? 1 : 0.4)
-                .scaleEffect(configuration.isPressed ? 0.97 : 1)
-                .animation(.spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
+            Button(role: configuration.role, action: configuration.trigger) { configuration.label }
+                .buttonStyle(LegacyPill(filled: filled, color: color, wide: wide))
         }
     }
 }
 
-extension ButtonStyle where Self == PillButtonStyle {
+/** The capsule before iOS 26: filled with the colour, or a quiet tonal fill. */
+private struct LegacyPill: ButtonStyle {
+    let filled: Bool
+    let color: Color
+    let wide: Bool
+    @Environment(\.isEnabled) private var enabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.fit(.titleMedium).weight(filled ? .bold : .semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 18)
+            .padding(.vertical, wide ? 16 : 12)
+            .frame(maxWidth: wide ? .infinity : nil)
+            .foregroundStyle(filled ? Ink.bg : color)
+            .background(Capsule().fill(filled ? color : Ink.raised))
+            .opacity(enabled ? 1 : 0.4)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
+    }
+}
+
+extension PrimitiveButtonStyle where Self == PillButtonStyle {
     static var pill: PillButtonStyle { PillButtonStyle() }
+    static var pillOutline: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text) }
+    static var primary: PillButtonStyle { PillButtonStyle(wide: true) }
+    static var ghost: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text, wide: true) }
+}
     static var pillOutline: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text) }
     static var primary: PillButtonStyle { PillButtonStyle(wide: true) }
     static var ghost: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text, wide: true) }

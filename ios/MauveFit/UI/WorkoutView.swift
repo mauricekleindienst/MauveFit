@@ -365,6 +365,16 @@ struct SummaryView: View {
                             }
                         }
                     }
+                    // What this workout was worth, and where that leaves the level.
+                    Card {
+                        HStack {
+                            Text("+\(Quests.workoutXp(w) + records.count * Quests.recordXp) XP").font(.fit(.headlineSmall)).foregroundStyle(Ink.accent)
+                            Spacer()
+                            CoinBadge(coins: Shop.workoutCoins(w) + records.count * Shop.recordCoins, gain: true)
+                        }
+                        LevelRow(rank: Quests.level(Quests.xp(d)), title: d.title)
+                    }
+                    ChallengeCard()
                     FeelCard(workout: w)
                     Button(L("Fertig", "Done"), action: onDone).buttonStyle(.primary).accessibilityIdentifier("summaryDone")
                 }
@@ -372,6 +382,8 @@ struct SummaryView: View {
                 .padding(.bottom, 24)
             }
             .accessibilityIdentifier("summary")
+            // Finishing may complete today's quests ("finish a workout", "do 15 sets"): bank them here.
+            .onAppear { store.claimQuests() }
             .toolbar(.hidden, for: .navigationBar)
             .sensoryFeedback(.success, trigger: records.count) { _, n in n > 0 }
         } else {

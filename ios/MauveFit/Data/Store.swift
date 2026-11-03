@@ -326,6 +326,45 @@ final class Store {
 
     func updateSettings(_ block: (inout Settings) -> Void) { update { block(&$0.settings) } }
 
+    // MARK: - Quests, coins and the shop
+
+    /** Banks the XP of quests just finished; true when something new was claimed. */
+    @discardableResult
+    func claimQuests() -> Bool {
+        let next = Quests.claim(data)
+        guard next.questsClaimed != data.questsClaimed else { return false }
+        update { $0 = next }
+        return true
+    }
+
+    /** Buys [item] when it is available and affordable; true when it went through. */
+    @discardableResult
+    func buy(_ item: Shop.Item) -> Bool {
+        guard let next = Shop.buy(data, item) else { return false }
+        update { $0 = next }
+        flush()
+        return true
+    }
+
+    /** The bought title to wear next to the level, or "" for the level's own. */
+    func setTitle(_ key: String) { update { $0.title = key } }
+
+    /** Books a completed weekly challenge once; true when it is new. */
+    @discardableResult
+    func completeChallenge(_ week: String) -> Bool {
+        guard !data.challengesDone.contains(week) else { return false }
+        update { $0.challengesDone.insert(week) }
+        return true
+    }
+
+    /** Books every finished week since the last call: earns freezes, spends one on a missed week. */
+    func settleStreak() {
+        let d = data
+        let s = Motivation.settle(d.history, goal: d.settings.weeklyGoal,
+                                  Motivation.FreezeState(freezes: d.freezes, frozen: d.frozenWeeks, settled: d.streakSettled, run: d.streakRun))
+        update { $0.freezes = s.freezes; $0.frozenWeeks = s.frozen; $0.streakSettled = s.settled; $0.streakRun = s.run }
+    }
+
     /** Deletes everything and starts over with the starter plans, saved right away. */
     func reset() {
         RestAlarm.cancel()

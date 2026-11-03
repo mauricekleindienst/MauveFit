@@ -13,6 +13,7 @@ struct MauveFitApp: App {
             store.closeIdleWorkout()
             store.refreshHealthWeight()
         }
+        store.settleStreak()
         Ink.accentChoice = Accent.of(store.data.settings.accent)
         _store = State(initialValue: store)
         // On iOS 26 the tab bar and toolbars are Liquid Glass by themselves; any appearance set
@@ -47,6 +48,7 @@ struct MauveFitApp: App {
                     } else if !Demo.enabled {
                         store.closeIdleWorkout()
                         store.refreshHealthWeight()
+                        store.settleStreak()
                     }
                 }
         }

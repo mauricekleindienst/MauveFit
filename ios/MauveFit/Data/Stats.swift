@@ -56,20 +56,60 @@ enum Stats {
         return history.filter { day($0.startedAt) >= start }.count
     }
 
-    /** Consecutive weeks (ending with this one, or last if this one is still open) that met the goal. */
-    static func weekStreak(_ history: [Workout], goal: Int, now: Date = Date()) -> Int {
+    /**
+     * Consecutive weeks (ending with this one, or last if this one is still open) that met the goal.
+     * [frozen] weeks (ISO keys) were covered by a streak freeze: they neither count nor break the run.
+     */
+    static func weekStreak(_ history: [Workout], goal: Int, frozen: Set<String> = [], now: Date = Date()) -> Int {
         let goal = max(1, goal)
         var perWeek: [Date: Int] = [:]
         for w in history { perWeek[weekStart(day(w.startedAt)), default: 0] += 1 }
         var week = weekStart(now)
         if perWeek[week, default: 0] < goal { week = calendar.date(byAdding: .weekOfYear, value: -1, to: week)! }
         var streak = 0
-        while perWeek[week, default: 0] >= goal {
-            streak += 1
+        while true {
+            if perWeek[week, default: 0] >= goal {
+                streak += 1
+            } else if !frozen.contains(weekKey(week)) {
+                break
+            }
             week = calendar.date(byAdding: .weekOfYear, value: -1, to: week)!
         }
         return streak
     }
+
+    /** ISO week key of the week containing [date], e.g. "2026-W44". */
+    static func weekKey(_ date: Date) -> String {
+        let c = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
+        return String(format: "%d-W%02d", c.yearForWeekOfYear ?? 0, c.weekOfYear ?? 0)
+    }
+
+    /** Monday of the week a [weekKey] names, or nil for anything else. */
+    static func weekOf(_ key: String) -> Date? {
+        let parts = key.components(separatedBy: "-W")
+        guard parts.count == 2, let year = Int(parts[0]), let week = Int(parts[1]) else { return nil }
+        var c = DateComponents()
+        c.yearForWeekOfYear = year
+        c.weekOfYear = week
+        c.weekday = 2
+        return calendar.date(from: c).map(weekStart)
+    }
+
+    /** Days since 1970-01-01 of the local calendar day of [date], like LocalDate.toEpochDay(). */
+    static func epochDay(_ date: Date) -> Int64 {
+        let c = calendar.dateComponents([.year, .month, .day], from: date)
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        let d = utc.date(from: DateComponents(year: c.year, month: c.month, day: c.day)) ?? date
+        return Int64((d.timeIntervalSince1970 / 86_400).rounded(.down))
+    }
+
+    /** 1 (Monday) to 7 (Sunday), like DayOfWeek.value. */
+    static func isoWeekday(_ date: Date) -> Int {
+        (calendar.component(.weekday, from: date) + 5) % 7 + 1
+    }
+
+    static func addDays(_ date: Date, _ n: Int) -> Date { calendar.date(byAdding: .day, value: n, to: date)! }
 
     /** Volume (kg × reps) for each of the last [weeks] weeks, oldest first. */
     static func weeklyVolume(_ history: [Workout], weeks: Int = 8, now: Date = Date()) -> [(Date, Double)] {

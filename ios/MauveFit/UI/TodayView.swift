@@ -18,6 +18,8 @@ struct TodayView: View {
                     if let w = d.active { activeCard(w) } else if let r = Stats.nextRoutine(d) { nextCard(r) }
                     weekTiles(d)
                     weekCard(d)
+                    QuestCard()
+                    ChallengeCard()
                     foodCard(d)
                 }
                 .padding(.horizontal, 20)
@@ -69,10 +71,10 @@ struct TodayView: View {
     private func weekTiles(_ d: AppData) -> some View {
         let goal = d.settings.weeklyGoal
         let count = Stats.workoutsThisWeek(d.history)
-        let streak = Stats.weekStreak(d.history, goal: goal)
+        let streak = Stats.weekStreak(d.history, goal: goal, frozen: d.frozenWeeks)
         return HStack(spacing: 10) {
             StatTile(value: "\(count)/\(goal)", label: L("diese Woche", "this week"), color: count >= goal ? Ink.accent : Ink.text)
-            StatTile(value: "\(streak)", label: Fmt.weeks(streak))
+            StatTile(value: "\(streak)", label: Fmt.weeks(streak) + (d.freezes > 0 ? " · " + Motivation.freezeLabel(d.freezes) : ""))
             StatTile(value: Fmt.volume(Stats.weeklyVolume(d.history, weeks: 1).first?.1 ?? 0), label: L("Volumen", "Volume"))
         }
     }

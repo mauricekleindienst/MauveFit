@@ -21,8 +21,9 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                     VStack(alignment: .leading, spacing: 10) {
                         Text(L("Akzentfarbe", "Accent")).font(.fit(.body)).foregroundStyle(Ink.text)
-                        HStack(spacing: 0) {
-                            ForEach(Accent.allCases) { a in
+                        // The free accents, plus the ones bought in the shop.
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 6), spacing: 12) {
+                            ForEach(Accent.allCases.filter { !$0.premium || store.data.owned.contains("accent:" + $0.rawValue) }) { a in
                                 let on = Accent.of(s.accent) == a
                                 Button { store.updateSettings { $0.accent = a.rawValue } } label: {
                                     VStack(spacing: 6) {

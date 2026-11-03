@@ -8,7 +8,7 @@ enum class BodySide { FRONT, BACK }
 
 /**
  * The body outline and muscle regions from react-native-body-highlighter (MIT, see
- * THIRD_PARTY_NOTICES.md), converted once into plain move/line/curve commands in bodymap.json,
+ * THIRD_PARTY_NOTICES.md at the repository root), converted once into plain move/line/curve commands in bodymap.json,
  * which the iOS app reads too. Both sides share one coordinate space of [width] x [height].
  */
 class BodyMap(val width: Float, val height: Float, val front: Side, val back: Side) {
@@ -53,41 +53,18 @@ class BodyMap(val width: Float, val height: Float, val front: Side, val back: Si
     }
 }
 
-/** Which map regions a muscle of the exercise data covers. */
-object MuscleRegions {
-    /**
-     * Every muscle name used in exercises.json, as targets or secondary muscles. An empty list
-     * means "nothing to highlight" on purpose (cardio). A unit test keeps this complete.
-     */
-    val map: Map<String, List<String>> = mapOf(
-        "abs" to listOf("abs"), "abdominals" to listOf("abs"), "lower abs" to listOf("abs"), "core" to listOf("abs", "obliques"),
-        "obliques" to listOf("obliques"),
-        "quads" to listOf("quadriceps"), "quadriceps" to listOf("quadriceps"), "hip flexors" to listOf("quadriceps"),
-        "lats" to listOf("upper-back"), "latissimus dorsi" to listOf("upper-back"), "upper back" to listOf("upper-back"),
-        "back" to listOf("upper-back"), "rhomboids" to listOf("upper-back"),
-        "spine" to listOf("lower-back"), "lower back" to listOf("lower-back"),
-        "calves" to listOf("calves"), "soleus" to listOf("calves"), "shins" to listOf("tibialis"),
-        "pectorals" to listOf("chest"), "chest" to listOf("chest"), "upper chest" to listOf("chest"), "serratus anterior" to listOf("chest"),
-        "glutes" to listOf("gluteal"), "abductors" to listOf("gluteal"),
-        "hamstrings" to listOf("hamstring"),
-        "adductors" to listOf("adductors"), "inner thighs" to listOf("adductors"), "groin" to listOf("adductors"),
-        "triceps" to listOf("triceps"),
-        "biceps" to listOf("biceps"), "brachialis" to listOf("biceps"),
-        "delts" to listOf("deltoids"), "shoulders" to listOf("deltoids"), "deltoids" to listOf("deltoids"), "rear deltoids" to listOf("deltoids"),
-        "rotator cuff" to listOf("deltoids"),
-        "forearms" to listOf("forearm"), "wrists" to listOf("forearm"), "wrist flexors" to listOf("forearm"), "wrist extensors" to listOf("forearm"),
-        "grip muscles" to listOf("forearm"),
-        "traps" to listOf("trapezius"), "trapezius" to listOf("trapezius"),
-        "levator scapulae" to listOf("neck"), "sternocleidomastoid" to listOf("neck"),
-        "ankles" to listOf("ankles"), "ankle stabilizers" to listOf("ankles"), "feet" to listOf("feet"), "hands" to listOf("hands"),
-        "cardiovascular system" to emptyList(),
-    )
-
+/**
+ * Which map regions a muscle of the exercise data covers, from muscle_regions.json, which the iOS
+ * app reads too. An empty list means "nothing to highlight" on purpose (cardio). A unit test keeps
+ * it complete for every muscle in exercises.json.
+ */
+class MuscleRegions(
+    val map: Map<String, List<String>>,
     /** Regions drawn only on the back of the figure. */
-    private val backOnly = setOf("upper-back", "lower-back", "gluteal", "hamstring")
+    private val backOnly: Set<String>,
     /** Regions on both sides that read better from behind. */
-    private val backFirst = setOf("triceps", "trapezius", "calves")
-
+    private val backFirst: Set<String>,
+) {
     fun regions(muscles: List<String>): Set<String> = muscles.flatMap { map[it].orEmpty() }.toSet()
 
     /** The side that shows what the exercise mainly trains; the back for back-only regions. */
@@ -95,6 +72,15 @@ object MuscleRegions {
         val target = regions(listOf(e.target))
         val back = target.any { it in backOnly } || (target.isNotEmpty() && target.all { it in backFirst || it in backOnly })
         return if (back) BodySide.BACK else BodySide.FRONT
+    }
+
+    @Serializable
+    private class Raw(val regions: Map<String, List<String>>, val backOnly: List<String>, val backFirst: List<String>)
+
+    companion object {
+        private val json = Json { ignoreUnknownKeys = true }
+
+        fun parse(text: String) = json.decodeFromString<Raw>(text).let { MuscleRegions(it.regions, it.backOnly.toSet(), it.backFirst.toSet()) }
     }
 }
 

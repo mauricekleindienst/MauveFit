@@ -45,6 +45,9 @@ class ExerciseRepo(private val context: Context) {
     /** The muscle map shapes, shared with the iOS app. */
     val bodyMap: BodyMap by lazy { BodyMap.parse(context.assets.open("bodymap.json").bufferedReader().use { it.readText() }) }
 
+    /** Which muscle map regions each muscle covers, shared with the iOS app. */
+    val muscleRegions: MuscleRegions by lazy { MuscleRegions.parse(context.assets.open("muscle_regions.json").bufferedReader().use { it.readText() }) }
+
     /** Exercise id to its Everkinetic drawings (asset paths, start position first). */
     val drawings: Map<String, List<String>> by lazy {
         runCatching { Drawings.parse(context.assets.open("everkinetic.json").bufferedReader().use { it.readText() }) }.getOrDefault(emptyMap())
@@ -66,6 +69,7 @@ class ExerciseRepo(private val context: Context) {
         all.size
         loadNames()
         bodyMap
+        muscleRegions
         drawings.size
         if (I18n.german) stepsDe.size
     }

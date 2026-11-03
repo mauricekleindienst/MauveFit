@@ -61,12 +61,19 @@ struct LineArt: View {
     let image: UIImage
 
     var body: some View {
-        let lines = Image(uiImage: image).resizable().interpolation(.high).scaledToFit()
-        lines.hidden()
-            .overlay {
-                Rectangle().fill(Ink.accent)
-                    .mask { lines.colorInvert().luminanceToAlpha() }
+        let lines = Image(uiImage: image).resizable().interpolation(.high)
+        Rectangle().fill(Ink.accent)
+            .mask { lines.colorInvert().luminanceToAlpha() }
+            // Some originals are cropped in the artwork itself (a plate cut at the edge): the
+            // drawing fades out at its left and right edge, as on Android.
+            .mask {
+                LinearGradient(stops: [
+                    .init(color: .clear, location: 0), .init(color: .black, location: 0.15),
+                    .init(color: .black, location: 0.85), .init(color: .clear, location: 1),
+                ], startPoint: .leading, endPoint: .trailing)
             }
+            // Sized to the drawing itself, so the fade sits on its edges, not on the card's.
+            .aspectRatio(image.size.width / max(1, image.size.height), contentMode: .fit)
     }
 }
 

@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.23.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.23.2 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,11 @@ Stand: Version 1.23.1 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.23.2
+
+- Gewicht und Wiederholungen im Training werden kleiner statt abgeschnitten: "22,5" stand vorher als "22," da (#26)
+- Muskelkarte liest die Zuordnung der Muskeln aus derselben Datei wie die iOS-App (#25)
 
 ## Erledigt in 1.23.1
 

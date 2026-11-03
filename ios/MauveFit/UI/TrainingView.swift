@@ -11,9 +11,6 @@ struct TrainingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    ScreenTitle(title: L("Training", "Training"), eyebrow: L("Pläne und Übungen", "Plans and exercises")) {
-                        RoundButton(icon: "plus", label: L("Neuer Plan", "New plan")) { editing = Routine(name: "") }
-                    }
                     HStack(spacing: 10) {
                         Button {
                             store.startWorkout(nil)
@@ -38,12 +35,19 @@ struct TrainingView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .tabRoot()
+            .screen()
+            .navigationTitle(L("Training", "Training"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { editing = Routine(name: "") } label: { Image(systemName: "plus") }
+                        .accessibilityLabel(L("Neuer Plan", "New plan"))
+                }
+            }
             .sheet(item: $editing) { r in RoutineEditor(routine: r) }
         }
     }
 
-    /** Icon in an accent disc, title and one line below, like the Android shortcut tiles. */
+    /** Icon in an accent disc, title and one line below, in an accent disc. */
     private func shortcut(_ title: String, _ sub: String, _ icon: String) -> some View {
         Card(padding: 16, spacing: 0) {
             Image(systemName: icon).font(.system(size: 18, weight: .semibold)).foregroundStyle(Ink.accent)
@@ -168,7 +172,7 @@ struct RoutineEditor: View {
     }
 }
 
-/** "− value +" with a caption, like the Android Stepper for plan targets. */
+/** "− value +" with a caption, for plan targets. */
 struct StepperBox: View {
     let label: String
     let value: String

@@ -275,8 +275,8 @@ private struct RestBar: View {
                         .accessibilityLabel(L("Pause überspringen", "Skip rest"))
                 }
                 .padding(18)
-                .background(Ink.surface, in: RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
-                .shadow(color: .black.opacity(0.25), radius: 16, y: 4)
+                .floatingGlass(in: RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+                .glassGroup()
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
                 .accessibilityElement(children: .contain)

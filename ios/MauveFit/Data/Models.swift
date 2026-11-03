@@ -223,7 +223,7 @@ struct Settings: Codable, Hashable {
     /** "system", "dark" or "light". */
     var theme: String = "system"
     /** Accent key, see Accent. */
-    var accent: String = "copper"
+    var accent: String = "mauve"
 
     enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent }
 
@@ -234,7 +234,7 @@ struct Settings: Codable, Hashable {
         weeklyGoal = c.value(.weeklyGoal, 3); defaultRest = c.value(.defaultRest, 90)
         weightStep = c.value(.weightStep, 2.5); barWeight = c.value(.barWeight, 20)
         vibrate = c.value(.vibrate, true); sound = c.value(.sound, true); language = c.value(.language, "system")
-        theme = c.value(.theme, "system"); accent = c.value(.accent, "copper")
+        theme = c.value(.theme, "system"); accent = c.value(.accent, "mauve")
     }
 }
 

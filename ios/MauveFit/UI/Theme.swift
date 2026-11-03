@@ -1,4 +1,3 @@
-import CoreText
 import SwiftUI
 import UIKit
 
@@ -50,7 +49,7 @@ enum Accent: String, CaseIterable, Identifiable {
         }
     }
 
-    static func of(_ key: String) -> Accent { Accent(rawValue: key) ?? .copper }
+    static func of(_ key: String) -> Accent { Accent(rawValue: key) ?? .mauve }
 }
 
 /**
@@ -60,7 +59,7 @@ enum Accent: String, CaseIterable, Identifiable {
  */
 enum Ink {
     /** Set from the settings by the app before anything is drawn. */
-    nonisolated(unsafe) static var accentChoice: Accent = .copper
+    nonisolated(unsafe) static var accentChoice: Accent = .mauve
 
     static var bgUI: UIColor { .tone(0x111315, 0xF2F3F5) }
     static var surfaceUI: UIColor { .tone(0x1A1D21, 0xFFFFFF) }
@@ -86,72 +85,36 @@ enum Ink {
 }
 
 /**
- * Archivo, the Android app's one typeface, set at different widths: extra-wide and heavy like a
- * scoreboard for titles and numbers, normal width for reading. Copied from the Android resources
- * at build time; the system font stands in if it is missing.
+ * The type scale: San Francisco in the system's text styles, so it scales with Dynamic Type and
+ * sits right next to the native large titles. Titles and numbers are heavy and rounded.
  */
-enum Archivo {
-    nonisolated(unsafe) private static let base: CTFontDescriptor? = {
-        guard let url = Bundle.main.url(forResource: "archivo", withExtension: "ttf"),
-              let all = CTFontManagerCreateFontDescriptorsFromURL(url as CFURL) as? [CTFontDescriptor] else { return nil }
-        return all.first
-    }()
-    nonisolated(unsafe) private static var cache: [String: UIFont] = [:]
-
-    private static let weightAxis = NSNumber(value: 0x7767_6874) as CFNumber // "wght"
-    private static let widthAxis = NSNumber(value: 0x7764_7468) as CFNumber // "wdth"
-
-    static func ui(_ size: CGFloat, weight: CGFloat, width: CGFloat = 100) -> UIFont {
-        let key = "\(size)-\(weight)-\(width)"
-        if let f = cache[key] { return f }
-        let font: UIFont
-        if var d = base {
-            d = CTFontDescriptorCreateCopyWithVariation(d, weightAxis, weight)
-            d = CTFontDescriptorCreateCopyWithVariation(d, widthAxis, width)
-            font = CTFontCreateWithFontDescriptor(d, size, nil) as UIFont
-        } else {
-            let w: UIFont.Weight = weight >= 800 ? .heavy : weight >= 700 ? .bold : weight >= 600 ? .semibold : weight >= 500 ? .medium : .regular
-            font = .systemFont(ofSize: size, weight: w, width: width > 110 ? .expanded : .standard)
-        }
-        cache[key] = font
-        return font
-    }
-}
-
-/** The Android type scale (FitTheme): Material sizes with Archivo at the widths per role. */
 enum FitType {
     case display, title, headline, headlineSmall, titleLarge, titleMedium, titleSmall
     case body, bodyMedium, bodySmall, label, labelSmall, number, numberLarge
 
-    var spec: (size: CGFloat, weight: CGFloat, width: CGFloat, style: UIFont.TextStyle) {
+    var font: Font {
         switch self {
-        case .display: (45, 800, 125, .largeTitle)
-        case .title: (32, 800, 125, .largeTitle)
-        case .headline: (26, 700, 125, .title1)
-        case .headlineSmall: (21, 700, 114, .title2)
-        case .titleLarge: (19, 650, 114, .title3)
-        case .titleMedium: (16, 600, 100, .headline)
-        case .titleSmall: (14, 600, 100, .subheadline)
-        case .body: (16, 400, 100, .body)
-        case .bodyMedium: (14, 400, 100, .subheadline)
-        case .bodySmall: (12, 400, 100, .footnote)
-        case .label: (14, 600, 100, .subheadline)
-        case .labelSmall: (12, 500, 100, .caption1)
-        // Figures in tables and counters: semi-wide, so digits read at a glance mid-set.
-        case .number: (17, 700, 112, .body)
-        case .numberLarge: (34, 700, 112, .largeTitle)
+        case .display: .system(.largeTitle, design: .rounded).weight(.heavy)
+        case .title: .system(.largeTitle).weight(.bold)
+        case .headline: .system(.title, design: .rounded).weight(.bold)
+        case .headlineSmall: .system(.title2, design: .rounded).weight(.bold)
+        case .titleLarge: .system(.title3).weight(.semibold)
+        case .titleMedium: .system(.headline)
+        case .titleSmall: .system(.subheadline).weight(.semibold)
+        case .body: .system(.body)
+        case .bodyMedium: .system(.subheadline)
+        case .bodySmall: .system(.footnote)
+        case .label: .system(.subheadline).weight(.semibold)
+        case .labelSmall: .system(.caption).weight(.medium)
+        // Figures in tables and counters: rounded and even-width, so digits read at a glance mid-set.
+        case .number: .system(.body, design: .rounded).weight(.bold).monospacedDigit()
+        case .numberLarge: .system(.largeTitle, design: .rounded).weight(.bold).monospacedDigit()
         }
-    }
-
-    /** Scaled with the system text size, like Material's sp. */
-    var uiFont: UIFont {
-        let s = spec
-        return UIFontMetrics(forTextStyle: s.style).scaledFont(for: Archivo.ui(s.size, weight: s.weight, width: s.width))
     }
 }
 
 extension Font {
-    static func fit(_ t: FitType) -> Font { Font(t.uiFont as CTFont) }
+    static func fit(_ t: FitType) -> Font { t.font }
 }
 
 /** Radii by rank, as on Android: heroes curve most, panels less, rows least. */
@@ -177,7 +140,10 @@ struct Card<Content: View>: View {
     }
 }
 
-/** Capsule button: the accent at full strength for the main action, a quiet tonal fill otherwise. */
+/**
+ * Capsule button. On iOS 26 it is Liquid Glass: tinted ("prominent") glass for the main action,
+ * clear glass otherwise. Earlier systems get a filled or tonal capsule.
+ */
 struct PillButtonStyle: ButtonStyle {
     var filled = true
     var color: Color = Ink.accent
@@ -185,17 +151,32 @@ struct PillButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.fit(.titleMedium).weight(filled ? .bold : .semibold))
-            .lineLimit(1)
-            .padding(.horizontal, 18)
-            .padding(.vertical, wide ? 17 : 12)
-            .frame(maxWidth: wide ? .infinity : nil)
-            .foregroundStyle(filled ? Ink.bg : color)
-            .background(Capsule().fill(filled ? color : Ink.raised))
-            .opacity(enabled ? 1 : 0.4)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
+        if #available(iOS 26, *) {
+            let label = configuration.label
+                .font(.fit(.titleMedium))
+                .lineLimit(1)
+                .frame(maxWidth: wide ? .infinity : nil)
+                .padding(.vertical, wide ? 6 : 0)
+            if filled {
+                Button(action: configuration.trigger) { label }
+                    .buttonStyle(.glassProminent).tint(color).controlSize(.large)
+            } else {
+                Button(action: configuration.trigger) { label.foregroundStyle(color) }
+                    .buttonStyle(.glass).controlSize(.large)
+            }
+        } else {
+            configuration.label
+                .font(.fit(.titleMedium).weight(filled ? .bold : .semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 18)
+                .padding(.vertical, wide ? 16 : 12)
+                .frame(maxWidth: wide ? .infinity : nil)
+                .foregroundStyle(filled ? Ink.bg : color)
+                .background(Capsule().fill(filled ? color : Ink.raised))
+                .opacity(enabled ? 1 : 0.4)
+                .scaleEffect(configuration.isPressed ? 0.97 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.55), value: configuration.isPressed)
+        }
     }
 }
 
@@ -217,31 +198,6 @@ struct SectionTitle: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
     }
-}
-
-/** Screen title: the wide heading first, one plain line of context under it. */
-struct ScreenTitle<Trailing: View>: View {
-    let title: String
-    var eyebrow: String = ""
-    @ViewBuilder var trailing: Trailing
-
-    var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.fit(.title)).tracking(-0.8).foregroundStyle(Ink.text)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                if !eyebrow.isEmpty { Text(eyebrow).font(.fit(.body)).foregroundStyle(Ink.muted) }
-            }
-            Spacer(minLength: 8)
-            trailing
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 6)
-    }
-}
-
-extension ScreenTitle where Trailing == EmptyView {
-    init(title: String, eyebrow: String = "") { self.init(title: title, eyebrow: eyebrow) { EmptyView() } }
 }
 
 /** A round icon button on the raised tone. */
@@ -384,8 +340,26 @@ extension View {
             .background(Ink.bg.ignoresSafeArea())
     }
 
-    /** A tab's root: no system bar, the screen draws its own wide title. */
-    func tabRoot() -> some View {
-        self.screen().toolbar(.hidden, for: .navigationBar)
+    /**
+     * The floating control layer (rest timer, workout bar): Liquid Glass on iOS 26, a thin
+     * material before it. Content cards never get this, as the HIG asks.
+     */
+    /** Lets glass pieces next to each other blend and morph together (iOS 26). */
+    @ViewBuilder
+    func glassGroup(spacing: CGFloat = 12) -> some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: spacing) { self }
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func floatingGlass<S: Shape>(in shape: S) -> some View {
+        if #available(iOS 26, *) {
+            self.glassEffect(.regular, in: shape)
+        } else {
+            self.background(.ultraThinMaterial, in: shape)
+        }
     }
 }

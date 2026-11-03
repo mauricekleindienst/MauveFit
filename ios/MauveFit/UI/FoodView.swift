@@ -16,9 +16,6 @@ struct FoodView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    ScreenTitle(title: L("Ernährung", "Nutrition"), eyebrow: d.profile.goal.label) {
-                        RoundButton(icon: "plus", label: L("Essen eintragen", "Log food")) { adding = true }
-                    }
                     dayPicker(date)
                     macros(entries, t)
                     water(d.water[day] ?? 0, goal: t.waterMl, day: day)
@@ -49,7 +46,14 @@ struct FoodView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .tabRoot()
+            .screen()
+            .navigationTitle(L("Ernährung", "Nutrition"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { adding = true } label: { Image(systemName: "plus") }
+                        .accessibilityLabel(L("Essen eintragen", "Log food"))
+                }
+            }
             .sheet(isPresented: $adding) { FoodEditor(day: day) }
         }
     }

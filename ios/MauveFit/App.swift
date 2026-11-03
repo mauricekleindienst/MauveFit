@@ -12,35 +12,27 @@ struct MauveFitApp: App {
         if !Demo.enabled { store.closeIdleWorkout() }
         Ink.accentChoice = Accent.of(store.data.settings.accent)
         _store = State(initialValue: store)
-        MauveFitApp.styleBars()
+        // On iOS 26 the tab bar and toolbars are Liquid Glass by themselves; any appearance set
+        // here would paint over the glass, so only earlier systems get the palette.
+        if #unavailable(iOS 26) { MauveFitApp.styleBars() }
         // Test and screenshot runs must not be covered by the permission prompt.
         if !Demo.enabled && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil { RestAlarm.requestPermission() }
     }
 
-    /** UIKit bars in the palette and in Archivo; their colours follow light and dark by themselves. */
+    /** UIKit bars in the palette before iOS 26; their colours follow light and dark by themselves. */
     static func styleBars() {
         let tabs = UITabBarAppearance()
-        tabs.configureWithOpaqueBackground()
-        tabs.backgroundColor = Ink.surfaceUI
-        tabs.shadowColor = .clear
-        let item = UITabBarItemAppearance()
-        item.normal.iconColor = Ink.mutedUI
-        item.normal.titleTextAttributes = [.foregroundColor: Ink.mutedUI, .font: Archivo.ui(11, weight: 600)]
-        item.selected.titleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(11, weight: 700)]
-        tabs.stackedLayoutAppearance = item
-        tabs.inlineLayoutAppearance = item
-        tabs.compactInlineLayoutAppearance = item
-        UITabBar.appearance().standardAppearance = tabs
-        UITabBar.appearance().scrollEdgeAppearance = tabs
+        tabs.configureWithDefaultBackground()
         let nav = UINavigationBarAppearance()
-        nav.configureWithOpaqueBackground()
-        nav.backgroundColor = Ink.bgUI
-        nav.shadowColor = .clear
-        nav.titleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(17, weight: 700, width: 114)]
-        nav.largeTitleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(32, weight: 800, width: 125)]
+        nav.configureWithDefaultBackground()
+        nav.titleTextAttributes = [.foregroundColor: Ink.textUI]
+        nav.largeTitleTextAttributes = [.foregroundColor: Ink.textUI]
+        UITabBar.appearance().standardAppearance = tabs
         UINavigationBar.appearance().standardAppearance = nav
-        UINavigationBar.appearance().scrollEdgeAppearance = nav
-        UINavigationBar.appearance().compactAppearance = nav
+        let edge = UINavigationBarAppearance()
+        edge.configureWithTransparentBackground()
+        edge.largeTitleTextAttributes = [.foregroundColor: Ink.textUI]
+        UINavigationBar.appearance().scrollEdgeAppearance = edge
     }
 
     var body: some Scene {
@@ -73,6 +65,7 @@ struct RootView: View {
     var body: some View {
         @Bindable var router = router
         let s = store.data.settings
+        let scheme: ColorScheme? = s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil
         TabView(selection: $router.tab) {
             TodayView()
                 .tabItem { Label(L("Heute", "Today"), systemImage: "bolt.fill") }
@@ -87,15 +80,78 @@ struct RootView: View {
                 .tabItem { Label(L("Fortschritt", "Progress"), systemImage: "chart.bar.fill") }
                 .tag(AppTab.progress)
         }
+        .workoutAccessory()
         // Re-renders every label when the language changes; colours follow the store by themselves.
         .id(s.language)
         .tint(Ink.accent)
-        .preferredColorScheme(s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil)
+        .preferredColorScheme(scheme)
         .fullScreenCover(isPresented: $router.showWorkout) {
             WorkoutView()
                 .environment(store).environment(router)
                 .tint(Ink.accent)
-                .preferredColorScheme(s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil)
+                .preferredColorScheme(scheme)
+        }
+    }
+}
+
+private extension View {
+    /** iOS 26: the running workout (or the next plan) floats above the tab bar in glass. */
+    @ViewBuilder
+    func workoutAccessory() -> some View {
+        if #available(iOS 26, *) {
+            self.tabViewBottomAccessory { WorkoutAccessory() }
+                .tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
+        }
+    }
+}
+
+/** The bar above the tab bar: resume the running workout, or start the next plan. */
+private struct WorkoutAccessory: View {
+    @Environment(Store.self) private var store
+    @Environment(Router.self) private var router
+
+    var body: some View {
+        let d = store.data
+        if let w = d.active {
+            let total = w.entries.reduce(0) { $0 + $1.sets.filter { !$0.warmup }.count }
+            Button { router.showWorkout = true } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: w.restEndsAt != nil ? "timer" : "figure.strengthtraining.traditional")
+                        .foregroundStyle(Ink.accent)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(w.name).font(.fit(.label)).lineLimit(1)
+                        Text(L("\(w.doneSets.count) von \(Fmt.sets(total))", "\(w.doneSets.count) of \(Fmt.sets(total))"))
+                            .font(.fit(.labelSmall)).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(L("Fortsetzen", "Resume")).font(.fit(.label)).foregroundStyle(Ink.accent)
+                }
+                .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("workoutAccessory")
+        } else if let r = Stats.nextRoutine(d) {
+            Button {
+                store.startWorkout(r)
+                router.showWorkout = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "play.fill").foregroundStyle(Ink.accent)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(L("Als Nächstes", "Up next")).font(.fit(.labelSmall)).foregroundStyle(.secondary)
+                        Text(r.name).font(.fit(.label)).lineLimit(1)
+                    }
+                    Spacer()
+                    Text(L("Starten", "Start")).font(.fit(.label)).foregroundStyle(Ink.accent)
+                }
+                .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("workoutAccessory")
+        } else {
+            Text(L("Lege unter Training einen Plan an.", "Add a plan under Training.")).font(.fit(.label)).foregroundStyle(.secondary)
         }
     }
 }

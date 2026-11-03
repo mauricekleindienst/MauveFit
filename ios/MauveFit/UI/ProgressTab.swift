@@ -11,7 +11,6 @@ struct ProgressTab: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    ScreenTitle(title: L("Fortschritt", "Progress"), eyebrow: Fmt.workouts(d.history.count))
                     let streak = Stats.weekStreak(d.history, goal: d.settings.weeklyGoal)
                     HStack(spacing: 10) {
                         StatTile(value: "\(Stats.workoutsThisWeek(d.history))", label: L("diese Woche", "this week"))
@@ -33,7 +32,8 @@ struct ProgressTab: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .tabRoot()
+            .screen()
+            .navigationTitle(L("Fortschritt", "Progress"))
             .sheet(isPresented: $weighing) { WeightEditor(start: Stats.latestWeight(d) ?? Nutrition.defaultKg) }
         }
     }
@@ -49,7 +49,7 @@ struct ProgressTab: View {
             Chart {
                 ForEach(weeks, id: \.0) { week, kg in
                     BarMark(x: .value(L("Woche", "Week"), week, unit: .weekOfYear), y: .value("kg", kg))
-                        // The current week in the accent, the ones before it quiet, as on Android.
+                        // The current week in the accent, the ones before it quiet.
                         .foregroundStyle(week == current ? Ink.accent : Ink.raised)
                         .cornerRadius(6)
                 }

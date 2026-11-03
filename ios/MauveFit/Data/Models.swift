@@ -226,8 +226,10 @@ struct Settings: Codable, Hashable {
     var accent: String = "copper"
     /** Write finished workouts and body weights to Apple Health (Android: Health Connect). */
     var healthWrite = false
+    /** Target body weight in kg; 0 = none. */
+    var goalWeight: Double = 0
 
-    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent, healthWrite }
+    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent, healthWrite, goalWeight }
 
     init() {}
 
@@ -237,7 +239,7 @@ struct Settings: Codable, Hashable {
         weightStep = c.value(.weightStep, 2.5); barWeight = c.value(.barWeight, 20)
         vibrate = c.value(.vibrate, true); sound = c.value(.sound, true); language = c.value(.language, "system")
         theme = c.value(.theme, "system"); accent = c.value(.accent, "copper")
-        healthWrite = c.value(.healthWrite, false)
+        healthWrite = c.value(.healthWrite, false); goalWeight = c.value(.goalWeight, 0)
     }
 }
 
@@ -277,8 +279,38 @@ struct AppData: Codable, Hashable {
     /** Food diary and water per day (ISO date to ml). */
     var food: [FoodEntry] = []
     var water: [String: Int] = [:]
+    /** ISO weeks ("2026-W44") whose weekly challenge was completed; its size is the count shown. */
+    var challengesDone: Set<String> = []
+    /** Streak freezes in stock (0 to 2) and the missed weeks they covered, as ISO week keys. */
+    var freezes = 0
+    var frozenWeeks: Set<String> = []
+    /** Last week the freeze bookkeeping settled ("" = never) and the goal weeks in a row up to it. */
+    var streakSettled = ""
+    var streakRun = 0
+    /** Quest keys already paid out (recent ones only), XP banked from quests, quests done in all. */
+    var questsClaimed: [String] = []
+    var questXp = 0
+    var questsDone = 0
+    /** Shop: coins banked from quests, coins spent, things bought ("accent:gold", "title:iron"). */
+    var questCoins = 0
+    var coinsSpent = 0
+    var owned: Set<String> = []
+    /** Title bought in the shop and shown next to the level, by key; "" for the level's own. */
+    var title = ""
+    /** Rerolls of today's quests and the day they belong to; end of a bought XP booster. */
+    var rerollDay = ""
+    var rerollCount = 0
+    var boostUntil: Int64 = 0
+    /** Days in a row with all three daily quests done: the current run, its last day and the best. */
+    var questStreak = 0
+    var questStreakDay = ""
+    var questStreakBest = 0
 
-    enum CodingKeys: String, CodingKey { case routines, history, active, favorites, settings, profile, bodyWeights, food, water }
+    enum CodingKeys: String, CodingKey {
+        case routines, history, active, favorites, settings, profile, bodyWeights, food, water
+        case challengesDone, freezes, frozenWeeks, streakSettled, streakRun, questsClaimed, questXp, questsDone
+        case questCoins, coinsSpent, owned, title, rerollDay, rerollCount, boostUntil, questStreak, questStreakDay, questStreakBest
+    }
 
     init() {}
 
@@ -288,5 +320,11 @@ struct AppData: Codable, Hashable {
         active = c.opt(.active); favorites = c.value(.favorites, [])
         settings = c.value(.settings, Settings()); profile = c.value(.profile, Profile())
         bodyWeights = c.value(.bodyWeights, []); food = c.value(.food, []); water = c.value(.water, [:])
+        challengesDone = c.value(.challengesDone, []); freezes = c.value(.freezes, 0); frozenWeeks = c.value(.frozenWeeks, [])
+        streakSettled = c.value(.streakSettled, ""); streakRun = c.value(.streakRun, 0)
+        questsClaimed = c.value(.questsClaimed, []); questXp = c.value(.questXp, 0); questsDone = c.value(.questsDone, 0)
+        questCoins = c.value(.questCoins, 0); coinsSpent = c.value(.coinsSpent, 0); owned = c.value(.owned, []); title = c.value(.title, "")
+        rerollDay = c.value(.rerollDay, ""); rerollCount = c.value(.rerollCount, 0); boostUntil = c.value(.boostUntil, 0)
+        questStreak = c.value(.questStreak, 0); questStreakDay = c.value(.questStreakDay, ""); questStreakBest = c.value(.questStreakBest, 0)
     }
 }

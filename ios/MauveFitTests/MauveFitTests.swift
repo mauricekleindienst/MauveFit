@@ -353,6 +353,136 @@ final class MauveFitTests: XCTestCase {
         XCTAssertEqual(store.bodyWeight, 80)
     }
 
+    // MARK: - Quests, XP and the shop (#11)
+
+    /** The same numbers as Kotlin's Random(seed), taken from kotlin-stdlib, so quests draw as on Android. */
+    func testKotlinRandomMatchesKotlin() {
+        let bounds = [1, 3, 4, 7, 10, 16, 100]
+        let expected: [Int64: [Int]] = [
+            0: [0, 0, 3, 3, 2, 2, 61, 0, 0, 3, 0, 4],
+            1: [0, 0, 3, 5, 9, 4, 1, 0, 2, 0, 4, 1],
+            161_508_005: [0, 1, 3, 0, 6, 3, 4, 0, 2, 3, 1, 6],
+            161_508_007: [0, 1, 3, 6, 7, 12, 58, 0, 2, 2, 4, 8],
+            -5: [0, 2, 3, 2, 3, 2, 28, 0, 1, 3, 0, 8],
+            123_456_789_012: [0, 1, 1, 1, 5, 3, 13, 0, 2, 3, 2, 0],
+        ]
+        for (seed, values) in expected {
+            var r = KotlinRandom(seed: seed)
+            XCTAssertEqual((0..<12).map { r.nextInt(bounds[$0 % bounds.count]) }, values, "seed \(seed)")
+        }
+    }
+
+    func testLevelsAndXp() {
+        XCTAssertEqual(Quests.level(0).level, 1)
+        XCTAssertEqual(Quests.level(0).need, 150)
+        XCTAssertEqual(Quests.level(149).level, 1)
+        XCTAssertEqual(Quests.level(150).level, 2)
+        XCTAssertEqual(Quests.level(150 + 200).level, 3)
+        var w = Workout(name: "x")
+        w.entries = [entry("0025", Array(repeating: (60.0, 8), count: 30))]
+        XCTAssertEqual(Quests.workoutXp(w), 100) // 40 + capped 60
+        XCTAssertEqual(Shop.workoutCoins(w), 50) // 20 + capped 30
+        XCTAssertEqual(Shop.skillLevel(9).level, 0)
+        XCTAssertEqual(Shop.skillLevel(10).level, 1)
+        XCTAssertEqual(Shop.skillLevel(25).level, 2)
+    }
+
+    private func day(_ y: Int, _ m: Int, _ d: Int, hour: Int = 18) -> Date {
+        Stats.calendar.date(from: DateComponents(year: y, month: m, day: d, hour: hour))!
+    }
+
+    /** A workout finished today completes "Finish a workout"; claiming banks it once, with coins. */
+    func testClaimBanksQuestsOnce() {
+        let today = Stats.calendar.startOfDay(for: day(2026, 11, 4)) // a Wednesday
+        var w = workout("Push", hoursAgo: 0, [entry("0025", [(60, 8), (60, 8)])])
+        w.startedAt = day(2026, 11, 4).ms
+        w.finishedAt = w.startedAt + 3_600_000
+        var d = AppData()
+        d.history = [w]
+        let quests = Quests.daily(d, day: today)
+        XCTAssertEqual(quests.count, 3)
+        XCTAssertEqual(quests.first?.key, "d:2026-11-04:Train")
+        XCTAssertTrue(quests[0].done)
+        // The same day draws the same quests.
+        XCTAssertEqual(Quests.daily(d, day: today).map(\.key), quests.map(\.key))
+        let claimed = Quests.claim(d, today: today, now: 0)
+        XCTAssertTrue(claimed.questsClaimed.contains("d:2026-11-04:Train"))
+        XCTAssertGreaterThanOrEqual(claimed.questXp, 50)
+        XCTAssertEqual(claimed.questCoins, claimed.questXp / 2)
+        XCTAssertEqual(Quests.claim(claimed, today: today, now: 0).questXp, claimed.questXp)
+        // A running booster doubles quest XP, not the coins.
+        let boosted = Quests.claim({ var x = d; x.boostUntil = 10; return x }(), today: today, now: 0)
+        XCTAssertEqual(boosted.questXp, claimed.questXp * 2)
+        XCTAssertEqual(boosted.questCoins, claimed.questCoins)
+    }
+
+    /** Every fourth goal week earns a freeze; a missed week spends it and keeps the streak. */
+    func testStreakFreezes() {
+        let today = day(2026, 11, 4)
+        let thisWeek = Stats.weekStart(today)
+        var history: [Workout] = []
+        // Goal weeks five to two weeks ago, nothing last week.
+        for back in [5, 4, 3, 2] {
+            var w = Workout(name: "A")
+            w.startedAt = Stats.calendar.date(byAdding: .weekOfYear, value: -back, to: thisWeek)!.addingTimeInterval(3600 * 18).ms
+            w.finishedAt = w.startedAt + 3_600_000
+            history.append(w)
+        }
+        history.reverse()
+        let s = Motivation.settle(history, goal: 1, Motivation.FreezeState(freezes: 0, frozen: [], settled: "", run: 0), today: today)
+        let lastWeek = Stats.calendar.date(byAdding: .weekOfYear, value: -1, to: thisWeek)!
+        XCTAssertEqual(s.freezes, 0) // earned after week four, spent on last week
+        XCTAssertEqual(s.frozen, [Stats.weekKey(lastWeek)])
+        XCTAssertEqual(s.run, 4)
+        XCTAssertEqual(s.settled, Stats.weekKey(lastWeek))
+        XCTAssertEqual(Stats.weekStreak(history, goal: 1, frozen: s.frozen, now: today), 4)
+        XCTAssertEqual(Stats.weekStreak(history, goal: 1, now: today), 0)
+        // Settling again changes nothing.
+        XCTAssertEqual(Motivation.settle(history, goal: 1, s, today: today), s)
+        XCTAssertEqual(Stats.weekOf(Stats.weekKey(lastWeek)), lastWeek)
+    }
+
+    /** Buying needs the coins and the level; a reroll draws the day anew. */
+    func testShop() throws {
+        let today = Stats.calendar.startOfDay(for: day(2026, 11, 4))
+        var d = AppData()
+        XCTAssertNil(Shop.buy(d, Shop.items().first { $0.key == "reroll" }!, today: today, now: 0))
+        var w = workout("Push", hoursAgo: 0, [entry("0025", Array(repeating: (60.0, 8), count: 10))])
+        w.startedAt = day(2026, 11, 3).ms
+        w.finishedAt = w.startedAt + 3_600_000
+        d.history = [w]
+        // 30 for the workout, 50 for "First step", 10 for the chest skill level, 25 for collection tier I.
+        XCTAssertEqual(Shop.balance(d), 115)
+        let reroll = Shop.items().first { $0.key == "reroll" }!
+        let after = try XCTUnwrap(Shop.buy(d, reroll, today: today, now: 0))
+        XCTAssertEqual(after.coinsSpent, 40)
+        XCTAssertEqual(after.rerollCount, 1)
+        XCTAssertEqual(after.rerollDay, "2026-11-04")
+        XCTAssertEqual(Shop.balance(after), 75)
+        // Colours and titles wait for their level.
+        let gold = Shop.items().first { $0.key == "accent:gold" }!
+        XCTAssertFalse(Shop.unlocked(d, gold))
+        XCTAssertNil(Shop.buy(d, gold, today: today, now: 0))
+        XCTAssertEqual(Shop.items().filter { $0.kind == .title }.count, 16)
+        XCTAssertEqual(Accent.of("gold"), .gold)
+        XCTAssertTrue(Accent.gold.premium)
+    }
+
+    /** The weekly challenge rotates by week; the side quests are always of another kind. */
+    func testChallengeRotation() {
+        let d = AppData()
+        var kinds: [Motivation.Kind] = []
+        for back in 0..<6 {
+            let t = Stats.calendar.date(byAdding: .weekOfYear, value: -back, to: day(2026, 11, 4))!
+            let main = Motivation.challenge(d, today: t)
+            let side = [1, 2].map { Motivation.challenge(d, today: t, slot: $0).kind }
+            XCTAssertFalse(side.contains(main.kind))
+            XCTAssertEqual(main.week, Stats.weekKey(t))
+            kinds.append(main.kind)
+        }
+        XCTAssertEqual(Set(kinds).count, 6)
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

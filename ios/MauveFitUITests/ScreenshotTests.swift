@@ -75,6 +75,18 @@ final class ScreenshotTests: XCTestCase {
 
         tab(app, 3)
         snap(app, "05-fortschritt")
+
+        let shop = element(app, "progressShop")
+        XCTAssertTrue(shop.waitForExistence(timeout: 10))
+        shop.tap()
+        XCTAssertTrue(element(app, "shopScreen").waitForExistence(timeout: 10))
+        snap(app, "21-shop")
+
+        // Today further down: quests and the weekly challenge.
+        tab(app, 0)
+        app.swipeUp()
+        app.swipeUp()
+        snap(app, "22-quests")
     }
 
     func testRunningWorkout() {

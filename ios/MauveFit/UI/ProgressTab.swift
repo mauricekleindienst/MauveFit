@@ -12,12 +12,13 @@ struct ProgressTab: View {
             ScrollView {
                 VStack(spacing: 12) {
                     TabHeader(title: L("Fortschritt", "Progress"), subtitle: Fmt.workouts(d.history.count)) { EmptyView() }
-                    let streak = Stats.weekStreak(d.history, goal: d.settings.weeklyGoal)
+                    let streak = Stats.weekStreak(d.history, goal: d.settings.weeklyGoal, frozen: d.frozenWeeks)
                     HStack(spacing: 10) {
                         StatTile(value: "\(Stats.workoutsThisWeek(d.history))", label: L("diese Woche", "this week"))
                         StatTile(value: "\(streak)", label: Fmt.weeks(streak))
                         StatTile(value: Fmt.volume(d.history.reduce(0) { $0 + $1.volume }), label: L("insgesamt bewegt", "lifted in total"), color: Ink.accent)
                     }
+                    rankCard(d)
                     volumeCard(d)
                     weightCard(d)
                     recordsCard(d)
@@ -35,6 +36,34 @@ struct ProgressTab: View {
             }
             .tabRoot()
             .sheet(isPresented: $weighing) { WeightEditor(start: Stats.latestWeight(d) ?? Nutrition.defaultKg) }
+        }
+    }
+
+    /** Level, coins and the streak freezes: what they are and how far the next one is. */
+    private func rankCard(_ d: AppData) -> some View {
+        let toNext = Motivation.freezeEvery - d.streakRun % Motivation.freezeEvery
+        return Card {
+            LevelRow(rank: Quests.level(Quests.xp(d)), title: d.title)
+            HStack {
+                CoinBadge(coins: Shop.balance(d))
+                Spacer()
+                NavigationLink { ShopView() } label: { Text(L("Zum Shop", "Open the shop")).font(.fit(.label)).foregroundStyle(Ink.accent) }
+                    .accessibilityIdentifier("progressShop")
+            }
+            HStack {
+                SectionTitle(text: L("Joker", "Streak freezes"))
+                Tag(text: Motivation.freezeLabel(d.freezes), color: d.freezes > 0 ? Ink.accent : Ink.muted).padding(.top, 10)
+            }
+            Text(L("Alle \(Motivation.freezeEvery) Wochen in Folge mit erreichtem Wochenziel gibt es einen Joker, höchstens \(Motivation.freezeMax) auf Vorrat. Verpasst du eine Woche, springt automatisch ein Joker ein und die Serie bleibt.",
+                   "Every \(Motivation.freezeEvery) weeks in a row with your weekly goal met earn a freeze, up to \(Motivation.freezeMax) in stock. Miss a week and a freeze steps in by itself, so the streak lives on."))
+                .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+            if d.freezes >= Motivation.freezeMax {
+                Text(L("Vorrat voll.", "Stock is full.")).font(.fit(.labelSmall)).foregroundStyle(Ink.accent)
+            } else {
+                Meter(fraction: Double(Motivation.freezeEvery - toNext) / Double(Motivation.freezeEvery))
+                Text(toNext == 1 ? L("Noch 1 Woche bis zum nächsten Joker", "1 more week to the next freeze") : L("Noch \(toNext) Wochen bis zum nächsten Joker", "\(toNext) more weeks to the next freeze"))
+                    .font(.fit(.labelSmall)).foregroundStyle(Ink.muted)
+            }
         }
     }
 

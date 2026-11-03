@@ -24,6 +24,12 @@ extension Color {
  */
 enum Accent: String, CaseIterable, Identifiable {
     case copper, sand, sage, blue, mauve, lime
+    // Bought in the shop (Shop.premiumAccents).
+    case gold, ruby, emerald, ocean, rose
+
+    /** The accents everyone has; the others are unlocked in the shop. */
+    static let free: [Accent] = [.copper, .sand, .sage, .blue, .mauve, .lime]
+    var premium: Bool { !Accent.free.contains(self) }
 
     var id: String { rawValue }
 
@@ -35,6 +41,11 @@ enum Accent: String, CaseIterable, Identifiable {
         case .blue: L("Blau", "Blue")
         case .mauve: L("Mauve", "Mauve")
         case .lime: L("Lime", "Lime")
+        case .gold: L("Gold", "Gold")
+        case .ruby: L("Rubin", "Ruby")
+        case .emerald: L("Smaragd", "Emerald")
+        case .ocean: L("Ozean", "Ocean")
+        case .rose: L("Rosé", "Rose")
         }
     }
 
@@ -46,6 +57,12 @@ enum Accent: String, CaseIterable, Identifiable {
         case .blue: (0x8FB3D2, 0x3D6180)
         case .mauve: (0xC5A9E6, 0x7955A0)
         case .lime: (0xD5F64E, 0x557100)
+        // Light variants tuned to 4.5:1 like the rest, as on Android.
+        case .gold: (0xE8C15A, 0x826412)
+        case .ruby: (0xEE7F8E, 0xCB1B33)
+        case .emerald: (0x5FD3A2, 0x207652)
+        case .ocean: (0x5FC4E8, 0x156F8F)
+        case .rose: (0xE6A0C4, 0xB83076)
         }
     }
 

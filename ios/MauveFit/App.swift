@@ -19,8 +19,8 @@ struct MauveFitApp: App {
         nav.titleTextAttributes = [.foregroundColor: UIColor(Ink.text)]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
-        // Screenshot runs must not be covered by the permission prompt.
-        if !Demo.enabled { RestAlarm.requestPermission() }
+        // Test and screenshot runs must not be covered by the permission prompt.
+        if !Demo.enabled && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil { RestAlarm.requestPermission() }
     }
 
     var body: some Scene {

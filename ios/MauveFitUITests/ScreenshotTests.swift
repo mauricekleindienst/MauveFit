@@ -13,9 +13,20 @@ final class ScreenshotTests: XCTestCase {
         return app
     }
 
+    /** A system alert left over from an earlier launch on this simulator is dismissed first. */
+    private func dismissSystemAlerts() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for label in ["Don\u{2019}t Allow", "Nicht erlauben", "Allow", "Erlauben", "OK"] {
+            let button = springboard.alerts.buttons[label]
+            if button.exists { button.tap(); return }
+        }
+    }
+
     /** Waits a moment for the exercise stills to load from the CDN, then keeps the screen. */
     private func snap(_ app: XCUIApplication, _ name: String) {
         sleep(3)
+        dismissSystemAlerts()
+        sleep(1)
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
         shot.lifetime = .keepAlways

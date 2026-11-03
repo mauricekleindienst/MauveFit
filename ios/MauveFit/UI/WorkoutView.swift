@@ -131,7 +131,7 @@ private struct EntryCard: View {
                 .accessibilityLabel(L("Mehr", "More"))
             }
             HStack(spacing: 8) {
-                Text(L("Satz", "Set")).frame(width: 34, alignment: .leading)
+                Text(L("Satz", "Set")).lineLimit(1).minimumScaleFactor(0.6).frame(width: 34, alignment: .leading)
                 if !bodyweight { Text("kg").frame(maxWidth: .infinity) }
                 Text(L("Wdh.", "Reps")).frame(maxWidth: .infinity)
                 Spacer().frame(width: 44)

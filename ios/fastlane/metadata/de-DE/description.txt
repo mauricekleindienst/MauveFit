@@ -1,4 +1,4 @@
-Mauve Fit ist ein Trainingstagebuch für Krafttraining, das alles auf deinem iPhone behält. Kein Konto, keine Werbung, kein Tracking.
+Mauve Fit ist ein Trainingstagebuch für Krafttraining, das alles auf deinem iPhone behält. Kein Konto, keine Werbung, kein Tracking, und alles funktioniert offline.
 
 PLÄNE
 Starte mit fertigen Plänen (Push, Pull, Beine, Ganzkörper und ein Training für zu Hause) oder bau dir eigene: Übungen auswählen, Sätze, Wiederholungen und Pause je Übung festlegen.
@@ -13,7 +13,7 @@ REKORDE
 Dein bester Satz jeder Übung wird mit dem geschätzten Maximalgewicht (1RM) gespeichert. Nach jedem Training zeigt eine Zusammenfassung Dauer, Sätze, Volumen und neue Rekorde.
 
 1324 ÜBUNGEN
-Eine Bibliothek mit 1324 Übungen mit Bildern, Zielmuskeln, Geräten und Schritt-für-Schritt-Anleitung, durchsuchbar nach Name, Muskel oder Gerät. Favoriten markieren und schnell wiederfinden.
+Eine Bibliothek mit 1324 Übungen mit Muskelkarte, Zeichnungen von Start- und Endposition für viele davon, Geräten und Schritt-für-Schritt-Anleitung, durchsuchbar nach Name, Muskel oder Gerät. Favoriten markieren und schnell wiederfinden.
 
 ERNÄHRUNG UND WASSER
 Trage ein, was du isst, mit Kalorien, Protein, Kohlenhydraten und Fett, gemessen an Tageszielen aus Körpergewicht und Ziel, und behalte dein Wasser im Blick.

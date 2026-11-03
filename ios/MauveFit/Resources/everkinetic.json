@@ -1,29 +1,5 @@
 [
  {
-  "everkinetic": "0006",
-  "title": "Arnold Press",
-  "images": [],
-  "exercises": [
-   {
-    "id": "2137",
-    "name": "dumbbell arnold press",
-    "equipment": "dumbbell"
-   }
-  ]
- },
- {
-  "everkinetic": "0007",
-  "title": "Front Barbell Raises",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0041",
-    "name": "barbell front raise",
-    "equipment": "barbell"
-   }
-  ]
- },
- {
   "everkinetic": "0008",
   "title": "Front Cable Raises",
   "images": [
@@ -35,18 +11,6 @@
     "id": "0162",
     "name": "cable front raise",
     "equipment": "cable"
-   }
-  ]
- },
- {
-  "everkinetic": "0012",
-  "title": "Dumbbell Shoulder Press",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0405",
-    "name": "dumbbell seated shoulder press",
-    "equipment": "dumbbell"
    }
   ]
  },
@@ -271,18 +235,6 @@
    {
     "id": "0363",
     "name": "dumbbell one arm upright row",
-    "equipment": "dumbbell"
-   }
-  ]
- },
- {
-  "everkinetic": "0040",
-  "title": "Dumbbell Raise",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0376",
-    "name": "dumbbell raise",
     "equipment": "dumbbell"
    }
   ]
@@ -653,18 +605,6 @@
   ]
  },
  {
-  "everkinetic": "0084",
-  "title": "Incline Chest Press",
-  "images": [],
-  "exercises": [
-   {
-    "id": "1299",
-    "name": "lever incline chest press",
-    "equipment": "leverage machine"
-   }
-  ]
- },
- {
   "everkinetic": "0085",
   "title": "Decline Chest Press",
   "images": [
@@ -705,18 +645,6 @@
    {
     "id": "0652",
     "name": "pull-up",
-    "equipment": "body weight"
-   }
-  ]
- },
- {
-  "everkinetic": "0089",
-  "title": "Chin Ups",
-  "images": [],
-  "exercises": [
-   {
-    "id": "1326",
-    "name": "chin-up",
     "equipment": "body weight"
    }
   ]
@@ -1392,18 +1320,6 @@
   ]
  },
  {
-  "everkinetic": "0200",
-  "title": "Triceps Extension: Dumbbell (Standing, One Arm)",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0423",
-    "name": "dumbbell standing one arm extension",
-    "equipment": "dumbbell"
-   }
-  ]
- },
- {
   "everkinetic": "0201",
   "title": "Triceps Extension: Barbell (Standing, Overhead)",
   "images": [
@@ -1714,18 +1630,6 @@
    {
     "id": "0313",
     "name": "dumbbell hammer curl",
-    "equipment": "dumbbell"
-   }
-  ]
- },
- {
-  "everkinetic": "0230",
-  "title": "Incline Biceps Curl with Dumbbell",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0315",
-    "name": "dumbbell incline biceps curl",
     "equipment": "dumbbell"
    }
   ]
@@ -2111,18 +2015,6 @@
   ]
  },
  {
-  "everkinetic": "0271",
-  "title": "Balance Board",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0020",
-    "name": "balance board",
-    "equipment": "body weight"
-   }
-  ]
- },
- {
   "everkinetic": "0272",
   "title": "Seated Calf Raise with Barbell",
   "images": [
@@ -2249,18 +2141,6 @@
     "id": "0605",
     "name": "lever standing calf raise",
     "equipment": "leverage machine"
-   }
-  ]
- },
- {
-  "everkinetic": "0283",
-  "title": "Standing Calf Raise with Dumbbell",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0417",
-    "name": "dumbbell standing calf raise",
-    "equipment": "dumbbell"
    }
   ]
  },
@@ -2396,18 +2276,6 @@
     "id": "0650",
     "name": "pull-in (on stability ball)",
     "equipment": "stability ball"
-   }
-  ]
- },
- {
-  "everkinetic": "0298",
-  "title": "Bent Over Row with Barbell",
-  "images": [],
-  "exercises": [
-   {
-    "id": "0027",
-    "name": "barbell bent over row",
-    "equipment": "barbell"
    }
   ]
  },

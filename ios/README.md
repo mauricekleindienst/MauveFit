@@ -14,7 +14,7 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   both apps always ship the same data. The dataset's media are not used.
 - **Exercise pictures, all bundled, no network**: every exercise gets a muscle map (body shapes
   from react-native-body-highlighter, MIT) with its target muscles in the accent and the
-  secondary ones lighter; thumbnails close in on the trained side. 168 exercises also show
+  secondary ones lighter; thumbnails close in on the trained side. 157 exercises also show
   Everkinetic line drawings of the start and end position (CC BY-SA 4.0, matched by hand in
   `MauveFit/Resources/everkinetic.json`, about 4 MB). See `THIRD_PARTY_NOTICES.md`. The app
   makes no network requests at all.

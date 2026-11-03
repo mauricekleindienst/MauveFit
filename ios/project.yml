@@ -1,0 +1,78 @@
+# XcodeGen spec: `xcodegen generate` in this folder writes MauveFit.xcodeproj (not checked in).
+name: MauveFit
+options:
+  bundleIdPrefix: dev.mauve
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: en
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    # The exercise data is copied from the Android assets by a script phase.
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+targets:
+  MauveFit:
+    type: application
+    platform: iOS
+    sources:
+      - path: MauveFit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.mauve.fit
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Mauve Fit
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: MauveFit/Info.plist
+      properties:
+        CFBundleLocalizations: [de, en]
+        CFBundleAllowMixedLocalizations: true
+    postCompileScripts:
+      - name: Copy exercise data
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - $(SRCROOT)/../app/src/main/assets/exercises.json
+          - $(SRCROOT)/../app/src/main/assets/exercises_de.json
+          - $(SRCROOT)/../app/src/main/assets/exercise_names_de.json
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercises.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercises_de.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercise_names_de.json
+        script: |
+          set -e
+          src="$SRCROOT/../app/src/main/assets"
+          dst="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          mkdir -p "$dst"
+          for f in exercises.json exercises_de.json exercise_names_de.json; do
+            cp "$src/$f" "$dst/$f"
+          done
+  MauveFitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MauveFitTests
+    dependencies:
+      - target: MauveFit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.mauve.fit.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/MauveFit.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MauveFit
+        BUNDLE_LOADER: $(TEST_HOST)
+schemes:
+  MauveFit:
+    build:
+      targets:
+        MauveFit: all
+        MauveFitTests: [test]
+    test:
+      targets:
+        - MauveFitTests
+      gatherCoverageData: false

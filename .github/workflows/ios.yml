@@ -1,0 +1,88 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "app/src/main/assets/exercise*.json"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Pick a simulator
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = json.load(sys.stdin)["devices"]
+          ios = sorted((k for k in devs if "iOS" in k), key=lambda k: [int(x) for x in k.rsplit("iOS-", 1)[1].split("-")])
+          for runtime in reversed(ios):
+              for d in devs[runtime]:
+                  if d["name"].startswith("iPhone"):
+                      print(d["udid"]); sys.exit()
+          ')
+          echo "Simulator: $udid"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project MauveFit.xcodeproj -scheme MauveFit \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build/test \
+            CODE_SIGNING_ALLOWED=NO | tee build-test.log | grep -E "error:|warning: .*MauveFit|Test Case|Executed|\*\* TEST" || true
+          grep -q "\*\* TEST SUCCEEDED \*\*" build-test.log
+
+      - name: Build unsigned ipa
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project MauveFit.xcodeproj -scheme MauveFit -configuration Release \
+            -sdk iphoneos -destination "generic/platform=iOS" \
+            -derivedDataPath build/release \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" | tee build-release.log | grep -E "error:|\*\* BUILD" || true
+          grep -q "\*\* BUILD SUCCEEDED \*\*" build-release.log
+          mkdir -p build/ipa/Payload
+          cp -R build/release/Build/Products/Release-iphoneos/MauveFit.app build/ipa/Payload/
+          (cd build/ipa && zip -qry ../MauveFit-unsigned.ipa Payload)
+          ls -lh build/MauveFit-unsigned.ipa
+
+      - name: Upload ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: MauveFit-unsigned-ipa
+          path: ios/build/MauveFit-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: ios/build-*.log

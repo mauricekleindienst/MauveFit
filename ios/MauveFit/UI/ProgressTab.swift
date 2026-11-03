@@ -11,56 +11,60 @@ struct ProgressTab: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    Card {
-                        HStack {
-                            StatTile(value: "\(d.history.count)", label: L("Trainings", "Workouts"))
-                            StatTile(value: "\(Stats.weekStreak(d.history, goal: d.settings.weeklyGoal))", label: L("Wochen in Folge", "Week streak"))
-                            StatTile(value: Fmt.num(d.history.reduce(0) { $0 + $1.volume } / 1000) + " t", label: L("Bewegt", "Lifted"))
-                        }
+                    ScreenTitle(title: L("Fortschritt", "Progress"), eyebrow: Fmt.workouts(d.history.count))
+                    let streak = Stats.weekStreak(d.history, goal: d.settings.weeklyGoal)
+                    HStack(spacing: 10) {
+                        StatTile(value: "\(Stats.workoutsThisWeek(d.history))", label: L("diese Woche", "this week"))
+                        StatTile(value: "\(streak)", label: Fmt.weeks(streak))
+                        StatTile(value: Fmt.volume(d.history.reduce(0) { $0 + $1.volume }), label: L("insgesamt bewegt", "lifted in total"), color: Ink.accent)
                     }
                     volumeCard(d)
                     weightCard(d)
                     recordsCard(d)
                     SectionTitle(text: L("Verlauf", "History"))
                     if d.history.isEmpty {
-                        Card { Text(L("Noch keine Trainings. Starte eins im Tab Training.", "No workouts yet. Start one in the Training tab.")).foregroundStyle(Ink.muted) }
+                        Card { Text(L("Noch keine Trainings. Starte eins im Tab Training.", "No workouts yet. Start one in the Training tab.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
                     ForEach(d.history) { w in
                         NavigationLink { WorkoutDetailView(workoutId: w.id) } label: { historyRow(w) }
                             .buttonStyle(.plain)
                     }
                 }
-                .padding(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
-            .screen()
-            .navigationTitle(L("Fortschritt", "Progress"))
+            .tabRoot()
             .sheet(isPresented: $weighing) { WeightEditor(start: Stats.latestWeight(d) ?? Nutrition.defaultKg) }
         }
     }
 
     private func volumeCard(_ d: AppData) -> some View {
         let weeks = Stats.weeklyVolume(d.history)
+        let current = weeks.last?.0
         return Card {
-            Text(L("Volumen pro Woche", "Volume per week")).font(.headline).foregroundStyle(Ink.text)
+            HStack {
+                SectionTitle(text: L("Volumen pro Woche", "Volume per week")).padding(.top, -10)
+                Text(Fmt.volume(weeks.last?.1 ?? 0)).font(.fit(.titleMedium)).foregroundStyle(Ink.accent)
+            }
             Chart {
                 ForEach(weeks, id: \.0) { week, kg in
                     BarMark(x: .value(L("Woche", "Week"), week, unit: .weekOfYear), y: .value("kg", kg))
-                        .foregroundStyle(Ink.accent)
-                        .cornerRadius(4)
+                        // The current week in the accent, the ones before it quiet, as on Android.
+                        .foregroundStyle(week == current ? Ink.accent : Ink.raised)
+                        .cornerRadius(6)
                 }
             }
             .chartXAxis {
-                AxisMarks(values: .stride(by: .weekOfYear, count: 2)) { _ in
-                    AxisValueLabel(format: .dateTime.day().month(.defaultDigits)).foregroundStyle(Ink.faint)
+                AxisMarks(values: weeks.map(\.0)) { v in
+                    AxisValueLabel {
+                        if let date = v.as(Date.self) {
+                            Text(L("KW", "W") + "\(Stats.calendar.component(.weekOfYear, from: date))").font(.fit(.labelSmall)).foregroundStyle(Ink.faint)
+                        }
+                    }
                 }
             }
-            .chartYAxis {
-                AxisMarks { _ in
-                    AxisGridLine().foregroundStyle(Ink.line)
-                    AxisValueLabel().foregroundStyle(Ink.faint)
-                }
-            }
-            .frame(height: 160)
+            .chartYAxis(.hidden)
+            .frame(height: 150)
         }
     }
 
@@ -68,28 +72,39 @@ struct ProgressTab: View {
         let points = d.bodyWeights.sorted { $0.at < $1.at }.suffix(30)
         return Card {
             HStack {
-                Text(L("Körpergewicht", "Body weight")).font(.headline).foregroundStyle(Ink.text)
-                Spacer()
+                SectionTitle(text: L("Körpergewicht", "Body weight")).padding(.top, -10)
                 if let kg = Stats.latestWeight(d) {
-                    Text("\(Fmt.num(kg)) kg").font(.system(.headline, design: .rounded)).foregroundStyle(Ink.accent)
+                    Text("\(Fmt.kg(kg)) kg").font(.fit(.titleMedium)).foregroundStyle(Ink.accent)
                 }
             }
             if points.count >= 2 {
+                let first = points.first!.kg, last = points.last!.kg
+                Text(abs(last - first) < 0.05 ? L("gleich geblieben", "unchanged")
+                     : L("\(last > first ? "+" : "−")\(Fmt.kg(abs(last - first))) kg seit \(Fmt.date(points.first!.at))",
+                         "\(last > first ? "+" : "−")\(Fmt.kg(abs(last - first))) kg since \(Fmt.date(points.first!.at))"))
+                    .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
                 Chart(Array(points), id: \.at) { p in
                     LineMark(x: .value(L("Tag", "Day"), Date(ms: p.at)), y: .value("kg", p.kg))
                         .foregroundStyle(Ink.accent)
+                        .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                         .interpolationMethod(.monotone)
                     PointMark(x: .value(L("Tag", "Day"), Date(ms: p.at)), y: .value("kg", p.kg))
                         .foregroundStyle(Ink.accent)
+                        .symbolSize(24)
                 }
                 .chartYScale(domain: .automatic(includesZero: false))
-                .chartYAxis { AxisMarks { _ in AxisGridLine().foregroundStyle(Ink.line); AxisValueLabel().foregroundStyle(Ink.faint) } }
-                .chartXAxis { AxisMarks { _ in AxisValueLabel().foregroundStyle(Ink.faint) } }
-                .frame(height: 140)
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { v in
+                        AxisGridLine().foregroundStyle(Ink.line)
+                        AxisValueLabel { if let kg = v.as(Double.self) { Text(Fmt.kg(kg)).font(.fit(.labelSmall)).foregroundStyle(Ink.faint) } }
+                    }
+                }
+                .chartXAxis(.hidden)
+                .frame(height: 130)
             } else {
-                Text(L("Trage dein Gewicht ein, um den Verlauf zu sehen.", "Log your weight to see the trend.")).font(.subheadline).foregroundStyle(Ink.muted)
+                Text(L("Trage dein Gewicht ein, um den Verlauf zu sehen.", "Log your weight to see the trend.")).font(.fit(.bodyMedium)).foregroundStyle(Ink.muted)
             }
-            Button(L("Gewicht eintragen", "Log weight")) { weighing = true }.buttonStyle(.pillOutline)
+            Button { weighing = true } label: { Label(L("Gewicht eintragen", "Log weight"), systemImage: "scalemass.fill") }.buttonStyle(.ghost)
         }
     }
 
@@ -98,12 +113,19 @@ struct ProgressTab: View {
         return Group {
             if !records.isEmpty {
                 Card {
-                    Text(L("Bestwerte (geschätztes 1RM)", "Records (estimated 1RM)")).font(.headline).foregroundStyle(Ink.text)
-                    ForEach(Array(records), id: \.0) { id, kg in
-                        HStack {
-                            Text(ExerciseRepo.shared[id]?.title ?? id).foregroundStyle(Ink.text).lineLimit(1)
+                    SectionTitle(text: L("Bestwerte", "Records")).padding(.top, -10)
+                    ForEach(Array(records), id: \.exerciseId) { r in
+                        let ex = ExerciseRepo.shared[r.exerciseId]
+                        HStack(spacing: 12) {
+                            ExerciseThumb(exercise: ex, size: 40)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(ex?.title ?? r.exerciseId).font(.fit(.titleMedium)).foregroundStyle(Ink.text).lineLimit(1)
+                                Text(r.best.weight > 0 ? L("1RM ca. \(Fmt.kg(r.e1rm.rounded())) kg · \(Fmt.date(r.at))", "1RM about \(Fmt.kg(r.e1rm.rounded())) kg · \(Fmt.date(r.at))")
+                                     : Fmt.date(r.at))
+                                    .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+                            }
                             Spacer()
-                            Text("\(Fmt.num(kg)) kg").font(.system(.subheadline, design: .rounded).weight(.semibold)).foregroundStyle(Ink.accent)
+                            Text(Fmt.set(r.best, bodyweight: ex?.bodyweight == true)).font(.fit(.number)).foregroundStyle(Ink.accent)
                         }
                     }
                 }
@@ -112,19 +134,16 @@ struct ProgressTab: View {
     }
 
     private func historyRow(_ w: Workout) -> some View {
-        Card(padding: 14) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(w.name).font(.headline).foregroundStyle(Ink.text)
-                    Text("\(Fmt.weekday(w.startedAt)), \(Fmt.date(w.startedAt))").font(.caption).foregroundStyle(Ink.muted)
+        Card(padding: 16) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(w.name).font(.fit(.titleLarge)).foregroundStyle(Ink.text).lineLimit(1)
+                    Text("\(Fmt.weekday(w.startedAt)), \(Fmt.date(w.startedAt))").font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+                    Text("\(Fmt.duration(w.durationMs)) · \(Fmt.sets(w.doneSets.count))").font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(Fmt.minutes(w.durationMs)).font(.subheadline.weight(.semibold)).foregroundStyle(Ink.text)
-                    Text(L("\(w.doneSets.count) Sätze · \(Fmt.num(w.volume, digits: 0)) kg", "\(w.doneSets.count) sets · \(Fmt.num(w.volume, digits: 0)) kg"))
-                        .font(.caption).foregroundStyle(Ink.muted)
-                }
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(Ink.faint)
+                Text(Stats.headline(w)).font(.fit(.headlineSmall)).foregroundStyle(Ink.text)
+                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Ink.faint)
             }
         }
     }
@@ -140,45 +159,38 @@ struct WorkoutDetailView: View {
     var body: some View {
         if let w = store.data.history.first(where: { $0.id == workoutId }) {
             ScrollView {
-                VStack(spacing: 12) {
-                    Card {
-                        Text("\(Fmt.weekday(w.startedAt)), \(Fmt.date(w.startedAt, style: .long))").foregroundStyle(Ink.muted)
-                        HStack {
-                            StatTile(value: Fmt.minutes(w.durationMs), label: L("Dauer", "Duration"))
-                            StatTile(value: "\(w.doneSets.count)", label: L("Sätze", "Sets"))
-                            StatTile(value: Fmt.num(w.volume, digits: 0) + " kg", label: L("Volumen", "Volume"))
-                        }
-                        Picker(L("Gefühl", "Feel"), selection: Binding(get: { w.feel }, set: { v in store.updateWorkout(w.id) { $0.feel = v } })) {
-                            Text(L("Leicht", "Easy")).tag(1)
-                            Text(L("Gut", "Good")).tag(2)
-                            Text(L("Hart", "Hard")).tag(3)
-                        }
-                        .pickerStyle(.segmented)
-                        TextField(L("Notiz", "Note"), text: Binding(get: { w.note }, set: { v in store.updateWorkout(w.id) { $0.note = v } }), axis: .vertical)
-                            .foregroundStyle(Ink.text)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("\(Fmt.weekday(w.startedAt)), \(Fmt.date(w.startedAt, style: .long))").font(.fit(.body)).foregroundStyle(Ink.muted)
+                        .padding(.top, 8)
+                    HStack(spacing: 10) {
+                        StatTile(value: Fmt.duration(w.durationMs), label: L("Dauer", "Duration"))
+                        StatTile(value: "\(w.doneSets.count)", label: w.doneSets.count == 1 ? L("Satz", "Set") : L("Sätze", "Sets"))
+                        StatTile(value: Stats.headline(w), label: w.volume > 0 ? L("Volumen", "Volume") : L("Gesamt", "Total"), color: Ink.accent)
                     }
                     ForEach(w.entries) { e in
-                        Card(padding: 14) {
+                        let ex = ExerciseRepo.shared[e.exerciseId]
+                        Card(padding: 16) {
                             HStack(spacing: 12) {
-                                ExerciseThumb(exercise: ExerciseRepo.shared[e.exerciseId], size: 40)
-                                Text(ExerciseRepo.shared[e.exerciseId]?.title ?? e.exerciseId).font(.headline).foregroundStyle(Ink.text)
+                                ExerciseThumb(exercise: ex, size: 44)
+                                Text(ex?.title ?? e.exerciseId).font(.fit(.titleMedium)).foregroundStyle(Ink.text)
                             }
                             ForEach(Array(e.sets.enumerated()), id: \.offset) { i, s in
                                 HStack {
                                     Text(s.warmup ? "W" : "\(e.sets.prefix(i + 1).filter { !$0.warmup }.count)")
-                                        .foregroundStyle(s.warmup ? Ink.coral : Ink.faint).frame(width: 28, alignment: .leading)
-                                    Text(s.weight > 0 ? "\(Fmt.num(s.weight)) kg × \(s.reps)" : L("\(s.reps) Wdh.", "\(s.reps) reps"))
-                                        .foregroundStyle(Ink.text)
+                                        .font(.fit(.number)).foregroundStyle(s.warmup ? Ink.coral : Ink.faint).frame(width: 28, alignment: .leading)
+                                    Text(s.weight > 0 ? "\(Fmt.kg(s.weight)) kg × \(s.reps)" : L("\(s.reps) Wdh.", "\(s.reps) reps"))
+                                        .font(.fit(.titleMedium)).foregroundStyle(Ink.text)
                                     Spacer()
                                 }
-                                .font(.system(.subheadline, design: .rounded))
                             }
                         }
                     }
+                    FeelCard(workout: w)
                     Button(L("Training löschen", "Delete workout"), role: .destructive) { confirmDelete = true }
-                        .buttonStyle(PillButtonStyle(filled: false, color: Ink.red))
+                        .buttonStyle(PillButtonStyle(filled: false, color: Ink.red, wide: true))
                 }
-                .padding(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
             .screen()
             .navigationTitle(w.name)

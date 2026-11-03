@@ -2,25 +2,45 @@ import SwiftUI
 
 @main
 struct MauveFitApp: App {
-    @State private var store = Demo.enabled ? Demo.store() : Store()
+    @State private var store: Store
     @State private var router = Router(showWorkout: Demo.workout)
     @Environment(\.scenePhase) private var phase
 
     init() {
+        let store = Demo.enabled ? Demo.store() : Store()
+        // A workout left open for hours is saved (or dropped when empty) instead of resumed.
+        if !Demo.enabled { store.closeIdleWorkout() }
+        Ink.accentChoice = Accent.of(store.data.settings.accent)
+        _store = State(initialValue: store)
+        MauveFitApp.styleBars()
+        // Test and screenshot runs must not be covered by the permission prompt.
+        if !Demo.enabled && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil { RestAlarm.requestPermission() }
+    }
+
+    /** UIKit bars in the palette and in Archivo; their colours follow light and dark by themselves. */
+    static func styleBars() {
         let tabs = UITabBarAppearance()
         tabs.configureWithOpaqueBackground()
-        tabs.backgroundColor = UIColor(Ink.surface)
+        tabs.backgroundColor = Ink.surfaceUI
+        tabs.shadowColor = .clear
+        let item = UITabBarItemAppearance()
+        item.normal.iconColor = Ink.mutedUI
+        item.normal.titleTextAttributes = [.foregroundColor: Ink.mutedUI, .font: Archivo.ui(11, weight: 600)]
+        item.selected.titleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(11, weight: 700)]
+        tabs.stackedLayoutAppearance = item
+        tabs.inlineLayoutAppearance = item
+        tabs.compactInlineLayoutAppearance = item
         UITabBar.appearance().standardAppearance = tabs
         UITabBar.appearance().scrollEdgeAppearance = tabs
         let nav = UINavigationBarAppearance()
-        nav.configureWithTransparentBackground()
-        nav.backgroundColor = UIColor(Ink.bg)
-        nav.largeTitleTextAttributes = [.foregroundColor: UIColor(Ink.text)]
-        nav.titleTextAttributes = [.foregroundColor: UIColor(Ink.text)]
+        nav.configureWithOpaqueBackground()
+        nav.backgroundColor = Ink.bgUI
+        nav.shadowColor = .clear
+        nav.titleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(17, weight: 700, width: 114)]
+        nav.largeTitleTextAttributes = [.foregroundColor: Ink.textUI, .font: Archivo.ui(32, weight: 800, width: 125)]
         UINavigationBar.appearance().standardAppearance = nav
         UINavigationBar.appearance().scrollEdgeAppearance = nav
-        // Test and screenshot runs must not be covered by the permission prompt.
-        if !Demo.enabled && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil { RestAlarm.requestPermission() }
+        UINavigationBar.appearance().compactAppearance = nav
     }
 
     var body: some Scene {
@@ -28,9 +48,9 @@ struct MauveFitApp: App {
             RootView()
                 .environment(store)
                 .environment(router)
-                .preferredColorScheme(.dark)
-                .tint(Ink.accent)
-                .onChange(of: phase) { _, p in if p != .active { store.flush() } }
+                .onChange(of: phase) { _, p in
+                    if p != .active { store.flush() } else if !Demo.enabled { store.closeIdleWorkout() }
+                }
         }
     }
 }
@@ -52,6 +72,7 @@ struct RootView: View {
 
     var body: some View {
         @Bindable var router = router
+        let s = store.data.settings
         TabView(selection: $router.tab) {
             TodayView()
                 .tabItem { Label(L("Heute", "Today"), systemImage: "bolt.fill") }
@@ -66,10 +87,15 @@ struct RootView: View {
                 .tabItem { Label(L("Fortschritt", "Progress"), systemImage: "chart.bar.fill") }
                 .tag(AppTab.progress)
         }
-        // Re-renders every label when the language setting changes.
-        .id(store.data.settings.language)
+        // Re-renders every label when the language changes; colours follow the store by themselves.
+        .id(s.language)
+        .tint(Ink.accent)
+        .preferredColorScheme(s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil)
         .fullScreenCover(isPresented: $router.showWorkout) {
-            WorkoutView().environment(store).environment(router)
+            WorkoutView()
+                .environment(store).environment(router)
+                .tint(Ink.accent)
+                .preferredColorScheme(s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil)
         }
     }
 }

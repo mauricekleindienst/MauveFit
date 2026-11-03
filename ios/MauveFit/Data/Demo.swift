@@ -3,11 +3,16 @@ import Foundation
 /**
  * Sample data for screenshots. `-demoData` starts the app on a throwaway file filled with three
  * weeks of workouts, body weights and today's food; `-demoWorkout` also opens a running workout
- * with the first set ticked off and the rest timer going. The user's own data is never touched.
+ * with the first set ticked off and the rest timer going, `-demoSummary` a just finished one
+ * with a new record, and `-demoLight` switches to the light theme. The user's own data is
+ * never touched.
  */
 enum Demo {
-    static var enabled: Bool { ProcessInfo.processInfo.arguments.contains("-demoData") }
-    static var workout: Bool { ProcessInfo.processInfo.arguments.contains("-demoWorkout") }
+    private static func has(_ arg: String) -> Bool { ProcessInfo.processInfo.arguments.contains(arg) }
+    static var enabled: Bool { has("-demoData") }
+    static var workout: Bool { has("-demoWorkout") || has("-demoSummary") }
+    /** The workout the summary shows, set once the demo store has made it. */
+    nonisolated(unsafe) private(set) static var summaryId: String?
 
     @MainActor
     static func store() -> Store {
@@ -16,7 +21,21 @@ enum Demo {
         for name in ["demo-data.json", "data.prev.json"] { try? FileManager.default.removeItem(at: dir.appendingPathComponent(name)) }
         let store = Store(file: file)
         store.update { seed(&$0) }
-        if workout {
+        if has("-demoLight") { store.updateSettings { $0.theme = "light" } }
+        if has("-demoSummary") {
+            // Every set of the first three exercises, the first one 5 kg heavier than ever.
+            store.startWorkout(store.data.routines.first { $0.id == "tpl-push" })
+            store.updateActive { w in
+                w.startedAt = nowMs() - 58 * 60_000
+                for i in w.entries.indices.prefix(3) {
+                    for j in w.entries[i].sets.indices {
+                        if i == 0 { w.entries[i].sets[j].weight += 5 }
+                        w.entries[i].sets[j].done = true
+                    }
+                }
+            }
+            summaryId = store.finishWorkout()
+        } else if workout {
             store.startWorkout(store.data.routines.first { $0.id == "tpl-push" })
             store.toggleDone(0, 0)
         }

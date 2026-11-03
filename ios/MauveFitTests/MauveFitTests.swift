@@ -117,6 +117,162 @@ final class MauveFitTests: XCTestCase {
         XCTAssertEqual(Stats.weekStreak([w], goal: 1), 1)
     }
 
+    private func workout(_ name: String, routineId: String? = nil, hoursAgo: Double, _ entries: [ExerciseEntry]) -> Workout {
+        var w = Workout(name: name, routineId: routineId, entries: entries)
+        w.startedAt = nowMs() - Int64(hoursAgo * 3_600_000)
+        w.finishedAt = w.startedAt + 3_600_000
+        return w
+    }
+
+    private func entry(_ id: String, _ sets: [(Double, Int)], target: Int = 0) -> ExerciseEntry {
+        ExerciseEntry(exerciseId: id, sets: sets.map { SetEntry(weight: $0.0, reps: $0.1, done: true, target: target) })
+    }
+
+    func testStreakWithZeroGoalEnds() {
+        var w = Workout(name: "x")
+        w.startedAt = nowMs()
+        XCTAssertEqual(Stats.weekStreak([w], goal: 0), 1)
+    }
+
+    /** As on Android: any weighted set beats one without weight, and the best set is kept with its date. */
+    func testRecordsRankWeightedSetsFirst() {
+        let old = workout("A", hoursAgo: 48, [entry("0025", [(0, 30)])])
+        let new = workout("B", hoursAgo: 2, [entry("0025", [(20, 8), (15, 12)]), entry("0652", [(0, 12)])])
+        let records = Stats.records([new, old])
+        let bench = try! XCTUnwrap(records.first { $0.exerciseId == "0025" })
+        XCTAssertEqual(bench.best.weight, 20)
+        XCTAssertEqual(bench.at, new.startedAt)
+        XCTAssertEqual(records.first { $0.exerciseId == "0652" }?.best.reps, 12)
+    }
+
+    func testFirstTimeIsNoRecordButBeatingItIs() {
+        let first = workout("A", hoursAgo: 48, [entry("0025", [(60, 8)])])
+        XCTAssertTrue(Stats.newRecords(first, history: [first]).isEmpty)
+        let second = workout("B", hoursAgo: 1, [entry("0025", [(62.5, 8)])])
+        XCTAssertEqual(Stats.newRecords(second, history: [second, first]).map(\.0), ["0025"])
+        let same = workout("C", hoursAgo: 0.5, [entry("0025", [(62.5, 8)])])
+        XCTAssertTrue(Stats.newRecords(same, history: [same, second, first]).isEmpty)
+    }
+
+    /** The plan whose muscles rested longest comes next, not simply the oldest plan. */
+    func testNextPlanFollowsRecovery() {
+        var d = AppData()
+        d.routines = [
+            Routine(id: "chest", name: "Chest", exercises: [PlanExercise(exerciseId: "0025")]),
+            Routine(id: "legs", name: "Legs", exercises: [PlanExercise(exerciseId: "0043")]),
+        ]
+        XCTAssertEqual(Stats.nextRoutine(d)?.id, "chest")
+        d.history = [workout("Chest", routineId: "chest", hoursAgo: 5, [entry("0025", [(60, 8)])])]
+        XCTAssertEqual(Stats.nextRoutine(d)?.id, "legs")
+        // A free workout that trained the legs does not count as the legs plan, but its muscles do.
+        d.history.insert(workout("Free", hoursAgo: 1, [entry("0043", [(80, 5)])]), at: 0)
+        XCTAssertEqual(Stats.nextRoutine(d)?.id, "chest")
+    }
+
+    func testGermanAndEnglishFormatting() {
+        I18n.apply("de")
+        XCTAssertEqual(Fmt.kg(82.5), "82,5")
+        XCTAssertEqual(Fmt.kg(1.25), "1,25")
+        XCTAssertEqual(Fmt.kg(80), "80")
+        XCTAssertEqual(Fmt.kg(81.37), "81,4")
+        XCTAssertEqual(Fmt.volume(12_345), "12,3 t")
+        XCTAssertEqual(Fmt.volume(1340), "1340 kg")
+        XCTAssertEqual(Fmt.sets(1), "1 Satz")
+        XCTAssertEqual(Fmt.sets(3), "3 Sätze")
+        XCTAssertEqual(Fmt.exercises(1), "1 Übung")
+        XCTAssertEqual(Fmt.set(SetEntry(weight: 62.5, reps: 8), bodyweight: false), "62,5×8")
+        XCTAssertEqual(Fmt.set(SetEntry(weight: 0, reps: 12), bodyweight: true), "12 Wdh.")
+        I18n.apply("en")
+        XCTAssertEqual(Fmt.kg(82.5), "82.5")
+        XCTAssertEqual(Fmt.volume(12_000), "12.0 t")
+        XCTAssertEqual(Fmt.sets(1), "1 set")
+        XCTAssertEqual(Fmt.duration(30_000), "< 1 min")
+        XCTAssertEqual(Fmt.duration(65 * 60_000), "1 h 5 min")
+        // Body-weight training shows reps, not "0 kg".
+        let w = workout("Home", hoursAgo: 1, [entry("0652", [(0, 12), (0, 10)])])
+        XCTAssertEqual(Stats.headline(w), "22 reps")
+    }
+
+    func testWaterStaysBetweenZeroAndTenLitres() {
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        let day = Stats.isoDay()
+        store.addWater(-250, day: day)
+        XCTAssertNil(store.data.water[day])
+        store.addWater(20_000, day: day)
+        XCTAssertEqual(store.data.water[day], 10_000)
+        store.addWater(-10_000, day: day)
+        XCTAssertNil(store.data.water[day])
+    }
+
+    /** A workout left open for hours is saved with its last activity as the end. */
+    func testIdleWorkoutIsClosed() throws {
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.startWorkout(Routine(name: "A", exercises: [PlanExercise(exerciseId: "0025", sets: 2, reps: 8)]))
+        store.setSet(0, 0) { $0.weight = 60 }
+        store.toggleDone(0, 0)
+        XCTAssertFalse(store.closeIdleWorkout())
+        let last = nowMs() - 4 * 3_600_000
+        store.update { $0.active?.lastActivityAt = last }
+        XCTAssertTrue(store.closeIdleWorkout())
+        XCTAssertNil(store.data.active)
+        let w = try XCTUnwrap(store.data.history.first)
+        XCTAssertEqual(w.finishedAt, last + 5 * 60_000)
+        XCTAssertEqual(w.doneSets.count, 1)
+    }
+
+    /** +15 after the rest ran out counts from now; a finished rest can be cleared by its end time. */
+    func testRestTimer() throws {
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.startWorkout(Routine(name: "A", exercises: [PlanExercise(exerciseId: "0025", sets: 2, reps: 8)]))
+        let past = nowMs() - 60_000
+        store.update { $0.active?.restEndsAt = past }
+        store.shiftRest(15)
+        let end = try XCTUnwrap(store.data.active?.restEndsAt)
+        XCTAssertGreaterThan(end, nowMs() + 13_000)
+        store.endRest(end - 1)
+        XCTAssertNotNil(store.data.active?.restEndsAt)
+        store.endRest(end)
+        XCTAssertNil(store.data.active?.restEndsAt)
+        // Unticking the only ticked set takes back the rest it started.
+        store.toggleDone(0, 0)
+        XCTAssertNotNil(store.data.active?.restEndsAt)
+        store.toggleDone(0, 0)
+        XCTAssertNil(store.data.active?.restEndsAt)
+    }
+
+    func testBodyWeightProgressesByReps() {
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.update { $0.history = [self.workout("Home", hoursAgo: 30, [self.entry("0652", [(0, 12), (0, 11)], target: 10)])] }
+        store.startWorkout(Routine(name: "Home", exercises: [PlanExercise(exerciseId: "0652", sets: 2, reps: 10)]))
+        XCTAssertEqual(store.data.active?.entries.first?.sets.first?.reps, 13)
+        XCTAssertEqual(store.data.active?.entries.first?.sets.first?.weight, 0)
+    }
+
+    /** A lift never logged starts from body weight and level, never below the empty bar. */
+    func testFirstWeightFromBodyWeight() {
+        var d = AppData()
+        d.bodyWeights = [BodyWeight(at: nowMs(), kg: 80)]
+        XCTAssertEqual(Coach.startWeight(d, .shared, "0025", reps: 8), 25)
+        d.bodyWeights = [BodyWeight(at: nowMs(), kg: 50)]
+        XCTAssertEqual(Coach.startWeight(d, .shared, "0025", reps: 8), 20)
+        // Unknown equipment and no history: nothing to go on.
+        XCTAssertEqual(Coach.startWeight(AppData(), .shared, "0025", reps: 8), 0)
+    }
+
+    /** The library sorts by the name in the app's language, favourites first, every word must match. */
+    func testLibrarySearch() {
+        I18n.apply("de")
+        defer { I18n.apply("en") }
+        let repo = ExerciseRepo.shared
+        let titles = repo.search("").prefix(50).map(\.title)
+        let locale = Locale(identifier: "de_DE")
+        XCTAssertEqual(titles, titles.sorted { $0.compare($1, options: [.caseInsensitive, .diacriticInsensitive], locale: locale) == .orderedAscending })
+        XCTAssertEqual(repo.search("", favorites: ["0652"]).first?.id, "0652")
+        let found = repo.search("bankdrücken langhantel")
+        XCTAssertTrue(found.contains { $0.id == "0025" })
+        XCTAssertTrue(found.allSatisfy { $0.equipment == "barbell" || $0.title.lowercased().contains("langhantel") })
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

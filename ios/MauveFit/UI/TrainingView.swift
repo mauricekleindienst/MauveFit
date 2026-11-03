@@ -11,35 +11,46 @@ struct TrainingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    HStack {
+                    ScreenTitle(title: L("Training", "Training"), eyebrow: L("Pläne und Übungen", "Plans and exercises")) {
+                        RoundButton(icon: "plus", label: L("Neuer Plan", "New plan")) { editing = Routine(name: "") }
+                    }
+                    HStack(spacing: 10) {
                         Button {
                             store.startWorkout(nil)
                             router.showWorkout = true
-                        } label: { Label(L("Freies Training", "Free workout"), systemImage: "play.fill") }
-                            .buttonStyle(.pillOutline)
-                            .disabled(d.active != nil)
-                        NavigationLink { LibraryView() } label: { Label(L("Übungen", "Exercises"), systemImage: "books.vertical") }
-                            .buttonStyle(.pillOutline)
-                            .accessibilityIdentifier("library")
-                        Spacer()
+                        } label: {
+                            shortcut(L("Freies Training", "Free workout"), L("Ohne Plan starten", "Start without a plan"), "play.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(d.active != nil)
+                        NavigationLink { LibraryView() } label: {
+                            shortcut(L("Übungen", "Exercises"), L("\(ExerciseRepo.shared.all.count) mit Anleitung", "\(ExerciseRepo.shared.all.count) with how-to"), "books.vertical.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("library")
                     }
-                    SectionTitle(text: L("Pläne", "Plans"))
+                    SectionTitle(text: L("Deine Pläne", "Your plans"))
                     if d.routines.isEmpty {
-                        Card { Text(L("Noch keine Pläne. Lege oben rechts einen an.", "No plans yet. Add one at the top right.")).foregroundStyle(Ink.muted) }
+                        Card { Text(L("Noch keine Pläne. Lege oben rechts einen an.", "No plans yet. Add one at the top right.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
                     ForEach(d.routines) { r in routineCard(r, running: d.active) }
                 }
-                .padding(16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
             }
-            .screen()
-            .navigationTitle(L("Training", "Training"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { editing = Routine(name: "") } label: { Image(systemName: "plus") }
-                        .accessibilityLabel(L("Neuer Plan", "New plan"))
-                }
-            }
+            .tabRoot()
             .sheet(item: $editing) { r in RoutineEditor(routine: r) }
+        }
+    }
+
+    /** Icon in an accent disc, title and one line below, like the Android shortcut tiles. */
+    private func shortcut(_ title: String, _ sub: String, _ icon: String) -> some View {
+        Card(padding: 16, spacing: 0) {
+            Image(systemName: icon).font(.system(size: 18, weight: .semibold)).foregroundStyle(Ink.accent)
+                .frame(width: 40, height: 40).background(Circle().fill(Ink.accent.opacity(0.16)))
+            Spacer().frame(height: 14)
+            Text(title).font(.fit(.titleMedium)).foregroundStyle(Ink.text).lineLimit(1)
+            Text(sub).font(.fit(.bodySmall)).foregroundStyle(Ink.muted).lineLimit(1)
         }
     }
 
@@ -48,8 +59,9 @@ struct TrainingView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(r.name.isEmpty ? L("Ohne Namen", "Untitled") : r.name)
-                        .font(.system(.title3, design: .rounded).weight(.bold)).foregroundStyle(Ink.text)
-                    if !r.note.isEmpty { Text(r.note).font(.subheadline).foregroundStyle(Ink.muted) }
+                        .font(.fit(.headlineSmall)).foregroundStyle(Ink.text)
+                    Text([Fmt.exercises(r.exercises.count), Fmt.sets(r.exercises.reduce(0) { $0 + $1.sets }), r.note].filter { !$0.isEmpty }.joined(separator: " · "))
+                        .font(.fit(.bodyMedium)).foregroundStyle(Ink.muted)
                 }
                 Spacer()
                 Menu {
@@ -62,26 +74,31 @@ struct TrainingView: View {
                     } label: { Label(L("Duplizieren", "Duplicate"), systemImage: "plus.square.on.square") }
                     Button(role: .destructive) { store.deleteRoutine(r.id) } label: { Label(L("Löschen", "Delete"), systemImage: "trash") }
                 } label: {
-                    Image(systemName: "ellipsis").foregroundStyle(Ink.muted).frame(width: 36, height: 36)
+                    Image(systemName: "ellipsis").font(.system(size: 16, weight: .semibold)).foregroundStyle(Ink.text)
+                        .frame(width: 40, height: 40).background(Circle().fill(Ink.raised))
                 }
+                .accessibilityLabel(L("Mehr", "More"))
             }
-            Text(r.exercises.compactMap { ExerciseRepo.shared[$0.exerciseId]?.title }.joined(separator: " · "))
-                .font(.footnote).foregroundStyle(Ink.faint).lineLimit(2)
-            HStack {
-                Text(L("\(r.exercises.count) Übungen · \(r.exercises.reduce(0) { $0 + $1.sets }) Sätze",
-                       "\(r.exercises.count) exercises · \(r.exercises.reduce(0) { $0 + $1.sets }) sets"))
-                    .font(.caption).foregroundStyle(Ink.muted)
-                Spacer()
-                if running?.routineId == r.id {
-                    Button(L("Fortsetzen", "Resume")) { router.showWorkout = true }.buttonStyle(.pill)
-                } else {
-                    Button(L("Starten", "Start")) {
-                        store.startWorkout(r)
-                        router.showWorkout = true
+            if !r.exercises.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(r.exercises.prefix(5)) { p in ExerciseThumb(exercise: ExerciseRepo.shared[p.exerciseId], size: 44) }
+                    if r.exercises.count > 5 {
+                        Text("+\(r.exercises.count - 5)").font(.fit(.label)).foregroundStyle(Ink.muted)
+                            .frame(width: 44, height: 44).background(Ink.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    .buttonStyle(.pill)
-                    .disabled(running != nil || r.exercises.isEmpty)
                 }
+                Text(r.exercises.compactMap { ExerciseRepo.shared[$0.exerciseId]?.title }.joined(separator: " · "))
+                    .font(.fit(.bodySmall)).foregroundStyle(Ink.faint).lineLimit(2)
+            }
+            if running?.routineId == r.id {
+                Button(L("Fortsetzen", "Resume")) { router.showWorkout = true }.buttonStyle(.primary)
+            } else {
+                Button {
+                    store.startWorkout(r)
+                    router.showWorkout = true
+                } label: { Label(L("Starten", "Start"), systemImage: "play.fill") }
+                    .buttonStyle(.primary)
+                    .disabled(running != nil || r.exercises.isEmpty)
             }
         }
         .contentShape(Rectangle())
@@ -100,26 +117,30 @@ struct RoutineEditor: View {
         NavigationStack {
             List {
                 Section {
-                    TextField(L("Name", "Name"), text: $routine.name)
-                    TextField(L("Notiz", "Note"), text: $routine.note)
+                    TextField(L("Name", "Name"), text: $routine.name).font(.fit(.titleMedium))
+                    TextField(L("Notiz", "Note"), text: $routine.note).font(.fit(.body))
                 }
                 .listRowBackground(Ink.surface)
-                Section(L("Übungen", "Exercises")) {
+                Section {
                     ForEach($routine.exercises) { $p in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                ExerciseThumb(exercise: ExerciseRepo.shared[p.exerciseId], size: 40)
-                                Text(ExerciseRepo.shared[p.exerciseId]?.title ?? p.exerciseId).foregroundStyle(Ink.text)
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(spacing: 12) {
+                                ExerciseThumb(exercise: ExerciseRepo.shared[p.exerciseId], size: 44)
+                                Text(ExerciseRepo.shared[p.exerciseId]?.title ?? p.exerciseId).font(.fit(.titleMedium)).foregroundStyle(Ink.text)
                             }
-                            Stepper(L("\(p.sets) Sätze", "\(p.sets) sets"), value: $p.sets, in: 1...10)
-                            Stepper(L("\(p.reps) Wdh.", "\(p.reps) reps"), value: $p.reps, in: 1...50)
-                            Stepper(L("Pause \(Fmt.clock(p.restSec))", "Rest \(Fmt.clock(p.restSec))"), value: $p.restSec, in: 0...600, step: 15)
+                            HStack(spacing: 8) {
+                                StepperBox(label: L("Sätze", "Sets"), value: "\(p.sets)", minus: { p.sets = max(1, p.sets - 1) }, plus: { p.sets = min(10, p.sets + 1) })
+                                StepperBox(label: L("Wdh.", "Reps"), value: "\(p.reps)", minus: { p.reps = max(1, p.reps - 1) }, plus: { p.reps = min(50, p.reps + 1) })
+                                StepperBox(label: L("Pause", "Rest"), value: Fmt.clock(p.restSec), minus: { p.restSec = max(0, p.restSec - 15) }, plus: { p.restSec = min(600, p.restSec + 15) })
+                            }
                         }
-                        .foregroundStyle(Ink.muted)
+                        .padding(.vertical, 4)
                     }
                     .onDelete { routine.exercises.remove(atOffsets: $0) }
                     .onMove { routine.exercises.move(fromOffsets: $0, toOffset: $1) }
-                    Button { picking = true } label: { Label(L("Übung hinzufügen", "Add exercise"), systemImage: "plus") }
+                    Button { picking = true } label: { Label(L("Übung hinzufügen", "Add exercise"), systemImage: "plus").font(.fit(.titleMedium)) }
+                } header: {
+                    Text(Fmt.exercises(routine.exercises.count)).font(.fit(.titleSmall)).foregroundStyle(Ink.muted).textCase(nil)
                 }
                 .listRowBackground(Ink.surface)
             }
@@ -134,6 +155,7 @@ struct RoutineEditor: View {
                         store.saveRoutine(routine)
                         dismiss()
                     }
+                    .fontWeight(.semibold)
                 }
                 ToolbarItem(placement: .bottomBar) { EditButton() }
             }
@@ -143,6 +165,38 @@ struct RoutineEditor: View {
                 }
             }
         }
+    }
+}
+
+/** "− value +" with a caption, like the Android Stepper for plan targets. */
+struct StepperBox: View {
+    let label: String
+    let value: String
+    let minus: () -> Void
+    let plus: () -> Void
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(label).font(.fit(.labelSmall)).foregroundStyle(Ink.muted).lineLimit(1)
+            Text(value).font(.fit(.titleLarge)).foregroundStyle(Ink.text).lineLimit(1).minimumScaleFactor(0.7)
+            HStack(spacing: 6) {
+                step("minus", L("Weniger", "Less"), minus)
+                step("plus", L("Mehr", "More"), plus)
+            }
+        }
+        .padding(.top, 10).padding(.bottom, 8).padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .background(Ink.raised, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private func step(_ icon: String, _ label: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon).font(.system(size: 14, weight: .bold)).foregroundStyle(Ink.text)
+                .frame(maxWidth: .infinity).frame(height: 34)
+                .background(Capsule().fill(Ink.line))
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(label)
     }
 }
 
@@ -167,7 +221,9 @@ struct ExercisePicker: View {
 /** Browses the database; tapping opens the how-to. */
 struct LibraryView: View {
     var body: some View {
-        ExerciseList(onPick: nil).navigationTitle(L("Übungen", "Exercises"))
+        ExerciseList(onPick: nil)
+            .navigationTitle(L("Übungen", "Exercises"))
+            .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -181,15 +237,15 @@ struct ExerciseList: View {
 
     var body: some View {
         let repo = ExerciseRepo.shared
-        let found = repo.search(query, category: category).filter { !favoritesOnly || store.data.favorites.contains($0.id) }
+        let found = repo.search(query, category: category, favorites: store.data.favorites, favoritesOnly: favoritesOnly)
         List {
             Section {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        chip(L("Favoriten", "Favourites"), on: favoritesOnly, icon: "star.fill") { favoritesOnly.toggle() }
-                        chip(L("Alle", "All"), on: category == nil) { category = nil }
+                        Chip(text: L("Favoriten", "Favourites"), on: favoritesOnly, icon: "star.fill") { favoritesOnly.toggle() }
+                        Chip(text: L("Alle", "All"), on: category == nil) { category = nil }
                         ForEach(repo.categories, id: \.self) { c in
-                            chip(Labels.category(c), on: category == c) { category = category == c ? nil : c }
+                            Chip(text: Labels.category(c), on: category == c) { category = category == c ? nil : c }
                         }
                     }
                     .padding(.vertical, 4)
@@ -197,96 +253,97 @@ struct ExerciseList: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             }
-            Section(L("\(found.count) Übungen", "\(found.count) exercises")) {
+            Section {
                 ForEach(found.prefix(300)) { e in
                     if let onPick {
                         Button { onPick(e) } label: { row(e) }
                     } else {
                         NavigationLink { ExerciseDetailView(exercise: e) } label: { row(e) }
+                            .accessibilityIdentifier("exercise-\(e.id)")
                     }
                 }
+            } header: {
+                Text(Fmt.exercises(found.count)).font(.fit(.titleSmall)).foregroundStyle(Ink.muted).textCase(nil)
             }
             .listRowBackground(Ink.surface)
         }
         .screen()
-        .searchable(text: $query, prompt: L("Übung oder Muskel suchen", "Search exercise or muscle"))
+        .searchable(text: $query, prompt: L("Übung, Muskel oder Gerät", "Exercise, muscle or equipment"))
     }
 
     private func row(_ e: Exercise) -> some View {
         HStack(spacing: 12) {
-            ExerciseThumb(exercise: e, size: 44)
+            ExerciseThumb(exercise: e, size: 52)
             VStack(alignment: .leading, spacing: 2) {
-                Text(e.title).foregroundStyle(Ink.text).lineLimit(2)
-                Text("\(Labels.muscle(e.target)) · \(Labels.equipment(e.equipment))").font(.caption).foregroundStyle(Ink.muted)
+                Text(e.title).font(.fit(.titleMedium)).foregroundStyle(Ink.text).lineLimit(2)
+                Text("\(Labels.muscle(e.target)) · \(Labels.equipment(e.equipment))").font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
             }
             Spacer()
             if store.data.favorites.contains(e.id) { Image(systemName: "star.fill").font(.caption).foregroundStyle(Ink.accent) }
         }
     }
-
-    private func chip(_ text: String, on: Bool, icon: String? = nil, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                if let icon { Image(systemName: icon).font(.caption) }
-                Text(text)
-            }
-            .font(.subheadline.weight(.medium))
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .foregroundStyle(on ? Ink.bg : Ink.text)
-            .background(Capsule().fill(on ? Ink.accent : Ink.raised))
-        }
-        .buttonStyle(.plain)
-    }
 }
 
-/** The how-to of one exercise: still, muscles, equipment and steps. */
+/** The how-to of one exercise: still, muscles, equipment, the best set and steps. */
 struct ExerciseDetailView: View {
     @Environment(Store.self) private var store
     let exercise: Exercise
 
     var body: some View {
         let fav = store.data.favorites.contains(exercise.id)
-        let best = Stats.records(store.data.history).first { $0.0 == exercise.id }?.1
+        let record = Stats.records(store.data.history).first { $0.exerciseId == exercise.id }
+        let last = Stats.lastSets(store.data.history, exercise.id)
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                AsyncImage(url: exercise.imageUrl) { phase in
-                    if let img = phase.image { img.resizable().scaledToFit() } else { ProgressView().frame(height: 240) }
+            VStack(alignment: .leading, spacing: 12) {
+                ExerciseMedia(exercise: exercise, radius: Radius.panel)
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                Text(Exercise.attribution).font(.fit(.labelSmall)).foregroundStyle(Ink.faint)
+                Text(exercise.title).font(.fit(.headline)).foregroundStyle(Ink.text)
+                HStack(spacing: 6) {
+                    Tag(text: Labels.muscle(exercise.target), color: Ink.accent)
+                    Tag(text: Labels.equipment(exercise.equipment))
+                    Tag(text: Labels.category(exercise.category))
                 }
-                .frame(maxWidth: .infinity)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                Text(Exercise.attribution).font(.caption2).foregroundStyle(Ink.faint)
-                Card {
-                    HStack {
-                        StatTile(value: Labels.muscle(exercise.target), label: L("Zielmuskel", "Target"))
-                        StatTile(value: Labels.equipment(exercise.equipment), label: L("Gerät", "Equipment"))
+                if !exercise.secondary.isEmpty {
+                    Text(L("Mit dabei: ", "Also works: ") + exercise.secondary.map(Labels.muscle).joined(separator: ", "))
+                        .font(.fit(.bodyMedium)).foregroundStyle(Ink.muted)
+                }
+                if let record {
+                    HStack(spacing: 10) {
+                        StatTile(value: Fmt.set(record.best, bodyweight: exercise.bodyweight), label: L("Bester Satz", "Best set"), color: Ink.accent)
+                        if record.best.weight > 0 {
+                            StatTile(value: Fmt.kg(record.e1rm.rounded()) + " kg", label: L("Geschätztes 1RM", "Estimated 1RM"))
+                        }
                     }
-                    if !exercise.secondary.isEmpty {
-                        Text(L("Mit dabei: ", "Also works: ") + exercise.secondary.map(Labels.muscle).joined(separator: ", "))
-                            .font(.footnote).foregroundStyle(Ink.muted)
-                    }
-                    if let best {
-                        Text(L("Bestwert (geschätztes 1RM): \(Fmt.num(best)) kg", "Best (estimated 1RM): \(Fmt.num(best)) kg"))
-                            .font(.footnote.weight(.semibold)).foregroundStyle(Ink.accent)
+                }
+                if !last.isEmpty {
+                    Card(padding: 16) {
+                        SectionTitle(text: L("Letztes Mal", "Last time")).padding(.top, -10)
+                        Text(last.map { Fmt.set($0, bodyweight: exercise.bodyweight) }.joined(separator: "   "))
+                            .font(.fit(.titleMedium)).foregroundStyle(Ink.text)
                     }
                 }
                 SectionTitle(text: L("Ausführung", "How to"))
                 ForEach(Array(ExerciseRepo.shared.steps(exercise).enumerated()), id: \.offset) { i, s in
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("\(i + 1)").font(.system(.subheadline, design: .rounded).weight(.bold)).foregroundStyle(Ink.accent).frame(width: 20)
-                        Text(s).foregroundStyle(Ink.text)
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("\(i + 1)").font(.fit(.label)).foregroundStyle(Ink.bg)
+                            .frame(width: 26, height: 26).background(Circle().fill(Ink.accent))
+                        Text(s).font(.fit(.body)).foregroundStyle(Ink.text).fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
-            .padding(16)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 24)
         }
         .screen()
+        .accessibilityIdentifier("exerciseDetail")
         .navigationTitle(exercise.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { store.toggleFavorite(exercise.id) } label: { Image(systemName: fav ? "star.fill" : "star") }
-                    .accessibilityLabel(L("Favorit", "Favourite"))
+                    .accessibilityLabel(fav ? L("Kein Favorit mehr", "Remove favourite") : L("Als Favorit", "Add favourite"))
             }
         }
     }

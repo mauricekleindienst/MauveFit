@@ -41,10 +41,12 @@ targets:
           - $(SRCROOT)/../app/src/main/assets/exercises.json
           - $(SRCROOT)/../app/src/main/assets/exercises_de.json
           - $(SRCROOT)/../app/src/main/assets/exercise_names_de.json
+          - $(SRCROOT)/../app/src/main/res/font/archivo.ttf
         outputFiles:
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercises.json
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercises_de.json
           - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/exercise_names_de.json
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/archivo.ttf
         script: |
           set -e
           src="$SRCROOT/../app/src/main/assets"
@@ -53,6 +55,8 @@ targets:
           for f in exercises.json exercises_de.json exercise_names_de.json; do
             cp "$src/$f" "$dst/$f"
           done
+          # The Android app's typeface, Archivo (variable weight and width).
+          cp "$SRCROOT/../app/src/main/res/font/archivo.ttf" "$dst/archivo.ttf"
   MauveFitTests:
     type: bundle.unit-test
     platform: iOS

@@ -26,8 +26,17 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   closed (stored as `restEndsAt`, like Android) with a local notification when it runs out, and
   finish or discard. The next start of a plan suggests one weight step more when every set hit
   its target.
-- German and English, following the system or the setting (Today, gear icon).
-- Dark "iron" palette with the sage accent, cards and pill buttons. No emojis, SF Symbols only.
+- After finishing: a summary with duration, sets and volume (reps for body-weight training),
+  new records against every earlier workout, what was trained, and how it felt plus a note.
+- Starting weights and reps as on Android: last time's weight, one step up when every set hit
+  its target; never logged, a similar exercise's record or a first estimate from body weight and
+  level; body-weight exercises go up by a rep. A workout left open for three hours is saved.
+- German and English, following the system or the setting (Today, gear icon), with German
+  plurals and decimal commas.
+- The Android look: the "iron" (dark) and "chalk" (light) palettes, the six free accents (copper
+  by default), the Archivo typeface at its wide display widths (copied from the Android
+  resources at build time), tonal cards, pill buttons, and dark exercise stills ("smart invert").
+  No emojis, SF Symbols only.
 
 ## Still open
 
@@ -44,7 +53,7 @@ Compared with the Android app, these are not ported yet:
 - Insights, body measurements, progress photos, share images
 - Exercise animations (GIFs; only the stills are shown), template packs
 - Backup import / export (the format already matches) and the in-app updater
-- Light theme and other accents
+- The shop's premium accents and the wallpaper accent
 - App icon
 
 ## Building
@@ -56,8 +65,9 @@ CI does everything (`.github/workflows/ios.yml`): on every push to `main` that t
 `MauveFit-unsigned.ipa`, uploaded as the workflow artifact **MauveFit-unsigned-ipa**.
 
 A UI test (`MauveFitUITests`) also starts the app with sample data (launch argument `-demoData`,
-plus `-demoWorkout` for a running workout) on an iPhone 16 Pro simulator in German and dark mode,
-and saves a screenshot of each main screen. They are uploaded as **MauveFit-iOS-screenshots**.
+plus `-demoWorkout` for a running workout, `-demoSummary` for a finished one and `-demoLight` for
+the light theme) on an iPhone 16 Pro simulator in German and dark mode, and saves a screenshot of
+each main screen, the summary, an exercise, the settings and three light-mode screens. They are uploaded as **MauveFit-iOS-screenshots**.
 
 The `.xcodeproj` is never edited or committed; change `project.yml` instead. On a Mac:
 

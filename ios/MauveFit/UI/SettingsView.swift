@@ -1,6 +1,6 @@
 import SwiftUI
 
-/** Language, weekly goal, rest and weight step, and the training goal behind the food targets. */
+/** Look, language, training defaults and the goal behind the food targets. */
 struct SettingsView: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -10,41 +10,84 @@ struct SettingsView: View {
         let p = store.data.profile
         NavigationStack {
             Form {
-                Section(L("Allgemein", "General")) {
+                Section {
+                    Picker(L("Design", "Theme"), selection: Binding(get: { s.theme }, set: { v in store.updateSettings { $0.theme = v } })) {
+                        Text(L("System", "System")).tag("system")
+                        Text(L("Dunkel", "Dark")).tag("dark")
+                        Text(L("Hell", "Light")).tag("light")
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(L("Akzentfarbe", "Accent")).font(.fit(.body)).foregroundStyle(Ink.text)
+                        HStack(spacing: 0) {
+                            ForEach(Accent.allCases) { a in
+                                let on = Accent.of(s.accent) == a
+                                Button { store.updateSettings { $0.accent = a.rawValue } } label: {
+                                    VStack(spacing: 6) {
+                                        Circle().fill(Color(uiColor: .tone(a.tones.ink, a.tones.paper)))
+                                            .frame(width: 34, height: 34)
+                                            .overlay { if on { Image(systemName: "checkmark").font(.system(size: 14, weight: .heavy)).foregroundStyle(Ink.bg) } }
+                                            .overlay(Circle().stroke(on ? Ink.text : Color.clear, lineWidth: 2).padding(-4))
+                                        Text(a.label).font(.fit(.labelSmall)).foregroundStyle(on ? Ink.text : Ink.muted).lineLimit(1).minimumScaleFactor(0.8)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(a.label)
+                                .accessibilityAddTraits(on ? .isSelected : [])
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
                     Picker(L("Sprache", "Language"), selection: Binding(get: { s.language }, set: { v in store.updateSettings { $0.language = v } })) {
                         Text(L("System", "System")).tag("system")
                         Text("Deutsch").tag("de")
                         Text("English").tag("en")
                     }
+                } header: { header(L("Aussehen", "Look")) }
+                .listRowBackground(Ink.surface)
+
+                Section {
                     Picker(L("Ziel", "Goal"), selection: Binding(get: { p.goal }, set: { v in store.updateProfile { $0.goal = v } })) {
                         ForEach(Goal.allCases) { g in Text(g.label).tag(g) }
                     }
-                }
-                .listRowBackground(Ink.surface)
-                Section(L("Training", "Training")) {
-                    Stepper(L("Wochenziel: \(s.weeklyGoal) Trainings", "Weekly goal: \(s.weeklyGoal) workouts"),
+                    Stepper(L("Wochenziel: \(Fmt.workouts(s.weeklyGoal))", "Weekly goal: \(Fmt.workouts(s.weeklyGoal))"),
                             value: Binding(get: { s.weeklyGoal }, set: { v in store.updateSettings { $0.weeklyGoal = v } }), in: 1...7)
                     Stepper(L("Standardpause: \(Fmt.clock(s.defaultRest))", "Default rest: \(Fmt.clock(s.defaultRest))"),
                             value: Binding(get: { s.defaultRest }, set: { v in store.updateSettings { $0.defaultRest = v } }), in: 0...600, step: 15)
                     Picker(L("Gewichtsschritt", "Weight step"), selection: Binding(get: { s.weightStep }, set: { v in store.updateSettings { $0.weightStep = v } })) {
-                        ForEach([0.5, 1, 1.25, 2, 2.5, 5], id: \.self) { v in Text("\(Fmt.num(v, digits: 2)) kg").tag(v) }
+                        ForEach([0.5, 1, 1.25, 2, 2.5, 5], id: \.self) { v in Text("\(Fmt.kg(v)) kg").tag(v) }
                     }
-                }
+                    Picker(L("Stange", "Bar"), selection: Binding(get: { s.barWeight }, set: { v in store.updateSettings { $0.barWeight = v } })) {
+                        ForEach([10.0, 15, 20], id: \.self) { v in Text("\(Fmt.kg(v)) kg").tag(v) }
+                    }
+                } header: { header(L("Training", "Training")) }
+                .font(.fit(.body))
                 .listRowBackground(Ink.surface)
+
                 Section {
-                    Text(Exercise.attribution).font(.footnote).foregroundStyle(Ink.muted)
+                    Text(Exercise.attribution).font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
                     Text(L("Übungsdaten: exercises-dataset von hasaneyldrm", "Exercise data: exercises-dataset by hasaneyldrm"))
-                        .font(.footnote).foregroundStyle(Ink.muted)
+                        .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
                     if let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
-                        Text("Mauve Fit \(v)").font(.footnote).foregroundStyle(Ink.faint)
+                        Text("Mauve Fit \(v)").font(.fit(.bodySmall)).foregroundStyle(Ink.faint)
                     }
-                }
+                } header: { header(L("Über", "About")) }
                 .listRowBackground(Ink.surface)
             }
             .screen()
+            .accessibilityIdentifier("settingsScreen")
             .navigationTitle(L("Einstellungen", "Settings"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("Fertig", "Done")) { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("Fertig", "Done")) { dismiss() }.fontWeight(.semibold) } }
         }
+        // The sheet sits outside the tab view, so it follows the theme setting itself.
+        .preferredColorScheme(s.theme == "light" ? .light : s.theme == "dark" ? .dark : nil)
+        .tint(Ink.accent)
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text).font(.fit(.titleSmall)).foregroundStyle(Ink.muted).textCase(nil)
     }
 }

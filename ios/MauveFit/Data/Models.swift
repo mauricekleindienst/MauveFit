@@ -141,6 +141,9 @@ struct Workout: Codable, Hashable, Identifiable {
     var note: String = ""
     var lastActivityAt: Int64 = 0
 
+    /** When the workout was last touched, falling back to its start. */
+    var lastActive: Int64 { lastActivityAt > 0 ? lastActivityAt : startedAt }
+
     enum CodingKeys: String, CodingKey {
         case id, name, routineId, startedAt, finishedAt, entries, restEndsAt, restTotalSec, feel, note, lastActivityAt
     }
@@ -217,8 +220,12 @@ struct Settings: Codable, Hashable {
     var sound = true
     /** "system", "de" or "en". */
     var language: String = "system"
+    /** "system", "dark" or "light". */
+    var theme: String = "system"
+    /** Accent key, see Accent. */
+    var accent: String = "copper"
 
-    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language }
+    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent }
 
     init() {}
 
@@ -227,6 +234,7 @@ struct Settings: Codable, Hashable {
         weeklyGoal = c.value(.weeklyGoal, 3); defaultRest = c.value(.defaultRest, 90)
         weightStep = c.value(.weightStep, 2.5); barWeight = c.value(.barWeight, 20)
         vibrate = c.value(.vibrate, true); sound = c.value(.sound, true); language = c.value(.language, "system")
+        theme = c.value(.theme, "system"); accent = c.value(.accent, "copper")
     }
 }
 

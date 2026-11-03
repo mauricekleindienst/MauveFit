@@ -6,6 +6,7 @@ on:
     paths:
       - "ios/**"
       - "app/src/main/assets/exercise*.json"
+      - "app/src/main/res/font/archivo.ttf"
       - ".github/workflows/ios.yml"
   workflow_dispatch:
 
@@ -90,7 +91,7 @@ jobs:
                   shutil.copy("build/attachments/" + a["exportedFileName"], "build/screenshots/" + name)
           PY
           ls -l build/screenshots
-          test "$(ls build/screenshots/*.png | wc -l)" -ge 6
+          test "$(ls build/screenshots/*.png | wc -l)" -ge 12
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

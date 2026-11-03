@@ -53,6 +53,7 @@ final class Store {
         block(&d)
         guard d != data else { return }
         if d.settings.language != data.settings.language { I18n.apply(d.settings.language) }
+        if d.settings.accent != data.settings.accent { Ink.accentChoice = Accent.of(d.settings.accent) }
         data = d
         scheduleSave()
     }
@@ -82,9 +83,11 @@ final class Store {
         update { d in
             guard d.active == nil else { return }
             let entries = (routine?.exercises ?? []).map { p in
-                ExerciseEntry(
+                let weight = Coach.startWeight(d, repo, p.exerciseId, reps: p.reps)
+                let reps = Coach.startReps(d, p.exerciseId, planned: p.reps)
+                return ExerciseEntry(
                     exerciseId: p.exerciseId, restSec: p.restSec,
-                    sets: Array(repeating: SetEntry(weight: startWeight(d, p.exerciseId, reps: p.reps), reps: p.reps, target: p.reps), count: max(1, p.sets)),
+                    sets: Array(repeating: SetEntry(weight: weight, reps: reps, target: p.reps), count: max(1, p.sets)),
                     superset: p.superset
                 )
             }
@@ -94,11 +97,15 @@ final class Store {
         }
     }
 
-    /** Last top weight, one step up when every set reached the target last time. */
-    func startWeight(_ d: AppData, _ exerciseId: String, reps: Int) -> Double {
-        if repo[exerciseId]?.bodyweight == true { return 0 }
-        let last = Stats.lastSets(d.history, exerciseId)
-        return Stats.roundTo(Stats.suggestWeight(last, targetReps: reps, step: d.settings.weightStep), d.settings.weightStep)
+    /**
+     * Ends a workout nobody has touched for [Coach.idleLimitMs]: done sets are saved with the
+     * last activity as the end, an empty one is dropped. Returns true when it did something.
+     */
+    @discardableResult
+    func closeIdleWorkout(now: Int64 = nowMs()) -> Bool {
+        guard let w = data.active, now - w.lastActive >= Coach.idleLimitMs else { return false }
+        finishWorkout(endAt: w.lastActive + 5 * 60_000)
+        return true
     }
 
     func updateActive(_ block: (inout Workout) -> Void) {
@@ -120,9 +127,15 @@ final class Store {
     /** Ticks a set off or back on; ticking starts the rest timer of that exercise. */
     func toggleDone(_ entry: Int, _ set: Int) {
         var startRest: Int?
+        var stopRest = false
         updateActive { w in
             guard w.entries.indices.contains(entry), w.entries[entry].sets.indices.contains(set) else { return }
             w.entries[entry].sets[set].done.toggle()
+            // Unticking the last ticked set again (a mis-tap) takes back the rest it started.
+            if !w.entries[entry].sets[set].done, w.restEndsAt != nil, !w.entries.contains(where: { $0.sets.contains(where: \.done) }) {
+                w.restEndsAt = nil
+                stopRest = true
+            }
             if w.entries[entry].sets[set].done {
                 let rest = w.entries[entry].restSec
                 if rest > 0 {
@@ -133,6 +146,7 @@ final class Store {
             }
         }
         if let s = startRest { RestAlarm.schedule(seconds: s) }
+        if stopRest { RestAlarm.cancel() }
     }
 
     func addSet(_ entry: Int) {
@@ -152,9 +166,11 @@ final class Store {
     }
 
     func addExercise(_ exerciseId: String) {
+        let d = data
         updateActive { w in
-            let reps = 10
-            let weight = startWeight(data, exerciseId, reps: reps)
+            // Last time's reps (or what was planned then), else ten.
+            let reps = Stats.lastSets(d.history, exerciseId).first.map { $0.target > 0 ? $0.target : $0.reps } ?? 10
+            let weight = Coach.startWeight(d, repo, exerciseId, reps: reps)
             w.entries.append(ExerciseEntry(
                 exerciseId: exerciseId, restSec: data.settings.defaultRest,
                 sets: Array(repeating: SetEntry(weight: weight, reps: reps, target: reps), count: 3)
@@ -170,15 +186,24 @@ final class Store {
         updateActive { w in if w.entries.indices.contains(entry) { w.entries[entry].restSec = max(0, seconds) } }
     }
 
-    /** Moves the running rest timer by [seconds]; at or below zero it ends. */
+    /**
+     * Moves the running rest timer by [seconds]; at or below zero it ends. More rest after the
+     * timer already ran out counts from now.
+     */
     func shiftRest(_ seconds: Int) {
         updateActive { w in
             guard let end = w.restEndsAt else { return }
-            let next = end + Int64(seconds) * 1000
+            let now = nowMs()
+            let next = (seconds > 0 ? max(end, now) : end) + Int64(seconds) * 1000
             w.restEndsAt = next > nowMs() ? next : nil
             w.restTotalSec = max(0, w.restTotalSec + seconds)
         }
         if let end = data.active?.restEndsAt { RestAlarm.schedule(seconds: Int((end - nowMs()) / 1000)) } else { RestAlarm.cancel() }
+    }
+
+    /** Ends the rest that ends at [end], unless it was changed meanwhile; not counted as activity. */
+    func endRest(_ end: Int64) {
+        update { d in if d.active?.restEndsAt == end { d.active?.restEndsAt = nil } }
     }
 
     func skipRest() {
@@ -238,11 +263,26 @@ final class Store {
 
     // MARK: - Food, water, body
 
-    func addFood(_ e: FoodEntry) { update { $0.food.insert(e, at: 0) } }
+    /** Oldest diary day kept; anything before it is dropped on the next write, as on Android. */
+    private static func keepFrom() -> String { Stats.isoDay(Stats.calendar.date(byAdding: .day, value: -60, to: Date())!) }
+
+    func addFood(_ e: FoodEntry) {
+        let from = Store.keepFrom()
+        update { d in
+            d.food.insert(e, at: 0)
+            d.food.removeAll { $0.date < from }
+        }
+    }
+
     func deleteFood(_ id: String) { update { $0.food.removeAll { $0.id == id } } }
 
+    /** Adds (or with a negative [ml] removes) water for [day], kept between 0 and 10 l. */
     func addWater(_ ml: Int, day: String = Stats.isoDay()) {
-        update { d in d.water[day] = max(0, (d.water[day] ?? 0) + ml) }
+        let from = Store.keepFrom()
+        update { d in
+            d.water[day] = min(10_000, max(0, (d.water[day] ?? 0) + ml))
+            d.water = d.water.filter { $0.key >= from && $0.value > 0 }
+        }
     }
 
     func logWeight(_ kg: Double) {

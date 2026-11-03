@@ -39,18 +39,36 @@ final class ScreenshotTests: XCTestCase {
         button.tap()
     }
 
+    private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        app.descendants(matching: .any)[id].firstMatch
+    }
+
     func testTabs() {
         let app = launch()
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 15))
         snap(app, "01-heute")
 
+        let settings = element(app, "settings")
+        XCTAssertTrue(settings.waitForExistence(timeout: 10))
+        settings.tap()
+        XCTAssertTrue(element(app, "settingsScreen").waitForExistence(timeout: 10))
+        snap(app, "09-einstellungen")
+        app.buttons["Fertig"].firstMatch.tap()
+
         tab(app, 1)
         snap(app, "02-training")
 
-        let library = app.buttons["library"]
+        let library = element(app, "library")
         XCTAssertTrue(library.waitForExistence(timeout: 10))
         library.tap()
         snap(app, "06-uebungen")
+
+        // A favourite, so it is at the top of the list.
+        let bench = element(app, "exercise-0025")
+        XCTAssertTrue(bench.waitForExistence(timeout: 10))
+        bench.tap()
+        XCTAssertTrue(element(app, "exerciseDetail").waitForExistence(timeout: 10))
+        snap(app, "08-uebung")
 
         tab(app, 2)
         snap(app, "04-essen")
@@ -63,5 +81,38 @@ final class ScreenshotTests: XCTestCase {
         let app = launch(["-demoWorkout"])
         XCTAssertTrue(app.otherElements["restBar"].waitForExistence(timeout: 15))
         snap(app, "03-training-laeuft")
+    }
+
+    /** Finishing for real: the confirmation, then the summary of the saved workout. */
+    func testFinishShowsSummary() {
+        let app = launch(["-demoWorkout"])
+        let finish = element(app, "finish")
+        XCTAssertTrue(finish.waitForExistence(timeout: 15))
+        finish.tap()
+        let save = app.buttons["Speichern und beenden"].firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        save.tap()
+        XCTAssertTrue(element(app, "summary").waitForExistence(timeout: 10))
+    }
+
+    /** A finished workout with a new record, the state right after "Save and finish". */
+    func testSummary() {
+        let app = launch(["-demoSummary"])
+        XCTAssertTrue(element(app, "summary").waitForExistence(timeout: 15))
+        snap(app, "07-zusammenfassung")
+    }
+
+    func testLightTheme() {
+        let app = launch(["-demoLight"])
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 15))
+        snap(app, "10-heute-hell")
+        tab(app, 3)
+        snap(app, "11-fortschritt-hell")
+    }
+
+    func testLightWorkout() {
+        let app = launch(["-demoLight", "-demoWorkout"])
+        XCTAssertTrue(app.otherElements["restBar"].waitForExistence(timeout: 15))
+        snap(app, "12-training-laeuft-hell")
     }
 }

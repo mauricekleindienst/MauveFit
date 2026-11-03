@@ -76,13 +76,36 @@ final class ExerciseRepo: @unchecked Sendable {
 
     var categories: [String] { Array(Set(all.map(\.category))).sorted { Labels.category($0) < Labels.category($1) } }
 
-    /** Exercises whose name (either language) or muscle contains [query]. */
-    func search(_ query: String, category: String? = nil) -> [Exercise] {
-        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
-        return all.filter { e in
-            (category == nil || e.category == category) &&
-                (q.isEmpty || e.name.contains(q) || e.title.lowercased().contains(q) || Labels.muscle(e.target).lowercased().contains(q))
+    /** Every exercise sorted by its name in the app's language, made once per language. */
+    private var sortedCache: [Bool: [Exercise]] = [:]
+    private let lock = NSLock()
+
+    func sortedByTitle() -> [Exercise] {
+        let german = I18n.german
+        lock.lock(); defer { lock.unlock() }
+        if let s = sortedCache[german] { return s }
+        let locale = I18n.locale
+        let s = all.map { ($0, $0.title) }
+            .sorted { $0.1.compare($1.1, options: [.caseInsensitive, .diacriticInsensitive], locale: locale) == .orderedAscending }
+            .map(\.0)
+        sortedCache[german] = s
+        return s
+    }
+
+    /**
+     * Exercises matching every word of [query] in either name, a muscle or the equipment, sorted
+     * by name in the app's language with favourites first, as in the Android library.
+     */
+    func search(_ query: String, category: String? = nil, favorites: Set<String> = [], favoritesOnly: Bool = false) -> [Exercise] {
+        let terms = query.lowercased().split(separator: " ").map(String.init)
+        let found = sortedByTitle().filter { e in
+            guard category == nil || e.category == category, !favoritesOnly || favorites.contains(e.id) else { return false }
+            if terms.isEmpty { return true }
+            let haystack = ([e.name, e.title.lowercased(), Labels.equipment(e.equipment).lowercased()]
+                + e.muscles.flatMap { [$0, Labels.muscle($0).lowercased()] }).joined(separator: " ")
+            return terms.allSatisfy { haystack.contains($0) }
         }
+        return found.filter { favorites.contains($0.id) } + found.filter { !favorites.contains($0.id) }
     }
 }
 

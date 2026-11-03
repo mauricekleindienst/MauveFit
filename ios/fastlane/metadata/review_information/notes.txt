@@ -1,0 +1,1 @@
+No account or login is needed. All data is stored on the device only; exercise images load from cdn.jsdelivr.net. To try it: open Training, start a plan, tick off a set to start the rest timer, then tap Finish to see the summary.

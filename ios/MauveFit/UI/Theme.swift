@@ -154,15 +154,16 @@ struct PillButtonStyle: PrimitiveButtonStyle {
             let label = configuration.label
                 .font(.fit(.titleMedium))
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .frame(maxWidth: wide ? .infinity : nil)
                 .padding(.vertical, wide ? 6 : 0)
             if filled {
                 // The page colour on the tint, as on Android: white was hard to read on the light dark-mode accents.
                 Button(role: configuration.role, action: configuration.trigger) { label.foregroundStyle(Ink.bg) }
-                    .buttonStyle(.glassProminent).tint(color).controlSize(.large)
+                    .buttonStyle(.glassProminent).tint(color).controlSize(wide ? .large : .regular)
             } else {
                 Button(role: configuration.role, action: configuration.trigger) { label.foregroundStyle(color) }
-                    .buttonStyle(.glass).controlSize(.large)
+                    .buttonStyle(.glass).controlSize(wide ? .large : .regular)
             }
         } else {
             Button(role: configuration.role, action: configuration.trigger) { configuration.label }

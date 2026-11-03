@@ -72,7 +72,7 @@ struct FoodView: View {
         let left = t.kcal - kcal
         return Card {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("\(kcal)").font(.fit(.display)).tracking(-1.2).foregroundStyle(Ink.text).lineLimit(1).minimumScaleFactor(0.6)
+                Text(verbatim: "\(kcal)").font(.fit(.display)).tracking(-1.2).foregroundStyle(Ink.text).lineLimit(1).minimumScaleFactor(0.6)
                 Text(L("von \(t.kcal) kcal", "of \(t.kcal) kcal")).font(.fit(.body)).foregroundStyle(Ink.muted)
                 Spacer()
                 Text(left >= 0 ? L("noch \(left)", "\(left) left") : L("\(-left) drüber", "\(-left) over"))

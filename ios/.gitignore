@@ -2,3 +2,7 @@
 MauveFit.xcodeproj/
 MauveFit/Info.plist
 build/
+# Made by the App Store metadata workflow from the UI test.
+fastlane/screenshots/
+fastlane/report.xml
+fastlane/README.md

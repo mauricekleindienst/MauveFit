@@ -1,0 +1,59 @@
+# The App Store product page, uploaded by .github/workflows/appstore-metadata.yml. Never submits
+# for review: that, the App Privacy labels, pricing and availability stay manual in App Store Connect.
+default_platform(:ios)
+
+platform :ios do
+  # The App Store Connect API key from the CI secrets; the key text is never printed.
+  private_lane :api_key do
+    content = ENV.fetch("ASC_KEY_P8")
+    app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: content,
+      is_key_content_base64: !content.include?("BEGIN PRIVATE KEY")
+    )
+  end
+
+  desc "Texts, categories, age rating and screenshots for the version in preparation"
+  lane :metadata do
+    deliver(
+      api_key: api_key,
+      app_identifier: "dev.mauve.fit",
+      platform: "ios",
+      app_version: ENV.fetch("APP_VERSION"),
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      app_rating_config_path: "./fastlane/app_rating_config.json",
+      skip_binary_upload: true,
+      overwrite_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      run_precheck_before_submit: false
+    )
+  end
+
+  desc "Reads back what App Store Connect now has, to confirm the upload landed"
+  lane :check do
+    api_key
+    app = Spaceship::ConnectAPI::App.find("dev.mauve.fit")
+    UI.user_error!("No app record for dev.mauve.fit") unless app
+    version = app.get_edit_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+    UI.user_error!("No version in preparation") unless version
+    UI.message("Version #{version.version_string}: #{version.app_store_state}")
+    version.get_app_store_version_localizations.each do |loc|
+      sets = loc.get_app_screenshot_sets(includes: "appScreenshots")
+      shots = sets.map { |s| "#{s.screenshot_display_type} x#{(s.app_screenshots || []).size}" }
+      UI.message("#{loc.locale}: description #{loc.description.to_s.length} chars, keywords \"#{loc.keywords}\", promo #{loc.promotional_text.to_s.length} chars, screenshots #{shots.join(', ')}")
+      UI.user_error!("#{loc.locale}: no description") if loc.description.to_s.empty?
+      UI.user_error!("#{loc.locale}: no screenshots") if shots.empty?
+    end
+    info = app.fetch_edit_app_info
+    if info
+      info.get_app_info_localizations.each do |l|
+        UI.message("#{l.locale}: name \"#{l.name}\", subtitle \"#{l.subtitle}\", privacy #{l.privacy_policy_url}")
+      end
+      UI.message("Categories: #{info.primary_category&.id} / #{info.secondary_category&.id}")
+    end
+  end
+end

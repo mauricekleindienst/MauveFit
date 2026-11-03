@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "ios/**"
+      # Store texts and screenshots have their own workflow and need no new build.
+      - "!ios/fastlane/**"
       - "app/src/main/assets/exercise*.json"
       - ".github/workflows/ios.yml"
   workflow_dispatch:
@@ -79,6 +81,7 @@ jobs:
             -destination "id=${{ steps.sim.outputs.udid }}" \
             -derivedDataPath build/test \
             -only-testing:MauveFitUITests \
+            -skip-testing:MauveFitUITests/StoreScreenshots \
             -resultBundlePath build/screens.xcresult \
             -testLanguage de -testRegion DE | tee build-screens.log | grep -E "error:|Test Case|Executed|\*\* TEST" || true
           grep -q "\*\* TEST SUCCEEDED \*\*" build-screens.log

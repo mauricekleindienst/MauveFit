@@ -1,0 +1,118 @@
+name: App Store metadata
+
+# Fills in the App Store product page (texts, categories, age rating, screenshots) for the
+# version in preparation. Never uploads a binary and never submits for review.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/fastlane/**"
+      - ".github/workflows/appstore-metadata.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: appstore-metadata
+  cancel-in-progress: false
+
+jobs:
+  metadata:
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | grep -v -i beta | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Install XcodeGen and fastlane
+        run: brew install xcodegen fastlane
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Pick a 6.9-inch simulator
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devs = json.load(sys.stdin)["devices"]
+          ios = sorted((k for k in devs if "iOS" in k), key=lambda k: [int(x) for x in k.rsplit("iOS-", 1)[1].split("-")])
+          for runtime in reversed(ios):
+              for want in ("iPhone 17 Pro Max", "iPhone 16 Pro Max"):
+                  for d in devs[runtime]:
+                      if d["name"] == want:
+                          print(runtime, d["name"], file=sys.stderr); print(d["udid"]); sys.exit()
+          sys.exit("no 6.9-inch iPhone")
+          ')
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl ui "$udid" appearance dark
+          # A tidy status bar, as Apple shows it in its own screenshots.
+          xcrun simctl status_bar "$udid" override --time 9:41 --dataNetwork wifi --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
+
+      - name: Take store screenshots
+        run: |
+          set -o pipefail
+          for lang in de en; do
+            locale=$([ "$lang" = de ] && echo de-DE || echo en-US)
+            TEST_RUNNER_STORE_LANG=$lang xcodebuild test \
+              -project MauveFit.xcodeproj -scheme MauveFit \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/test \
+              -only-testing:MauveFitUITests/StoreScreenshots \
+              -resultBundlePath build/store-$lang.xcresult \
+              CODE_SIGNING_ALLOWED=NO | tee build-store-$lang.log | grep -E "error:|Test Case|\*\* TEST" || true
+            grep -q "\*\* TEST SUCCEEDED \*\*" build-store-$lang.log
+            rm -rf build/attachments-$lang && mkdir -p build/attachments-$lang fastlane/screenshots/$locale
+            xcrun xcresulttool export attachments --path build/store-$lang.xcresult --output-path build/attachments-$lang
+            python3 - "$lang" "$locale" <<'PY'
+          import json, re, shutil, sys
+          lang, locale = sys.argv[1], sys.argv[2]
+          for test in json.load(open(f"build/attachments-{lang}/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  name = name if name.endswith(".png") else name + ".png"
+                  shutil.copy(f"build/attachments-{lang}/" + a["exportedFileName"], f"fastlane/screenshots/{locale}/" + name)
+          PY
+          done
+          for f in fastlane/screenshots/*/*.png; do echo "$f $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/ {printf "%s ", $2}')"; done
+          test "$(ls fastlane/screenshots/de-DE/*.png | wc -l)" -eq 6
+          test "$(ls fastlane/screenshots/en-US/*.png | wc -l)" -eq 6
+
+      - name: Keep the screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: MauveFit-store-screenshots
+          path: ios/fastlane/screenshots
+          if-no-files-found: error
+
+      - name: Upload to App Store Connect
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          # The version in preparation carries the Android versionName, like the TestFlight builds.
+          export APP_VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' ../app/build.gradle.kts | head -1)
+          test -n "$APP_VERSION"
+          fastlane metadata
+
+      - name: Check what landed
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: fastlane check
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-logs
+          path: ios/build-*.log

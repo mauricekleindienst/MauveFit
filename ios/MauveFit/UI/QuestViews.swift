@@ -28,7 +28,7 @@ struct CoinBadge: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "circle.circle.fill").foregroundStyle(Ink.accent)
-            Text(gain ? "+\(coins)" : "\(coins)").font(.fit(.label).weight(.bold)).foregroundStyle(Ink.text)
+            Text(verbatim: gain ? "+\(coins)" : "\(coins)").font(.fit(.label).weight(.bold)).foregroundStyle(Ink.text)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .background(Capsule().fill(Ink.raised))

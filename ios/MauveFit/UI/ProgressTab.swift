@@ -48,6 +48,7 @@ struct ProgressTab: View {
                 CoinBadge(coins: Shop.balance(d))
                 Spacer()
                 NavigationLink { ShopView() } label: { Text(L("Zum Shop", "Open the shop")).font(.fit(.label)).foregroundStyle(Ink.accent) }
+                    .accessibilityIdentifier("progressShop")
             }
             HStack {
                 SectionTitle(text: L("Joker", "Streak freezes"))

@@ -54,6 +54,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -98,6 +99,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import dev.mauve.fit.system.Haptics
 import dev.mauve.fit.App
@@ -817,7 +819,12 @@ private fun ValueCell(value: String, modifier: Modifier, onMinus: () -> Unit, on
                 .semantics(mergeDescendants = true) { contentDescription = spoken },
             contentAlignment = Alignment.Center,
         ) {
-            Text(value, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, maxLines = 1)
+            // Shrinks to fit: "22,5" between the buttons was cut to "22," on a 1080 px phone.
+            val style = MaterialTheme.typography.titleLarge
+            Text(
+                value, style = style, textAlign = TextAlign.Center, maxLines = 1, softWrap = false,
+                autoSize = TextAutoSize.StepBased(minFontSize = 12.sp, maxFontSize = style.fontSize),
+            )
         }
         Box(Modifier.size(36.dp).clip(Pill).clickable { Haptics.tick(); onPlus() }, contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.Add, L("Mehr", "More"), tint = Ink.muted, modifier = Modifier.size(18.dp))

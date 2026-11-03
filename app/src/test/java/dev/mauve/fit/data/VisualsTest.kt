@@ -10,6 +10,7 @@ import org.junit.Test
 import java.io.File
 
 class VisualsTest {
+    private val regions = MuscleRegions.parse(File("../ios/MauveFit/Resources/muscle_regions.json").readText())
     private val exercises = Json.parseToJsonElement(File("src/main/assets/exercises.json").readText()).jsonArray.map { it.jsonObject }
 
     @Test
@@ -17,7 +18,7 @@ class VisualsTest {
         val muscles = exercises.flatMap { e ->
             listOf(e["target"]!!.jsonPrimitive.content) + (e["secondary"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList())
         }.toSet()
-        val missing = muscles - MuscleRegions.map.keys
+        val missing = muscles - regions.map.keys
         assertTrue("No map region for $missing", missing.isEmpty())
     }
 
@@ -36,7 +37,7 @@ class VisualsTest {
     @Test
     fun backMusclesShowFromBehind() {
         val e = Exercise("x", "row", target = "lats")
-        assertEquals(BodySide.BACK, MuscleRegions.side(e))
-        assertEquals(BodySide.FRONT, MuscleRegions.side(e.copy(target = "pectorals")))
+        assertEquals(BodySide.BACK, regions.side(e))
+        assertEquals(BodySide.FRONT, regions.side(e.copy(target = "pectorals")))
     }
 }

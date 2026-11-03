@@ -58,7 +58,6 @@ import dev.mauve.fit.data.Drawings
 import dev.mauve.fit.data.Exercise
 import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Labels
-import dev.mauve.fit.data.MuscleRegions
 import kotlin.math.max
 import kotlin.math.min
 
@@ -68,9 +67,10 @@ import kotlin.math.min
  */
 @Composable
 fun MuscleMap(exercise: Exercise?, modifier: Modifier = Modifier, side: BodySide? = null, zoom: Boolean = false) {
-    val primary = remember(exercise) { MuscleRegions.regions(listOfNotNull(exercise?.target)) }
-    val secondary = remember(exercise) { MuscleRegions.regions(exercise?.secondary.orEmpty()) - primary }
-    val shown = side ?: exercise?.let(MuscleRegions::side) ?: BodySide.FRONT
+    val regions = App.repo.muscleRegions
+    val primary = remember(exercise) { regions.regions(listOfNotNull(exercise?.target)) }
+    val secondary = remember(exercise) { regions.regions(exercise?.secondary.orEmpty()) - primary }
+    val shown = side ?: exercise?.let(regions::side) ?: BodySide.FRONT
     val map = App.repo.bodyMap
     val accent = Ink.accent
     val body = Ink.line

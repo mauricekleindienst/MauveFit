@@ -285,6 +285,8 @@ final class MauveFitTests: XCTestCase {
         }
         for region in MuscleRegions.map.values.flatMap({ $0 }) { XCTAssertTrue(slugs.contains(region), region) }
         XCTAssertEqual(MuscleRegions.map["cardiovascular system"], [])
+        // Read from the shared muscle_regions.json, not built into the code.
+        XCTAssertGreaterThan(MuscleRegions.map.count, 40)
     }
 
     /** The thumbnail shows the side that matters. */

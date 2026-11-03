@@ -1,6 +1,6 @@
 import SwiftUI
 
-/** The third-party material bundled with the app and its licences (see THIRD_PARTY_NOTICES.md). */
+/** The third-party material bundled with the app and its licences (see THIRD_PARTY_NOTICES.md at the repository root). */
 struct LicensesView: View {
     private static func mit(_ holder: String, data: Bool = false) -> String {
         """

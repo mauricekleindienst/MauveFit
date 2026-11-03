@@ -1,0 +1,165 @@
+{
+ "_comment": "Muscle names of exercises.json mapped to regions of bodymap.json, shared by the Android and iOS apps. An empty list means nothing to highlight on purpose (cardio). backOnly / backFirst decide which side a thumbnail shows.",
+ "regions": {
+  "abdominals": [
+   "abs"
+  ],
+  "abductors": [
+   "gluteal"
+  ],
+  "abs": [
+   "abs"
+  ],
+  "adductors": [
+   "adductors"
+  ],
+  "ankle stabilizers": [
+   "ankles"
+  ],
+  "ankles": [
+   "ankles"
+  ],
+  "back": [
+   "upper-back"
+  ],
+  "biceps": [
+   "biceps"
+  ],
+  "brachialis": [
+   "biceps"
+  ],
+  "calves": [
+   "calves"
+  ],
+  "cardiovascular system": [],
+  "chest": [
+   "chest"
+  ],
+  "core": [
+   "abs",
+   "obliques"
+  ],
+  "deltoids": [
+   "deltoids"
+  ],
+  "delts": [
+   "deltoids"
+  ],
+  "feet": [
+   "feet"
+  ],
+  "forearms": [
+   "forearm"
+  ],
+  "glutes": [
+   "gluteal"
+  ],
+  "grip muscles": [
+   "forearm"
+  ],
+  "groin": [
+   "adductors"
+  ],
+  "hamstrings": [
+   "hamstring"
+  ],
+  "hands": [
+   "hands"
+  ],
+  "hip flexors": [
+   "quadriceps"
+  ],
+  "inner thighs": [
+   "adductors"
+  ],
+  "latissimus dorsi": [
+   "upper-back"
+  ],
+  "lats": [
+   "upper-back"
+  ],
+  "levator scapulae": [
+   "neck"
+  ],
+  "lower abs": [
+   "abs"
+  ],
+  "lower back": [
+   "lower-back"
+  ],
+  "obliques": [
+   "obliques"
+  ],
+  "pectorals": [
+   "chest"
+  ],
+  "quadriceps": [
+   "quadriceps"
+  ],
+  "quads": [
+   "quadriceps"
+  ],
+  "rear deltoids": [
+   "deltoids"
+  ],
+  "rhomboids": [
+   "upper-back"
+  ],
+  "rotator cuff": [
+   "deltoids"
+  ],
+  "serratus anterior": [
+   "chest"
+  ],
+  "shins": [
+   "tibialis"
+  ],
+  "shoulders": [
+   "deltoids"
+  ],
+  "soleus": [
+   "calves"
+  ],
+  "spine": [
+   "lower-back"
+  ],
+  "sternocleidomastoid": [
+   "neck"
+  ],
+  "trapezius": [
+   "trapezius"
+  ],
+  "traps": [
+   "trapezius"
+  ],
+  "triceps": [
+   "triceps"
+  ],
+  "upper back": [
+   "upper-back"
+  ],
+  "upper chest": [
+   "chest"
+  ],
+  "wrist extensors": [
+   "forearm"
+  ],
+  "wrist flexors": [
+   "forearm"
+  ],
+  "wrists": [
+   "forearm"
+  ]
+ },
+ "backOnly": [
+  "upper-back",
+  "lower-back",
+  "gluteal",
+  "hamstring"
+ ],
+ "backFirst": [
+  "triceps",
+  "trapezius",
+  "calves"
+ ]
+}

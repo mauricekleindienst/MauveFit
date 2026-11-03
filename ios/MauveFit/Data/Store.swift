@@ -7,6 +7,8 @@ import UserNotifications
 @Observable
 final class Store {
     private(set) var data: AppData
+    /** The newest body weight in Apple Health, when syncing is on; never saved to the file. */
+    private(set) var healthKg: Double?
     @ObservationIgnored private let file: URL
     @ObservationIgnored private let repo: ExerciseRepo
     @ObservationIgnored private var saveTask: Task<Void, Never>?
@@ -229,6 +231,9 @@ final class Store {
             }
         }
         RestAlarm.cancel()
+        if data.settings.healthWrite, let w = data.history.first, w.id == saved {
+            Task { await Health.shared.save(w) }
+        }
         return saved
     }
 
@@ -291,6 +296,31 @@ final class Store {
             let today = Stats.day(nowMs())
             d.bodyWeights.removeAll { Stats.day($0.at) == today }
             d.bodyWeights.insert(BodyWeight(at: nowMs(), kg: kg), at: 0)
+        }
+        if data.settings.healthWrite { Task { await Health.shared.saveWeight(kg) } }
+    }
+
+    /** The body weight the targets use: the app's own log first, else Apple Health's. */
+    var bodyWeight: Double? { Stats.latestWeight(data) ?? healthKg }
+
+    /** Reads the latest body mass from Apple Health when syncing is on. */
+    func refreshHealthWeight() {
+        guard data.settings.healthWrite else { healthKg = nil; return }
+        Task { healthKg = await Health.shared.latestWeight() }
+    }
+
+    /**
+     * Switches Apple Health on (asking for access first, in context) or off. Stays off when the
+     * device has no Health or the prompt fails.
+     */
+    func setHealth(_ on: Bool) async {
+        if on {
+            guard await Health.shared.requestAccess() else { return }
+            updateSettings { $0.healthWrite = true }
+            refreshHealthWeight()
+        } else {
+            updateSettings { $0.healthWrite = false }
+            healthKg = nil
         }
     }
 

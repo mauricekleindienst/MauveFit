@@ -224,8 +224,10 @@ struct Settings: Codable, Hashable {
     var theme: String = "system"
     /** Accent key, see Accent. */
     var accent: String = "copper"
+    /** Write finished workouts and body weights to Apple Health (Android: Health Connect). */
+    var healthWrite = false
 
-    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent }
+    enum CodingKeys: String, CodingKey { case weeklyGoal, defaultRest, weightStep, barWeight, vibrate, sound, language, theme, accent, healthWrite }
 
     init() {}
 
@@ -235,6 +237,7 @@ struct Settings: Codable, Hashable {
         weightStep = c.value(.weightStep, 2.5); barWeight = c.value(.barWeight, 20)
         vibrate = c.value(.vibrate, true); sound = c.value(.sound, true); language = c.value(.language, "system")
         theme = c.value(.theme, "system"); accent = c.value(.accent, "copper")
+        healthWrite = c.value(.healthWrite, false)
     }
 }
 

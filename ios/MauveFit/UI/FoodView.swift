@@ -11,7 +11,7 @@ struct FoodView: View {
         let date = Stats.calendar.date(byAdding: .day, value: dayOffset, to: Date())!
         let day = Stats.isoDay(date)
         let entries = d.food.filter { $0.date == day }
-        let kg = Stats.latestWeight(d)
+        let kg = store.bodyWeight
         let t = Nutrition.targets(kg: kg ?? Nutrition.defaultKg, goal: d.profile.goal)
         NavigationStack {
             ScrollView {

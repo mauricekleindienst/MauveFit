@@ -37,6 +37,9 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
 - Starting weights and reps as on Android: last time's weight, one step up when every set hit
   its target; never logged, a similar exercise's record or a first estimate from body weight and
   level; body-weight exercises go up by a rep. A workout left open for three hours is saved.
+- Apple Health (Settings, off by default): finished workouts are written as traditional
+  strength training and logged body weights as body mass; the newest body mass in Health sets
+  the nutrition targets when none is logged in the app. Access is asked when it is switched on.
 - German and English, following the system or the setting (Today, gear icon), with German
   plurals and decimal commas.
 - Apple's Liquid Glass design on iOS 26: the native tab bar and toolbars with large titles, a
@@ -56,7 +59,7 @@ Compared with the Android app, these are not ported yet:
 - Widgets (streak, nutrition, next workout) and Live Activities for the rest timer
 - Apple Watch app (the Android side has a Wear OS app)
 - Supersets in the workout screen (the data field is kept), drop / failure set types and RPE
-- Cardio sessions, Apple Health sync
+- Cardio sessions
 - Recipes, meal prep, shopping list, barcode scanner and food lookup
 - Insights, body measurements, progress photos, share images
 - Template packs

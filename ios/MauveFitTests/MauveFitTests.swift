@@ -498,6 +498,8 @@ final class MauveFitTests: XCTestCase {
         let store = Store(file: dir.appendingPathComponent("data.json"))
         store.startWorkout(Routine(name: "Push", exercises: [PlanExercise(exerciseId: "0025", sets: 3, reps: 8)]))
         store.toggleDone(0, 0)
+        // Creating a store applies its language setting ("system"); the check reads German.
+        I18n.apply("de")
         d = store.data
         s = WidgetSync.snapshot(d)
         XCTAssertTrue(s.running)

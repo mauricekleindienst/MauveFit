@@ -14,8 +14,8 @@ android {
         applicationId = "dev.mauve.fit"
         minSdk = 29
         targetSdk = 36
-        versionCode = 53
-        versionName = "1.23.0"
+        versionCode = 54
+        versionName = "1.23.1"
     }
 
     // The muscle map and the Everkinetic drawings live once in the repo, beside the iOS app.

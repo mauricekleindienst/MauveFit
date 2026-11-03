@@ -45,7 +45,11 @@ if [ "${1:-}" = "--dry-run" ]; then
   exit 0
 fi
 
-git push -q origin main
+# main is only changed through pull requests, so the release is built from what is on GitHub.
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+  echo "HEAD is not origin/main: merge the release PR and check out origin/main first" >&2
+  exit 1
+fi
 gh release create "$tag" "$out/MauveFit-$version.apk" "$out/MauveFit-Watch-$version.apk" \
   --target main --title "Mauve Fit $version" --notes "$notes"
 echo "published $tag"

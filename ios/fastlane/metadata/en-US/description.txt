@@ -21,4 +21,7 @@ Log what you eat with calories, protein, carbs and fat against daily targets fro
 PROGRESS
 Charts for weekly volume and body weight, a weekly goal with a streak, and the full history of every workout and set.
 
+APPLE HEALTH
+If you switch it on, finished workouts and your body weight are saved to Apple Health, and your latest weight from Health sets your nutrition targets.
+
 In German and English, in light and dark mode.

@@ -21,4 +21,7 @@ Trage ein, was du isst, mit Kalorien, Protein, Kohlenhydraten und Fett, gemessen
 FORTSCHRITT
 Diagramme für Wochenvolumen und Körpergewicht, ein Wochenziel mit Serie und der komplette Verlauf jedes Trainings und Satzes.
 
+APPLE HEALTH
+Wenn du es einschaltest, landen fertige Trainings und dein Körpergewicht in Apple Health, und dein aktuelles Gewicht aus Health bestimmt deine Ernährungsziele.
+
 Auf Deutsch und Englisch, im hellen und dunklen Design.

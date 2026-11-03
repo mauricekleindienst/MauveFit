@@ -40,8 +40,9 @@ struct MuscleMap: View {
         let wanted = primary.isEmpty ? secondary : primary
         let box = wanted.compactMap { map.parts[$0]?.boundingRect }.reduce(CGRect.null) { $0.union($1) }
         guard !box.isNull else { return full }
-        // At least a third of the body tall, so a single small muscle still shows where it sits.
-        var h = max(box.height * 1.5, box.width * 1.5 / aspect, full.height / 3)
+        // At least half the body tall and plenty of room around the muscles, so the figure reads
+        // as a body and not as cut-off pieces, even for one small muscle.
+        var h = max(box.height * 2.2, box.width * 2.2 / aspect, full.height * 0.5)
         var w = h * aspect
         if w > full.width { w = full.width; h = w / aspect }
         var r = CGRect(x: box.midX - w / 2, y: box.midY - h / 2, width: w, height: h)

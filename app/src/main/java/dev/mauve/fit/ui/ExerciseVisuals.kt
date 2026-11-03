@@ -28,7 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -41,7 +46,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.aspectRatio
+import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalContext
 import dev.mauve.fit.App
 import dev.mauve.fit.data.BodyMap
 import dev.mauve.fit.data.BodySide
@@ -117,8 +126,34 @@ private fun lineArt(color: Color) = ColorFilter.colorMatrix(
 private fun Drawing(path: String, modifier: Modifier = Modifier) {
     val accent = Ink.accent
     val filter = remember(accent) { lineArt(accent) }
-    AsyncImage("file:///android_asset/$path", null, modifier, contentScale = ContentScale.Fit, colorFilter = filter)
+    val painter = rememberAsyncImagePainter("file:///android_asset/$path")
+    // Read from the file header, so the layout has the drawing's shape before it is decoded.
+    val context = LocalContext.current
+    val aspect = remember(path) {
+        runCatching {
+            val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.assets.open(path).use { BitmapFactory.decodeStream(it, null, o) }
+            o.outWidth.toFloat() / o.outHeight
+        }.getOrNull()?.takeIf { it.isFinite() && it > 0f }
+    }
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Image(
+            painter, null,
+            // Sized to the drawing itself, so the fade sits on its edges and not on empty stage.
+            // Some drawings are cropped in the original artwork; fading both sides out makes a cut
+            // plate look intended instead of clipped.
+            (if (aspect != null) Modifier.aspectRatio(aspect) else Modifier.fillMaxSize())
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    drawRect(EdgeFade, blendMode = BlendMode.DstIn)
+                },
+            contentScale = ContentScale.Fit, colorFilter = filter,
+        )
+    }
 }
+
+private val EdgeFade = Brush.horizontalGradient(0f to Color.Transparent, 0.15f to Color.Black, 0.85f to Color.Black, 1f to Color.Transparent)
 
 /**
  * The picture of an exercise. [full]: its Everkinetic drawings of the start and end position

@@ -43,7 +43,7 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   glass bar above the tab bar to resume the running workout or start the next plan, the rest
   timer and the buttons in glass. Content cards stay plain surfaces. Before iOS 26 the same
   layer uses thin material. The colours are the Android palettes, graphite ("iron") in dark
-  and chalk-white in light mode, with the mauve accent by default and five others to pick.
+  and chalk-white in light mode, with the bronze (copper) brand accent by default, as on Android, and five others to pick.
   No emojis, SF Symbols only.
 
 ## Still open

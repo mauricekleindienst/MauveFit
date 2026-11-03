@@ -49,7 +49,7 @@ enum Accent: String, CaseIterable, Identifiable {
         }
     }
 
-    static func of(_ key: String) -> Accent { Accent(rawValue: key) ?? .mauve }
+    static func of(_ key: String) -> Accent { Accent(rawValue: key) ?? .copper }
 }
 
 /**
@@ -59,7 +59,7 @@ enum Accent: String, CaseIterable, Identifiable {
  */
 enum Ink {
     /** Set from the settings by the app before anything is drawn. */
-    nonisolated(unsafe) static var accentChoice: Accent = .mauve
+    nonisolated(unsafe) static var accentChoice: Accent = .copper
 
     static var bgUI: UIColor { .tone(0x111315, 0xF2F3F5) }
     static var surfaceUI: UIColor { .tone(0x1A1D21, 0xFFFFFF) }

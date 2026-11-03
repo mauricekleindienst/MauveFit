@@ -155,7 +155,8 @@ struct PillButtonStyle: PrimitiveButtonStyle {
         if #available(iOS 26, *) {
             let label = configuration.label
                 .font(.fit(.titleMedium))
-                .lineLimit(1)
+                .lineLimit(wide ? 2 : 1)
+                .multilineTextAlignment(.center)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: wide ? .infinity : nil)
                 .padding(.vertical, wide ? 6 : 0)
@@ -184,7 +185,8 @@ private struct LegacyPill: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.fit(.titleMedium).weight(filled ? .bold : .semibold))
-            .lineLimit(1)
+            .lineLimit(wide ? 2 : 1)
+            .multilineTextAlignment(.center)
             .padding(.horizontal, 18)
             .padding(.vertical, wide ? 16 : 12)
             .frame(maxWidth: wide ? .infinity : nil)
@@ -309,6 +311,8 @@ struct StatTile: View {
             Text(label).font(.fit(.labelSmall)).foregroundStyle(Ink.muted).lineLimit(2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Three tiles share a row; beyond this size the labels would break inside words.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         if boxed {
             inner.padding(16).background(Ink.surface, in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
         } else {

@@ -93,8 +93,8 @@ struct ExerciseHero: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity)
-                // Light in both themes: the drawings are black line art.
-                .background(Color(white: 0.97), in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+                // White in both themes: the drawings are black line art on white.
+                .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L("Zeichnung von Start- und Endposition", "Drawing of the start and end position"))
                 Link(destination: Drawings.licenseURL) {

@@ -65,6 +65,12 @@ struct ProgressTab: View {
             }
             .chartYAxis(.hidden)
             .frame(height: 150)
+            .overlay {
+                if weeks.allSatisfy({ $0.1 == 0 }) {
+                    Text(L("Nach dem ersten Training siehst du hier dein Volumen pro Woche.", "Your volume per week shows here after your first workout."))
+                        .font(.fit(.bodyMedium)).foregroundStyle(Ink.muted).multilineTextAlignment(.center).padding(.horizontal, 12)
+                }
+            }
         }
     }
 

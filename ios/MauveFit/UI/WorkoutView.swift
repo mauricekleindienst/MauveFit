@@ -138,10 +138,13 @@ private struct EntryCard: View {
             }
             .font(.fit(.labelSmall)).foregroundStyle(Ink.faint)
             .padding(.top, 4)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             ForEach(Array(entry.sets.enumerated()), id: \.offset) { si, s in
                 // Working sets count from 1; warm-ups show a W and are skipped.
                 let number = entry.sets.prefix(si + 1).filter { !$0.warmup }.count
                 SetRow(entry: index, set: si, value: s, label: s.warmup ? "W" : "\(number)", bodyweight: bodyweight)
+                    // Four controls in a row: larger text would push the numbers out of their fields.
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .contextMenu {
                         Button { store.setSet(index, si) { $0.warmup.toggle() } } label: {
                             Label(s.warmup ? L("Arbeitssatz", "Working set") : L("Aufwärmsatz", "Warm-up set"), systemImage: "flame")
@@ -289,6 +292,7 @@ private struct RestBar: View {
                 .glassGroup()
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("restBar")
             }

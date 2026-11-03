@@ -213,6 +213,63 @@ struct SectionTitle: View {
     }
 }
 
+/**
+ * A tab's title row: the large bold title with its action on the same line, centred on the
+ * title, and one line of context under it. Replaces the system bar, which put the button in a
+ * row of its own above the title.
+ */
+struct TabHeader<Trailing: View>: View {
+    let title: String
+    var subtitle: String = ""
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .center) {
+                Text(title).font(.fit(.title)).foregroundStyle(Ink.text)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer(minLength: 8)
+                trailing
+            }
+            if !subtitle.isEmpty { Text(subtitle).font(.fit(.body)).foregroundStyle(Ink.muted) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+    }
+}
+
+/** A round icon button for the title row: Liquid Glass on iOS 26, thin material before it. */
+struct GlassIconButton: View {
+    let icon: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Group {
+            if #available(iOS 26, *) {
+                Button(action: action) {
+                    Image(systemName: icon).font(.system(size: 18, weight: .semibold)).frame(width: 30, height: 30)
+                }
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .controlSize(.large)
+            } else {
+                Button(action: action) {
+                    Image(systemName: icon).font(.system(size: 18, weight: .semibold))
+                        .frame(width: 44, height: 44)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .tint(Ink.accent)
+        .foregroundStyle(Ink.accent)
+        .accessibilityLabel(label)
+    }
+}
+
 /** A round icon button on the raised tone. */
 struct RoundButton: View {
     let icon: String
@@ -357,6 +414,11 @@ extension View {
      * The floating control layer (rest timer, workout bar): Liquid Glass on iOS 26, a thin
      * material before it. Content cards never get this, as the HIG asks.
      */
+    /** A tab's root: no system bar, the screen draws its own title row (TabHeader). */
+    func tabRoot() -> some View {
+        self.screen().toolbar(.hidden, for: .navigationBar)
+    }
+
     /** Lets glass pieces next to each other blend and morph together (iOS 26). */
     @ViewBuilder
     func glassGroup(spacing: CGFloat = 12) -> some View {

@@ -11,6 +11,7 @@ struct ProgressTab: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
+                    TabHeader(title: L("Fortschritt", "Progress"), subtitle: Fmt.workouts(d.history.count)) { EmptyView() }
                     let streak = Stats.weekStreak(d.history, goal: d.settings.weeklyGoal)
                     HStack(spacing: 10) {
                         StatTile(value: "\(Stats.workoutsThisWeek(d.history))", label: L("diese Woche", "this week"))
@@ -32,8 +33,7 @@ struct ProgressTab: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .screen()
-            .navigationTitle(L("Fortschritt", "Progress"))
+            .tabRoot()
             .sheet(isPresented: $weighing) { WeightEditor(start: Stats.latestWeight(d) ?? Nutrition.defaultKg) }
         }
     }

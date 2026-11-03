@@ -11,6 +11,9 @@ struct TrainingView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
+                    TabHeader(title: L("Training", "Training"), subtitle: L("Pläne und Übungen", "Plans and exercises")) {
+                        GlassIconButton(icon: "plus", label: L("Neuer Plan", "New plan")) { editing = Routine(name: "") }
+                    }
                     HStack(spacing: 10) {
                         Button {
                             store.startWorkout(nil)
@@ -35,14 +38,7 @@ struct TrainingView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .screen()
-            .navigationTitle(L("Training", "Training"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { editing = Routine(name: "") } label: { Image(systemName: "plus") }
-                        .accessibilityLabel(L("Neuer Plan", "New plan"))
-                }
-            }
+            .tabRoot()
             .sheet(item: $editing) { r in RoutineEditor(routine: r) }
         }
     }

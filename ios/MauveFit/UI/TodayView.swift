@@ -11,8 +11,10 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
-                    Text(Date().formatted(Date.FormatStyle().weekday(.wide).day().month(.wide).locale(I18n.locale)))
-                        .font(.fit(.body)).foregroundStyle(Ink.muted).frame(maxWidth: .infinity, alignment: .leading)
+                    TabHeader(title: L("Heute", "Today"), subtitle: Date().formatted(Date.FormatStyle().weekday(.wide).day().month(.wide).locale(I18n.locale))) {
+                        GlassIconButton(icon: "gearshape", label: L("Einstellungen", "Settings")) { showSettings = true }
+                            .accessibilityIdentifier("settings")
+                    }
                     if let w = d.active { activeCard(w) } else if let r = Stats.nextRoutine(d) { nextCard(r) }
                     weekTiles(d)
                     weekCard(d)
@@ -21,15 +23,7 @@ struct TodayView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)
             }
-            .screen()
-            .navigationTitle(L("Heute", "Today"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showSettings = true } label: { Image(systemName: "gearshape") }
-                        .accessibilityLabel(L("Einstellungen", "Settings"))
-                        .accessibilityIdentifier("settings")
-                }
-            }
+            .tabRoot()
             .sheet(isPresented: $showSettings) { SettingsView() }
         }
     }

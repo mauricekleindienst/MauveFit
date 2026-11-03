@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.23.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.23.1 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,12 @@ Stand: Version 1.23.0 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.23.1
+
+- App-Icon in der Akzentfarbe: das Herzschlag-M nimmt die Farbe aus den Einstellungen an und wechselt, sobald man die App verlässt (#19)
+- Übungszeichnungen laufen links und rechts weich aus; im Original angeschnittene Zeichnungen wie die Beinpresse wirken nicht mehr abgeschnitten (#18)
+- Hinweis: Nach dem Update kann das Icon auf dem Startbildschirm einmalig verschwinden; einfach neu aus der App-Übersicht ziehen
 
 ## Erledigt in 1.23.0
 

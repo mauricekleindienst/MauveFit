@@ -483,6 +483,17 @@ final class MauveFitTests: XCTestCase {
         XCTAssertEqual(Set(kinds).count, 6)
     }
 
+    /** Every accent but copper has an alternate home screen icon in the built app (#19). */
+    func testAccentIcons() throws {
+        XCTAssertNil(AppIcon.name(for: .copper))
+        let icons = try XCTUnwrap(Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any])
+        let alternates = try XCTUnwrap(icons["CFBundleAlternateIcons"] as? [String: Any])
+        for accent in Accent.allCases where accent != .copper {
+            let name = try XCTUnwrap(AppIcon.name(for: accent))
+            XCTAssertNotNil(alternates[name], name)
+        }
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

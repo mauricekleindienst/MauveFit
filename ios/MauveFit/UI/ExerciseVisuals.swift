@@ -52,6 +52,24 @@ struct MuscleMap: View {
     }
 }
 
+/**
+ * A black-on-white line drawing redrawn in the accent on a transparent background: the lines
+ * become a mask (dark pixels opaque, white ones clear), so the drawing fits both themes and
+ * follows the accent the user picked.
+ */
+struct LineArt: View {
+    let image: UIImage
+
+    var body: some View {
+        let lines = Image(uiImage: image).resizable().interpolation(.high).scaledToFit()
+        lines.hidden()
+            .overlay {
+                Rectangle().fill(Ink.accent)
+                    .mask { lines.colorInvert().luminanceToAlpha() }
+            }
+    }
+}
+
 /** The small picture of an exercise in lists: its muscle map, closed in on what it trains. */
 struct ExerciseThumb: View {
     let exercise: Exercise?
@@ -81,12 +99,11 @@ struct ExerciseHero: View {
                         ForEach(Array(files.enumerated()), id: \.offset) { i, name in
                             VStack(spacing: 4) {
                                 if let img = Drawings.shared.load(name) {
-                                    Image(uiImage: img).resizable().interpolation(.high).scaledToFit()
-                                        .frame(maxWidth: .infinity, maxHeight: 240)
+                                    LineArt(image: img).frame(maxWidth: .infinity, maxHeight: 240)
                                 }
                                 if files.count > 1 {
                                     Text(i == 0 ? L("Start", "Start") : L("Ende", "End"))
-                                        .font(.fit(.labelSmall)).foregroundStyle(Color(white: 0.35))
+                                        .font(.fit(.labelSmall)).foregroundStyle(Ink.muted)
                                 }
                             }
                         }
@@ -94,8 +111,7 @@ struct ExerciseHero: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity)
-                // White in both themes: the drawings are black line art on white.
-                .background(Color.white, in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+                .background(Ink.stage, in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(L("Zeichnung von Start- und Endposition", "Drawing of the start and end position"))
                 Link(destination: Drawings.licenseURL) {

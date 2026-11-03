@@ -80,7 +80,8 @@ struct RootView: View {
                 .tabItem { Label(L("Fortschritt", "Progress"), systemImage: "chart.bar.fill") }
                 .tag(AppTab.progress)
         }
-        .workoutAccessory()
+        // Heute already shows the running or next workout as its big card.
+        .workoutAccessory(enabled: router.tab != .today)
         // Re-renders every label when the language changes; colours follow the store by themselves.
         .id(s.language)
         .tint(Ink.accent)
@@ -95,10 +96,16 @@ struct RootView: View {
 }
 
 private extension View {
-    /** iOS 26: the running workout (or the next plan) floats above the tab bar in glass. */
+    /**
+     * iOS 26: the running workout (or the next plan) floats above the tab bar in glass. From
+     * 26.1 it can be switched off per tab; on 26.0 it stays on everywhere.
+     */
     @ViewBuilder
-    func workoutAccessory() -> some View {
-        if #available(iOS 26, *) {
+    func workoutAccessory(enabled: Bool) -> some View {
+        if #available(iOS 26.1, *) {
+            self.tabViewBottomAccessory(isEnabled: enabled) { WorkoutAccessory() }
+                .tabBarMinimizeBehavior(.onScrollDown)
+        } else if #available(iOS 26, *) {
             self.tabViewBottomAccessory { WorkoutAccessory() }
                 .tabBarMinimizeBehavior(.onScrollDown)
         } else {

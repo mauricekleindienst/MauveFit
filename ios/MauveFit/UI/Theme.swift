@@ -198,12 +198,8 @@ extension PrimitiveButtonStyle where Self == PillButtonStyle {
     static var primary: PillButtonStyle { PillButtonStyle(wide: true) }
     static var ghost: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text, wide: true) }
 }
-    static var pillOutline: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text) }
-    static var primary: PillButtonStyle { PillButtonStyle(wide: true) }
-    static var ghost: PillButtonStyle { PillButtonStyle(filled: false, color: Ink.text, wide: true) }
-}
 
-/** Small heading above a block, like the Android Eyebrow. */
+/** Small heading above a block. */
 struct SectionTitle: View {
     let text: String
     var color: Color = Ink.muted

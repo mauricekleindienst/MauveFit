@@ -6,7 +6,8 @@ import kotlinx.serialization.json.Json
 
 /**
  * One entry of exercises-dataset (github.com/hasaneyldrm/exercises-dataset), slimmed to the
- * fields the app uses. Animations © Gym visual (gymvisual.com), loaded from the repository and cached.
+ * fields the app uses. Only the data: the pictures are our own muscle map and bundled drawings
+ * (see Visuals.kt), none of the dataset's media.
  */
 @Serializable
 data class Exercise(
@@ -17,28 +18,13 @@ data class Exercise(
     val target: String = "",
     val secondary: List<String> = emptyList(),
     val steps: List<String> = emptyList(),
-    val gif: String = "",
-    val image: String = "",
 ) {
     /** Display name in the app's language; [name] stays the English key the coach matches words in. */
     val title: String get() = (if (I18n.german) ExerciseRepo.namesDe[id] else null) ?: titleEn
     val titleEn: String get() = name.split(' ').joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
-    /** Original animation and still, served by the jsDelivr CDN straight from the GitHub repository. */
-    val gifUrl: String get() = MEDIA_BASE + gif
-    val imageUrl: String get() = MEDIA_BASE + image
-    /** The same files from raw.githubusercontent.com, used if the CDN is unreachable. */
-    val gifFallback: String get() = FALLBACK_BASE + gif
-    val imageFallback: String get() = FALLBACK_BASE + image
     /** Body-weight exercises are logged by reps only. */
     val bodyweight: Boolean get() = equipment == "body weight"
     val muscles: List<String> get() = listOf(target) + secondary
-
-    companion object {
-        const val MEDIA_BASE = "https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/"
-        const val FALLBACK_BASE = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/"
-        // Wording the media notice of exercises-dataset asks for on every use.
-        const val ATTRIBUTION = "© Gym visual — https://gymvisual.com/"
-    }
 }
 
 /** The bundled database, parsed once (warmed up off the main thread at app start). */
@@ -56,6 +42,14 @@ class ExerciseRepo(private val context: Context) {
 
     operator fun get(id: String): Exercise? = byId[id]
 
+    /** The muscle map shapes, shared with the iOS app. */
+    val bodyMap: BodyMap by lazy { BodyMap.parse(context.assets.open("bodymap.json").bufferedReader().use { it.readText() }) }
+
+    /** Exercise id to its Everkinetic drawings (asset paths, start position first). */
+    val drawings: Map<String, List<String>> by lazy {
+        runCatching { Drawings.parse(context.assets.open("everkinetic.json").bufferedReader().use { it.readText() }) }.getOrDefault(emptyMap())
+    }
+
     /** German how-to steps by exercise id (our own translation; the dataset has none). */
     private val stepsDe: Map<String, List<String>> by lazy {
         runCatching {
@@ -71,6 +65,8 @@ class ExerciseRepo(private val context: Context) {
     fun warm() {
         all.size
         loadNames()
+        bodyMap
+        drawings.size
         if (I18n.german) stepsDe.size
     }
 

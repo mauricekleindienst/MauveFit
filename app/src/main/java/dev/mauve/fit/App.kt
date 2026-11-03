@@ -3,15 +3,7 @@ package dev.mauve.fit
 import dev.mauve.fit.system.CrashLog
 import dev.mauve.fit.system.WeeklyReports
 import android.app.Application
-import coil3.ImageLoader
-import coil3.PlatformContext
-import coil3.SingletonImageLoader
-import coil3.disk.DiskCache
-import coil3.disk.directory
-import coil3.gif.AnimatedImageDecoder
-import coil3.request.crossfade
 import dev.mauve.fit.system.Haptics
-import dev.mauve.fit.system.Media
 import dev.mauve.fit.data.ExerciseRepo
 import dev.mauve.fit.data.I18n
 import dev.mauve.fit.data.Store
@@ -22,7 +14,7 @@ import dev.mauve.fit.watch.WatchSync
 import dev.mauve.fit.widget.NextWidget
 import kotlin.concurrent.thread
 
-class App : Application(), SingletonImageLoader.Factory {
+class App : Application() {
     /** The phone's language changed: with the setting on "system" the app follows, notifications too. */
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
@@ -55,20 +47,9 @@ class App : Application(), SingletonImageLoader.Factory {
         thread(name = "exercise-db") {
             repo.warm()
             WatchSync.start(this)
-            Media.prefetchPlans(this)
         }
     }
 
-    // GIFs need the animated decoder; the disk cache holds the downloaded media for offline use.
-    override fun newImageLoader(context: PlatformContext): ImageLoader =
-        ImageLoader.Builder(context)
-            .components {
-                add(dev.mauve.fit.system.SharpGifDecoder.Factory())
-                add(AnimatedImageDecoder.Factory())
-            }
-            .diskCache { DiskCache.Builder().directory(cacheDir.resolve("media")).maxSizeBytes(700L * 1024 * 1024).build() }
-            .crossfade(true)
-            .build()
 
     companion object {
         lateinit var store: Store

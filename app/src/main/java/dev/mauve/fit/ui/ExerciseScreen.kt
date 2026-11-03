@@ -85,11 +85,7 @@ fun ExerciseScreen(id: String, data: AppData, nav: NavController, onBack: (() ->
             }
         }
         item {
-            ExerciseMedia(e, Modifier.padding(horizontal = 20.dp).fillMaxWidth().height(mediaStageHeight()), corner = 28.dp)
-            Text(
-                Exercise.ATTRIBUTION, Modifier.padding(start = 24.dp, top = 6.dp),
-                style = MaterialTheme.typography.labelSmall, color = Ink.faint,
-            )
+            ExerciseHero(e, Modifier.padding(horizontal = 20.dp))
         }
         item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {

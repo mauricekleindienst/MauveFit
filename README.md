@@ -125,12 +125,14 @@ Tests: `app/src/test` (JUnit, 122 tests for coach logic, statistics, quests, par
 
 ## Privacy
 
-All data stays on the phone in the app's private storage. There are no accounts, analytics or ads. Network access is used for exercise animations, barcode lookups (Open Food Facts) and the update check against GitHub. Health Connect access is optional and asked for per data type.
+All data stays on the phone in the app's private storage. There are no accounts, analytics or ads. Exercise pictures (muscle maps and drawings) are bundled with the app. Network access is used for barcode lookups (Open Food Facts) and the update check against GitHub. Health Connect access is optional and asked for per data type.
 
 ## Credits and licences
 
 - Exercise data: [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset), MIT licence, © 2026 Hasan Emir Yıldırım. German translations of names and instructions are this project's own.
-- Exercise animations: © Gym visual (https://gymvisual.com/), loaded at runtime from the dataset. They are not covered by the MIT licence; a public store release needs a licence from Gym visual.
+- Muscle map shapes: react-native-body-highlighter, © 2022 ELABBASSI Hicham (MIT).
+- Exercise drawings: Everkinetic (https://github.com/everkinetic/data), CC BY-SA 4.0, scaled down and reduced to four grey levels.
+- Both live in `ios/MauveFit/Resources/` and are shared by the Android and iOS apps.
 - Font: Archivo, SIL Open Font License.
 
 ---

@@ -31,7 +31,7 @@ data class Palette(
     val dark: Boolean,
     val bg: Color, val surface: Color, val raised: Color, val line: Color, val lineStrong: Color,
     val text: Color, val muted: Color, val faint: Color,
-    /** What the exercise animations sit on: the recoloured GIF white in ink, the GIF's own white on paper. */
+    /** What the muscle maps and exercise drawings sit on. */
     val stage: Color,
     val coral: Color, val red: Color,
 )

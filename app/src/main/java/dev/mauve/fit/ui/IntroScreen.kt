@@ -280,7 +280,7 @@ fun IntroScreen(initial: Profile, redo: Boolean = false, onDone: () -> Unit) {
 
 @Composable
 private fun Welcome() {
-    // A grid of live animations as the hero; the tiles pop in one after the other.
+    // A grid of muscle maps as the hero; the tiles pop in one after the other.
     val ids = listOf("0025", "0043", "0652", "0662", "0334", "0313")
     var shown by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { shown = true }
@@ -293,7 +293,7 @@ private fun Welcome() {
                     ExerciseMedia(
                         App.repo[id],
                         Modifier.weight(1f).aspectRatio(1f).graphicsLayer { alpha = a; scaleX = 0.8f + 0.2f * a; scaleY = 0.8f + 0.2f * a },
-                        corner = 22.dp,
+                        full = false, corner = 22.dp,
                     )
                 }
             }
@@ -311,7 +311,7 @@ private fun Welcome() {
     Spacer(Modifier.height(22.dp))
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Promise(Icons.Rounded.Timer, L("Fertig in unter zwei Minuten", "Set up in under two minutes"), L("Ziel, Tage, Ort, fertig. Alles Weitere ist optional.", "Goal, days, place, done. Everything else is optional."))
-        Promise(Icons.Rounded.FitnessCenter, L("Über 1.300 Übungen mit Animation", "Over 1,300 animated exercises"), L("Passend zu deiner Ausstattung und deinen Gelenken.", "Matched to your equipment and your joints."))
+        Promise(Icons.Rounded.FitnessCenter, L("Über 1.300 Übungen mit Muskelkarte", "Over 1,300 exercises with muscle maps"), L("Passend zu deiner Ausstattung und deinen Gelenken.", "Matched to your equipment and your joints."))
         Promise(Icons.AutoMirrored.Rounded.TrendingUp, L("Gewichte steigen mit dir", "Weights grow with you"), L("Der Coach schlägt jedes Mal die nächste Steigerung vor.", "The coach suggests the next step up every time."))
     }
     Spacer(Modifier.height(8.dp))
@@ -526,7 +526,7 @@ private fun FocusStep(focus: Set<String>, onChange: (Set<String>) -> Unit) {
                         }.clip(RowShape).background(if (on) Ink.raised else Ink.surface)
                             .border(2.dp, if (on) Ink.accent else Ink.surface, RowShape).padding(10.dp),
                     ) {
-                        ExerciseMedia(App.repo[f.sample], Modifier.fillMaxWidth().height(92.dp), animated = false, corner = 14.dp)
+                        ExerciseMedia(App.repo[f.sample], Modifier.fillMaxWidth().height(92.dp), full = false, corner = 14.dp)
                         Spacer(Modifier.height(10.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(f.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).padding(start = 4.dp))

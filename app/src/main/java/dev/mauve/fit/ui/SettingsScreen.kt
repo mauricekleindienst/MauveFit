@@ -1,5 +1,7 @@
 package dev.mauve.fit.ui
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import dev.mauve.fit.system.CrashLog
 import dev.mauve.fit.data.CsvExport
 import dev.mauve.fit.data.Cycle
@@ -87,7 +89,6 @@ import androidx.navigation.NavController
 import com.google.android.gms.wearable.Wearable
 import dev.mauve.fit.system.Haptics
 import dev.mauve.fit.App
-import dev.mauve.fit.system.Media
 import dev.mauve.fit.data.AppData
 import dev.mauve.fit.data.Coach
 import dev.mauve.fit.data.Exercise
@@ -111,7 +112,6 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         message?.let { android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_SHORT).show() }
     }
     var confirmReset by remember { mutableStateOf(false) }
-    var confirmClear by remember { mutableStateOf(false) }
     var watch by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         watch = runCatching { Wearable.getNodeClient(context).connectedNodes.await().firstOrNull()?.displayName }.getOrNull()
@@ -359,59 +359,6 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         }
 
         item {
-            Section(L("Animationen", "Animations"), Icons.Rounded.Download) {
-                val progress by Media.progress.collectAsState()
-                Text(
-                    L(
-                        "Die Animationen kommen direkt aus dem Datensatz auf GitHub und bleiben danach in der App gespeichert. " +
-                            "Übungen aus deinen Plänen lädt die App von selbst vor, damit das Training auch ohne Netz läuft.",
-                        "The animations come straight from the dataset on GitHub and are then stored in the app. " +
-                            "Exercises from your plans are preloaded, so workouts run without a connection too.",
-                    ),
-                    color = Ink.muted, style = MaterialTheme.typography.bodySmall,
-                )
-                Spacer(Modifier.height(10.dp))
-                val p = progress
-                if (p == null) GhostButton(L("Alle offline speichern (ca. 130 MB)", "Save all offline (about 130 MB)"), Modifier.fillMaxWidth(), Icons.Rounded.Download) {
-                    Media.downloadAll(context)
-                } else {
-                    Text(L("${p.first} von ${p.second} Übungen", "${p.first} of ${p.second} exercises"), style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-                    Meter(p.first / p.second.coerceAtLeast(1).toFloat(), Modifier.fillMaxWidth())
-                    Spacer(Modifier.height(8.dp))
-                    Text(L("Abbrechen", "Cancel"), color = Ink.red, modifier = Modifier.clickable { Haptics.click(); Media.cancel() })
-                }
-                // Recomputed whenever a download finishes or the cache is cleared.
-                var cleared by remember { mutableStateOf(0) }
-                val size by androidx.compose.runtime.produceState(0L, progress == null, cleared) {
-                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Media.cacheSize(context) }
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(L("Gespeichert: ${"%.1f".format(size / 1_048_576.0).replace('.', ',')} MB", "Stored: ${"%.1f".format(size / 1_048_576.0)} MB"), Modifier.weight(1f), color = Ink.muted)
-                    Text(
-                        L("Speicher leeren", "Clear storage"), color = Ink.red,
-                        modifier = Modifier.clip(Pill).clickable { confirmClear = true }.padding(8.dp),
-                    )
-                }
-                if (confirmClear) AlertDialog(
-                    onDismissRequest = { confirmClear = false },
-                    title = { Text(L("Animationen löschen?", "Delete animations?")) },
-                    text = { Text(L("Alle gespeicherten Animationen werden entfernt und bei Bedarf neu aus GitHub geladen. Deine Trainingsdaten bleiben.", "All stored animations are removed and reloaded from GitHub when needed. Your training data stays.")) },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            Haptics.warn(); confirmClear = false
-                            // Deleting a few hundred MB is disk work, not something for the UI thread.
-                            io.launch { kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Media.clear(context) }; cleared++ }
-                        }) { Text(L("Löschen", "Delete"), color = Ink.red) }
-                    },
-                    dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(L("Abbrechen", "Cancel")) } },
-                    containerColor = Ink.raised,
-                )
-            }
-        }
-
-        item {
             Section("Galaxy Watch", Icons.Rounded.Watch) {
                 Text(watch?.let { L("Verbunden: $it", "Connected: $it") } ?: L("Keine Uhr verbunden", "No watch connected"), style = MaterialTheme.typography.titleMedium,
                     color = if (watch != null) Ink.accent else Ink.text)
@@ -482,13 +429,21 @@ fun SettingsScreen(data: AppData, nav: NavController) {
                 Spacer(Modifier.height(6.dp))
                 Text(
                     L(
-                        "Übungsdaten: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT-Lizenz). Animationen ${Exercise.ATTRIBUTION}. " +
+                        "Übungsdaten: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT-Lizenz). Muskelkarte: react-native-body-highlighter, © 2022 ELABBASSI Hicham (MIT-Lizenz). " +
+                            "Illustrationen: Everkinetic (CC BY-SA 4.0), verkleinert und auf vier Graustufen reduziert. " +
                             "Schrift: Archivo (SIL Open Font License). Keine Konten, kein Tracking, keine Werbung.",
-                        "Exercise data: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT licence). Animations ${Exercise.ATTRIBUTION}. " +
+                        "Exercise data: exercises-dataset, © 2026 Hasan Emir Yıldırım (MIT licence). Muscle map: react-native-body-highlighter, © 2022 ELABBASSI Hicham (MIT licence). " +
+                            "Illustrations: Everkinetic (CC BY-SA 4.0), scaled down and reduced to four grey levels. " +
                             "Font: Archivo (SIL Open Font License). No accounts, no tracking, no ads.",
                     ),
                     color = Ink.muted, style = MaterialTheme.typography.bodySmall,
                 )
+                var licenses by remember { mutableStateOf(false) }
+                Text(
+                    L("Open-Source-Lizenzen", "Open-source licences"), color = Ink.accent,
+                    modifier = Modifier.clip(Pill).clickable { Haptics.click(); licenses = true }.padding(vertical = 8.dp),
+                )
+                if (licenses) LicensesDialog { licenses = false }
                 Spacer(Modifier.height(8.dp))
                 Text(
                     L("Datensatz auf GitHub", "Dataset on GitHub"), color = Ink.accent,
@@ -781,3 +736,54 @@ internal fun readBackup(context: android.content.Context, uri: Uri): String? = r
 }.getOrNull()
 
 private const val MAX_BACKUP = 50 * 1024 * 1024
+
+private fun mit(holder: String) = """MIT License
+
+Copyright (c) $holder
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."""
+
+/** The third-party material bundled with the app and its licences (the same as on iOS). */
+@Composable
+private fun LicensesDialog(onDismiss: () -> Unit) {
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(L("Open-Source-Lizenzen", "Open-source licences")) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                @Composable fun entry(title: String, what: String, source: String, license: String?) {
+                    Text(title, style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(4.dp))
+                    Text(what, color = Ink.muted, style = MaterialTheme.typography.bodySmall)
+                    Text(L("Quelle", "Source"), color = Ink.accent, style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.clickable { uri.openUri(source) }.padding(vertical = 6.dp))
+                    if (license != null) Text(license, color = Ink.faint, style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.height(16.dp))
+                }
+                entry(
+                    L("Illustrationen: Everkinetic", "Illustrations: Everkinetic"),
+                    L("Zeichnungen von Start- und Endposition. Lizenz: CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0). Geändert: auf höchstens 640 px verkleinert und auf vier Graustufen reduziert; die geänderten Bilder stehen ebenfalls unter CC BY-SA 4.0.",
+                        "Drawings of the start and end position. License: CC BY-SA 4.0 (creativecommons.org/licenses/by-sa/4.0). Changed: scaled to at most 640 px and reduced to four grey levels; the changed images are shared under CC BY-SA 4.0 as well."),
+                    dev.mauve.fit.data.Drawings.SOURCE_URL, null,
+                )
+                entry(
+                    "react-native-body-highlighter",
+                    L("Körper- und Muskelformen der Muskelkarte, in Pfade für die App umgewandelt.", "Body and muscle shapes of the muscle map, converted into paths for the app."),
+                    "https://github.com/HichamELBSI/react-native-body-highlighter", mit("2022 ELABBASSI Hicham"),
+                )
+                entry(
+                    "exercises-dataset",
+                    L("Namen, Muskeln, Geräte und Anleitungen der Übungen (nur die Daten, keine Bilder).", "Names, muscles, equipment and instructions of the exercises (the data only, no images)."),
+                    "https://github.com/hasaneyldrm/exercises-dataset", mit("2026 Hasan Emir Yıldırım"),
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(L("Schließen", "Close")) } },
+        containerColor = Ink.raised,
+    )
+}

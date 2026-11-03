@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.22.4 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.23.0 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,13 @@ Stand: Version 1.22.4 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.23.0
+
+- Übungsbilder ohne Gym visual: eigene Muskelkarte (Ziel- und Hilfsmuskeln von vorn und hinten, in der Akzentfarbe) für alle 1324 Übungen, in Listen auf die trainierten Muskeln gezoomt
+- Everkinetic-Zeichnungen von Start- und Endposition (CC BY-SA 4.0) für über 150 Übungen, in der Akzentfarbe statt auf Weiß
+- Alles in der App enthalten: kein Nachladen, kein Offline-Download mehr, die App ist rund 130 MB Cache leichter
+- Dieselben Daten wie die iOS-App (bodymap.json, everkinetic.json), Lizenztexte unter Einstellungen → Über → Open-Source-Lizenzen
 
 ## Erledigt in 1.22.4
 
@@ -325,8 +332,6 @@ Stand: Version 1.22.4 (November 2026). Sortiert nach Nutzen für das Training, n
 
 - **Intervall-Timer im Hintergrund:** Piepen und Vibration laufen nur, solange die App offen ist. Braucht einen eigenen Vordergrunddienst wie der Pausentimer.
 
-- **Animationen lizenzrechtlich klären.** Die GIFs sind © Gym visual und nicht von der MIT-Lizenz des Datensatzes gedeckt. Vor einem Store-Release: Lizenz bei Gym visual oder Umstieg auf free-exercise-db (gemeinfrei, zwei Fotos pro Übung).
-
 - **Uhr-App auf echter Galaxy Watch testen.** Bisher nur gebaut, nicht auf einem Gerät oder Wear-Emulator gelaufen.
 
 ## Coach
@@ -352,4 +357,4 @@ Stand: Version 1.22.4 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Technik
 
 - **Tests:** Unit-Tests für Coach, Statistik und Ernährung; UI-Tests für den Trainingsablauf.
-- **Play-Store-Vorbereitung:** eigener Release-Key, Datenschutzerklärung, Store-Grafiken, Lizenz der Animationen bei Gym visual klären.
+- **Play-Store-Vorbereitung:** eigener Release-Key, Datenschutzerklärung, Store-Grafiken.

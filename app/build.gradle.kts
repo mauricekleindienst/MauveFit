@@ -14,9 +14,12 @@ android {
         applicationId = "dev.mauve.fit"
         minSdk = 29
         targetSdk = 36
-        versionCode = 52
-        versionName = "1.22.4"
+        versionCode = 53
+        versionName = "1.23.0"
     }
+
+    // The muscle map and the Everkinetic drawings live once in the repo, beside the iOS app.
+    sourceSets["main"].assets.srcDir("../ios/MauveFit/Resources")
 
     buildTypes {
         release {
@@ -60,9 +63,6 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.coil.compose)
-    implementation(libs.coil.network)
-    implementation(libs.coil.gif)
-    implementation(libs.gifdecoder)
     implementation(libs.health.connect)
     testImplementation(libs.junit)
 

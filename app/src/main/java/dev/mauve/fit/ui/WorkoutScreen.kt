@@ -398,7 +398,7 @@ private fun ExercisePage(
         else heard = L("Spracheingabe ist auf diesem Gerät nicht verfügbar", "Voice input is not available on this device")
     }
 
-    // Expanded windows: the animation gets a pane of its own on the left, the sets fill the right.
+    // Expanded windows: the exercise picture gets a pane of its own on the left, the sets fill the right.
     val split = LocalWidth.current.expanded
     val setList = @Composable {
         LazyColumn(contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 170.dp)) {

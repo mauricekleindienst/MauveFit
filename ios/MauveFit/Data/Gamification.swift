@@ -503,8 +503,11 @@ enum Quests {
     static func workoutXp(_ w: Workout) -> Int { 40 + min(60, w.doneSets.count * 3) }
 
     static func xp(_ d: AppData) -> Int {
-        d.history.reduce(0) { $0 + workoutXp($1) } + Records.timeline(d.history).count * recordXp
-            + d.challengesDone.count * challengeXp + d.questXp
+        var xp = 0
+        for w in d.history { xp += workoutXp(w) }
+        xp += Records.timeline(d.history).count * recordXp
+        xp += d.challengesDone.count * challengeXp
+        return xp + d.questXp
     }
 
     struct Rank {
@@ -674,12 +677,19 @@ enum Shop {
                 sets[e.exerciseId, default: 0] += e.sets.filter { $0.done && !$0.warmup }.count
             }
         }
-        return order.map { id in Collection(exerciseId: id, sets: sets[id]!, tier: tiers.filter { sets[id]! >= $0 }.count) }
-            .filter { $0.sets > 0 }
-            .enumerated().sorted { a, b in
-                a.element.tier != b.element.tier ? a.element.tier > b.element.tier
-                    : a.element.sets != b.element.sets ? a.element.sets > b.element.sets : a.offset < b.offset
-            }.map(\.element)
+        var list: [Collection] = []
+        for id in order {
+            let n = sets[id] ?? 0
+            if n > 0 { list.append(Collection(exerciseId: id, sets: n, tier: tiers.filter { n >= $0 }.count)) }
+        }
+        // Highest tier first, then most sets; ties keep the order of first appearance (stable, as on Android).
+        let indexed = Array(list.enumerated())
+        let sorted = indexed.sorted { (a: (offset: Int, element: Collection), b: (offset: Int, element: Collection)) -> Bool in
+            if a.element.tier != b.element.tier { return a.element.tier > b.element.tier }
+            if a.element.sets != b.element.sets { return a.element.sets > b.element.sets }
+            return a.offset < b.offset
+        }
+        return sorted.map { $0.element }
     }
 
     static func roman(_ tier: Int) -> String {
@@ -693,13 +703,15 @@ enum Shop {
 
     /** Coins earned in all: training, records, challenges, collection tiers, skill levels, achievements, quests. */
     static func earned(_ d: AppData, targetOf: (String) -> String? = { ExerciseRepo.shared[$0]?.target }) -> Int {
-        d.history.reduce(0) { $0 + workoutCoins($1) }
-            + Records.timeline(d.history).count * recordCoins
-            + d.challengesDone.count * 50
-            + collections(d).reduce(0) { $0 + (0...$1.tier).reduce(0, +) * 25 }
-            + skills(d, targetOf: targetOf).reduce(0) { $0 + $1.level * 10 }
-            + Achievements.all(d).filter(\.unlocked).reduce(0) { $0 + $1.coins }
-            + d.questCoins
+        var coins = 0
+        for w in d.history { coins += workoutCoins(w) }
+        coins += Records.timeline(d.history).count * recordCoins
+        coins += d.challengesDone.count * 50
+        for c in collections(d) { coins += c.tier * (c.tier + 1) / 2 * 25 }
+        for s in skills(d, targetOf: targetOf) { coins += s.level * 10 }
+        for a in Achievements.all(d) where a.unlocked { coins += a.coins }
+        coins += d.questCoins
+        return coins
     }
 
     static func balance(_ d: AppData, targetOf: (String) -> String? = { ExerciseRepo.shared[$0]?.target }) -> Int {

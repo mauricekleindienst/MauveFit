@@ -157,7 +157,8 @@ struct PillButtonStyle: PrimitiveButtonStyle {
                 .frame(maxWidth: wide ? .infinity : nil)
                 .padding(.vertical, wide ? 6 : 0)
             if filled {
-                Button(role: configuration.role, action: configuration.trigger) { label }
+                // The page colour on the tint, as on Android: white was hard to read on the light dark-mode accents.
+                Button(role: configuration.role, action: configuration.trigger) { label.foregroundStyle(Ink.bg) }
                     .buttonStyle(.glassProminent).tint(color).controlSize(.large)
             } else {
                 Button(role: configuration.role, action: configuration.trigger) { label.foregroundStyle(color) }

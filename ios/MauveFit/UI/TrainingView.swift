@@ -307,7 +307,10 @@ struct ExerciseDetailView: View {
                 HStack(spacing: 6) {
                     Tag(text: Labels.muscle(exercise.target), color: Ink.accent)
                     Tag(text: Labels.equipment(exercise.equipment))
-                    Tag(text: Labels.category(exercise.category))
+                    // "Brust · Langhantel · Brust" when the body part and the muscle share a name.
+                    if Labels.category(exercise.category) != Labels.muscle(exercise.target) {
+                        Tag(text: Labels.category(exercise.category))
+                    }
                 }
                 if !exercise.secondary.isEmpty {
                     Text(L("Mit dabei: ", "Also works: ") + exercise.secondary.map(Labels.muscle).joined(separator: ", "))

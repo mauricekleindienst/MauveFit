@@ -61,6 +61,7 @@ struct TodayView: View {
                 router.showWorkout = true
             } label: { Label(L("Training starten", "Start workout"), systemImage: "play.fill") }
                 .buttonStyle(.primary)
+                .accessibilityIdentifier("startNext")
             Button(L("Anderen Plan wählen", "Pick another plan")) { router.tab = .training }.buttonStyle(.ghost)
         }
     }

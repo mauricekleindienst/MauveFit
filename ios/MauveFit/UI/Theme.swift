@@ -75,8 +75,10 @@ enum Ink {
     static var text: Color { Color(uiColor: textUI) }
     static var muted: Color { Color(uiColor: mutedUI) }
     static var faint: Color { Color(uiColor: .tone(0x899099, 0x626972)) }
-    /** What the exercise pictures sit on: black in dark mode (they are inverted), their own white in light mode. */
-    static var stage: Color { Color(uiColor: .tone(0x000000, 0xFFFFFF)) }
+    /** What the muscle maps sit on. */
+    static var stage: Color { Color(uiColor: .tone(0x0C0D0F, 0xE8EAED)) }
+    /** Body regions that are not trained. */
+    static var body: Color { Color(uiColor: .tone(0x2E3338, 0xC9CED4)) }
     static var coral: Color { Color(uiColor: .tone(0xEE8F6A, 0xA84D2A)) }
     static var red: Color { Color(uiColor: .tone(0xF0736A, 0xB3362C)) }
     static var accent: Color { Color(uiColor: accentUI) }
@@ -117,7 +119,7 @@ extension Font {
     static func fit(_ t: FitType) -> Font { t.font }
 }
 
-/** Radii by rank, as on Android: heroes curve most, panels less, rows least. */
+/** Radii by rank: heroes curve most, panels less, rows least. */
 enum Radius {
     static let hero: CGFloat = 32
     static let panel: CGFloat = 24
@@ -363,44 +365,6 @@ struct Meter: View {
         }
         .frame(height: 6)
         .animation(.easeOut(duration: 0.5), value: fraction)
-    }
-}
-
-/**
- * The exercise still from the dataset on the stage colour. In dark mode the white picture is
- * inverted and its hue turned back, so it becomes a dark X-ray look with the target muscles
- * still red, like the Android "smart invert".
- */
-struct ExerciseMedia: View {
-    let exercise: Exercise?
-    var radius: CGFloat = 16
-    @Environment(\.colorScheme) private var scheme
-
-    var body: some View {
-        ZStack {
-            Ink.stage
-            AsyncImage(url: exercise?.imageUrl) { phase in
-                if let img = phase.image {
-                    if scheme == .dark {
-                        img.resizable().scaledToFit().colorInvert().hueRotation(.degrees(180))
-                    } else {
-                        img.resizable().scaledToFit()
-                    }
-                } else {
-                    Image(systemName: "dumbbell.fill").foregroundStyle(Ink.faint)
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-    }
-}
-
-struct ExerciseThumb: View {
-    let exercise: Exercise?
-    var size: CGFloat = 56
-
-    var body: some View {
-        ExerciseMedia(exercise: exercise, radius: size >= 48 ? 16 : 12).frame(width: size, height: size)
     }
 }
 

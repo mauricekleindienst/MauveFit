@@ -8,8 +8,17 @@ import Foundation
  * never touched.
  */
 enum Demo {
-    private static func has(_ arg: String) -> Bool { ProcessInfo.processInfo.arguments.contains(arg) }
-    static var enabled: Bool { has("-demoData") }
+    /** Debug builds only: in the App Store build no launch argument reaches the sample data. */
+    private static func has(_ arg: String) -> Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains(arg)
+        #else
+        false
+        #endif
+    }
+    static var enabled: Bool { has("-demoData") || empty }
+    /** A throwaway store with nothing in it, like a fresh install, for the empty-state walk. */
+    static var empty: Bool { has("-emptyData") }
     static var workout: Bool { has("-demoWorkout") || has("-demoSummary") }
     /** The workout the summary shows, set once the demo store has made it. */
     nonisolated(unsafe) private(set) static var summaryId: String?
@@ -20,6 +29,7 @@ enum Demo {
         let dir = file.deletingLastPathComponent()
         for name in ["demo-data.json", "data.prev.json"] { try? FileManager.default.removeItem(at: dir.appendingPathComponent(name)) }
         let store = Store(file: file)
+        if empty { return store }
         store.update { seed(&$0) }
         if has("-demoLight") { store.updateSettings { $0.theme = "light" } }
         if has("-demoSummary") {

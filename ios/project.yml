@@ -18,13 +18,17 @@ targets:
     platform: iOS
     sources:
       - path: MauveFit
+        excludes:
+          - PrivacyInfo.xcprivacy
+      # Privacy manifest: no tracking, no data collected, no required-reason APIs.
+      - path: MauveFit/PrivacyInfo.xcprivacy
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.mauve.fit
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Mauve Fit
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         CODE_SIGN_STYLE: Automatic
@@ -35,6 +39,9 @@ targets:
       properties:
         CFBundleLocalizations: [de, en]
         CFBundleAllowMixedLocalizations: true
+        # The page colour of the theme, so the start fades straight into the app.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         # Only HTTPS from the system: no export compliance questions per TestFlight build.
         ITSAppUsesNonExemptEncryption: false
     postCompileScripts:

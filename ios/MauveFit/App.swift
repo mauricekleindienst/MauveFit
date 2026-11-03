@@ -15,8 +15,6 @@ struct MauveFitApp: App {
         // On iOS 26 the tab bar and toolbars are Liquid Glass by themselves; any appearance set
         // here would paint over the glass, so only earlier systems get the palette.
         if #unavailable(iOS 26) { MauveFitApp.styleBars() }
-        // Test and screenshot runs must not be covered by the permission prompt.
-        if !Demo.enabled && ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil { RestAlarm.requestPermission() }
     }
 
     /** UIKit bars in the palette before iOS 26; their colours follow light and dark by themselves. */

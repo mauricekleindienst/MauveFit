@@ -295,6 +295,15 @@ final class Store {
     }
 
     func updateSettings(_ block: (inout Settings) -> Void) { update { block(&$0.settings) } }
+
+    /** Deletes everything and starts over with the starter plans, saved right away. */
+    func reset() {
+        RestAlarm.cancel()
+        data = AppData()
+        I18n.apply(data.settings.language)
+        Ink.accentChoice = Accent.of(data.settings.accent)
+        flush()
+    }
     func updateProfile(_ block: (inout Profile) -> Void) { update { block(&$0.profile) } }
 }
 
@@ -302,13 +311,22 @@ final class Store {
 enum RestAlarm {
     private static let id = "rest"
 
+    /** Test and screenshot runs never show the permission prompt. */
+    private static var quiet: Bool { Demo.enabled || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
+
+    /**
+     * Asked the first time a rest starts, where the reason is obvious, not at launch. iOS shows
+     * the prompt only once; later calls just return the answer.
+     */
     static func requestPermission() {
+        guard !quiet else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
     static func schedule(seconds: Int) {
         cancel()
         guard seconds > 0 else { return }
+        requestPermission()
         let c = UNMutableNotificationContent()
         c.title = L("Pause vorbei", "Rest is over")
         c.body = L("Weiter mit dem nächsten Satz.", "On to the next set.")

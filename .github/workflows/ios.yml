@@ -97,8 +97,29 @@ jobs:
                       name += ".png"
                   shutil.copy("build/attachments/" + a["exportedFileName"], "build/screenshots/" + name)
           PY
+          # The store screens in German and English too, to catch leftover strings of the other language.
+          for lang in de en; do
+            TEST_RUNNER_STORE_LANG=$lang xcodebuild test \
+              -project MauveFit.xcodeproj -scheme MauveFit \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/test \
+              -only-testing:MauveFitUITests/StoreScreenshots \
+              -resultBundlePath build/store-$lang.xcresult | tee build-store-$lang.log | grep -E "error:|Test Case|\*\* TEST" || true
+            grep -q "\*\* TEST SUCCEEDED \*\*" build-store-$lang.log
+            mkdir -p build/attachments-$lang
+            xcrun xcresulttool export attachments --path build/store-$lang.xcresult --output-path build/attachments-$lang
+            python3 - "$lang" <<'PY'
+          import json, re, shutil, sys
+          lang = sys.argv[1]
+          for test in json.load(open(f"build/attachments-{lang}/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  name = name if name.endswith(".png") else name + ".png"
+                  shutil.copy(f"build/attachments-{lang}/" + a["exportedFileName"], f"build/screenshots/store-{lang}-" + name)
+          PY
+          done
           ls -l build/screenshots
-          test "$(ls build/screenshots/*.png | wc -l)" -ge 12
+          test "$(ls build/screenshots/*.png | wc -l)" -ge 32
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
@@ -120,6 +141,11 @@ jobs:
           cp -R build/release/Build/Products/Release-iphoneos/MauveFit.app build/ipa/Payload/
           (cd build/ipa && zip -qry ../MauveFit-unsigned.ipa Payload)
           ls -lh build/MauveFit-unsigned.ipa
+          du -sh build/ipa/Payload/MauveFit.app
+          echo "Drawings: $(cat build/ipa/Payload/MauveFit.app/ek-*.png | wc -c) bytes"
+          # App Review: the privacy manifest is in, and nothing points to the old image CDN.
+          test -f build/ipa/Payload/MauveFit.app/PrivacyInfo.xcprivacy
+          ! grep -rqs "jsdelivr\|gymvisual" build/ipa/Payload/MauveFit.app
 
       - name: Upload ipa
         uses: actions/upload-artifact@v4

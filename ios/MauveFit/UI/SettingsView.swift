@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @State private var confirmReset = false
 
     var body: some View {
         let s = store.data.settings
@@ -67,14 +68,47 @@ struct SettingsView: View {
                 .listRowBackground(Ink.surface)
 
                 Section {
-                    Text(Exercise.attribution).font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
-                    Text(L("Übungsdaten: exercises-dataset von hasaneyldrm", "Exercise data: exercises-dataset by hasaneyldrm"))
+                    // Guideline 1.4.1: the targets and suggestions are rough guidance only.
+                    Label {
+                        Text(L("Trainingsvorschläge und Ernährungsziele sind allgemeine Richtwerte und keine medizinische Beratung. Sprich bei Beschwerden, Vorerkrankungen oder in der Schwangerschaft vorher mit einer Ärztin oder einem Arzt.",
+                               "Training suggestions and nutrition targets are general guidance, not medical advice. If you have pain, a medical condition or are pregnant, talk to a doctor first."))
+                            .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+                    } icon: { Image(systemName: "heart.text.square").foregroundStyle(Ink.accent) }
+                    Link(destination: URL(string: "https://github.com/mauricekleindienst/MauveFit/blob/main/PRIVACY.md")!) {
+                        Label(L("Datenschutz", "Privacy"), systemImage: "hand.raised")
+                    }
+                    Text(L("Alle Daten bleiben auf diesem iPhone. Die App hat kein Konto und geht nicht online.",
+                           "All data stays on this iPhone. The app has no account and never goes online."))
                         .font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+                    NavigationLink { LicensesView() } label: { Label(L("Open-Source-Lizenzen", "Open-source licences"), systemImage: "doc.text") }
+                        .accessibilityIdentifier("licenses")
+                    Link(destination: Drawings.licenseURL) {
+                        Text(L("Illustrationen: Everkinetic, CC BY-SA 4.0", "Illustrations: Everkinetic, CC BY-SA 4.0")).font(.fit(.bodySmall))
+                    }
                     if let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
                         Text("Mauve Fit \(v)").font(.fit(.bodySmall)).foregroundStyle(Ink.faint)
                     }
                 } header: { header(L("Über", "About")) }
+                .font(.fit(.body))
                 .listRowBackground(Ink.surface)
+
+                Section {
+                    Button(L("Alle Daten löschen", "Delete all data"), role: .destructive) { confirmReset = true }
+                } footer: {
+                    Text(L("Löscht Trainings, Pläne, Gewicht, Ernährung und Einstellungen von diesem iPhone.",
+                           "Deletes workouts, plans, weight, nutrition and settings from this iPhone."))
+                        .font(.fit(.bodySmall))
+                }
+                .listRowBackground(Ink.surface)
+            }
+            .alert(L("Alle Daten löschen?", "Delete all data?"), isPresented: $confirmReset) {
+                Button(L("Löschen", "Delete"), role: .destructive) {
+                    store.reset()
+                    dismiss()
+                }
+                Button(L("Abbrechen", "Cancel"), role: .cancel) {}
+            } message: {
+                Text(L("Das kann nicht rückgängig gemacht werden.", "This cannot be undone."))
             }
             .screen()
             .accessibilityIdentifier("settingsScreen")

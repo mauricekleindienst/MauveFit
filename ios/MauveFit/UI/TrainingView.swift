@@ -295,10 +295,7 @@ struct ExerciseDetailView: View {
         let last = Stats.lastSets(store.data.history, exercise.id)
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                ExerciseMedia(exercise: exercise, radius: Radius.panel)
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                Text(Exercise.attribution).font(.fit(.labelSmall)).foregroundStyle(Ink.faint)
+                ExerciseHero(exercise: exercise)
                 Text(exercise.title).font(.fit(.headline)).foregroundStyle(Ink.text)
                 HStack(spacing: 6) {
                     Tag(text: Labels.muscle(exercise.target), color: Ink.accent)

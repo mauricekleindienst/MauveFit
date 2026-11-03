@@ -110,6 +110,53 @@ final class ScreenshotTests: XCTestCase {
         snap(app, "11-fortschritt-hell")
     }
 
+    /** A fresh install: every tab with no history, an exercise without a drawing, an empty workout. */
+    func testEmptyState() {
+        let app = launch(["-emptyData"])
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 15))
+        snap(app, "13-leer-heute")
+        tab(app, 2)
+        snap(app, "15-leer-essen")
+        tab(app, 3)
+        snap(app, "16-leer-fortschritt")
+        tab(app, 1)
+        snap(app, "14-leer-training")
+        let library = element(app, "library")
+        XCTAssertTrue(library.waitForExistence(timeout: 10))
+        library.tap()
+        // 3/4 Sit-up: first in the list, and one of the exercises without a drawing.
+        let situp = element(app, "exercise-0001")
+        XCTAssertTrue(situp.waitForExistence(timeout: 10))
+        situp.tap()
+        XCTAssertTrue(element(app, "exerciseDetail").waitForExistence(timeout: 10))
+        snap(app, "17-uebung-ohne-zeichnung")
+        // Start the suggested plan from Heute and finish it with nothing ticked: it is not saved.
+        tab(app, 0)
+        let start = element(app, "startNext")
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        start.tap()
+        let finish = element(app, "finish")
+        XCTAssertTrue(finish.waitForExistence(timeout: 10))
+        snap(app, "18-leer-training-laeuft")
+        finish.tap()
+        let save = app.buttons["Speichern und beenden"].firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 10))
+        save.tap()
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 10))
+    }
+
+    /** The largest accessibility text size still fits. */
+    func testLargeText() {
+        let size = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXL"]
+        var app = launch(size)
+        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 15))
+        snap(app, "19-grosse-schrift-heute")
+        app.terminate()
+        app = launch(size + ["-demoWorkout"])
+        XCTAssertTrue(element(app, "finish").waitForExistence(timeout: 15))
+        snap(app, "20-grosse-schrift-training")
+    }
+
     func testLightWorkout() {
         let app = launch(["-demoLight", "-demoWorkout"])
         XCTAssertTrue(app.otherElements["restBar"].waitForExistence(timeout: 15))

@@ -273,6 +273,53 @@ final class MauveFitTests: XCTestCase {
         XCTAssertTrue(found.allSatisfy { $0.equipment == "barbell" || $0.title.lowercased().contains("langhantel") })
     }
 
+    /** Every muscle in the exercise data maps to map regions, or explicitly to none (cardio). */
+    func testEveryMuscleHasARegion() {
+        let map = BodyMap.shared
+        let slugs = Set(map.front.parts.keys).union(map.back.parts.keys)
+        XCTAssertTrue(slugs.isSuperset(of: ["chest", "abs", "quadriceps", "upper-back", "gluteal", "hamstring"]))
+        XCTAssertFalse(map.front.outline.isEmpty)
+        XCTAssertFalse(map.back.outline.isEmpty)
+        for e in ExerciseRepo.shared.all {
+            for m in e.muscles { XCTAssertNotNil(MuscleRegions.map[m], "\(m) of \(e.id) has no entry") }
+        }
+        for region in MuscleRegions.map.values.flatMap({ $0 }) { XCTAssertTrue(slugs.contains(region), region) }
+        XCTAssertEqual(MuscleRegions.map["cardiovascular system"], [])
+    }
+
+    /** The thumbnail shows the side that matters. */
+    func testMuscleMapSide() {
+        let repo = ExerciseRepo.shared
+        XCTAssertEqual(MuscleRegions.side(for: repo["0025"]!), .front) // bench press: chest
+        XCTAssertEqual(MuscleRegions.side(for: repo["0043"]!), .back) // full squat: glutes
+        XCTAssertEqual(MuscleRegions.side(for: repo["0652"]!), .back) // pull-up: lats
+        XCTAssertEqual(MuscleRegions.side(for: repo["0313"]!), .front) // hammer curl: biceps
+    }
+
+    /** Every drawing in the match table is bundled, and belongs to an exercise of the database. */
+    func testDrawingsAreBundled() {
+        let d = Drawings.shared
+        XCTAssertGreaterThan(d.images.count, 150)
+        for (id, files) in d.images {
+            XCTAssertNotNil(ExerciseRepo.shared[id], id)
+            XCTAssertFalse(files.isEmpty, id)
+            for f in files { XCTAssertNotNil(d.load(f), f) }
+        }
+        XCTAssertEqual(d.images["0025"], ["ek-0042-relaxation", "ek-0042-tension"])
+        XCTAssertNil(d.images["0001"])
+    }
+
+    func testResetStartsOver() {
+        let file = dir.appendingPathComponent("data.json")
+        let store = Store(file: file)
+        store.addWater(500)
+        store.deleteRoutine(store.data.routines[0].id)
+        store.reset()
+        XCTAssertTrue(store.data.water.isEmpty)
+        XCTAssertEqual(store.data.routines.map(\.id), Templates.routines.map(\.id))
+        XCTAssertEqual(Store(file: file).data.routines.count, Templates.routines.count)
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

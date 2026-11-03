@@ -11,7 +11,13 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   that cannot be read is moved aside instead of being overwritten.
 - **Exercise database**: `exercises.json`, `exercises_de.json` and `exercise_names_de.json` are
   not duplicated. A build phase copies them from `app/src/main/assets/` into the app bundle, so
-  both apps always ship the same data. Stills load from the dataset's CDN.
+  both apps always ship the same data. The dataset's media are not used.
+- **Exercise pictures, all bundled, no network**: every exercise gets a muscle map (body shapes
+  from react-native-body-highlighter, MIT) with its target muscles in the accent and the
+  secondary ones lighter; thumbnails close in on the trained side. 168 exercises also show
+  Everkinetic line drawings of the start and end position (CC BY-SA 4.0, matched by hand in
+  `MauveFit/Resources/everkinetic.json`, about 4 MB). See `THIRD_PARTY_NOTICES.md`. The app
+  makes no network requests at all.
 - **Four tabs**
   - *Heute / Today*: the running workout or the next plan (the one rested longest), the week
     with goal and streak, and today's food.
@@ -37,8 +43,7 @@ A native SwiftUI port of the Android app, built entirely in GitHub Actions (no M
   glass bar above the tab bar to resume the running workout or start the next plan, the rest
   timer and the buttons in glass. Content cards stay plain surfaces. Before iOS 26 the same
   layer uses thin material. The colours are the Android palettes, graphite ("iron") in dark
-  and chalk-white in light mode, with the mauve accent by default and five others to pick;
-  the exercise stills are inverted to a dark X-ray look in dark mode, as on Android.
+  and chalk-white in light mode, with the mauve accent by default and five others to pick.
   No emojis, SF Symbols only.
 
 ## Still open
@@ -54,7 +59,7 @@ Compared with the Android app, these are not ported yet:
 - Cardio sessions, Apple Health sync
 - Recipes, meal prep, shopping list, barcode scanner and food lookup
 - Insights, body measurements, progress photos, share images
-- Exercise animations (GIFs; only the stills are shown), template packs
+- Template packs
 - Backup import / export (the format already matches) and the in-app updater
 - The shop's premium accents and the wallpaper accent
 - App icon

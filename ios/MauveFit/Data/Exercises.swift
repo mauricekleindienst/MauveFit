@@ -2,8 +2,9 @@ import Foundation
 
 /**
  * One entry of exercises-dataset (github.com/hasaneyldrm/exercises-dataset), slimmed to the
- * fields the app uses. The JSON files are copied from the Android assets at build time.
- * Animations and stills (c) Gym visual (gymvisual.com), loaded from the repository.
+ * fields the app uses. The JSON files are copied from the Android assets at build time. The
+ * dataset's media are not used: the app draws a muscle map and, where one matches, an
+ * Everkinetic drawing, all bundled, so it never goes online.
  */
 struct Exercise: Codable, Hashable, Identifiable {
     var id: String
@@ -13,10 +14,8 @@ struct Exercise: Codable, Hashable, Identifiable {
     var target: String = ""
     var secondary: [String] = []
     var steps: [String] = []
-    var gif: String = ""
-    var image: String = ""
 
-    enum CodingKeys: String, CodingKey { case id, name, category, equipment, target, secondary, steps, gif, image }
+    enum CodingKeys: String, CodingKey { case id, name, category, equipment, target, secondary, steps }
 
     init(id: String, name: String, category: String = "", equipment: String = "", target: String = "") {
         self.id = id; self.name = name; self.category = category; self.equipment = equipment; self.target = target
@@ -28,21 +27,15 @@ struct Exercise: Codable, Hashable, Identifiable {
         name = try c.decode(String.self, forKey: .name)
         category = c.value(.category, ""); equipment = c.value(.equipment, ""); target = c.value(.target, "")
         secondary = c.value(.secondary, []); steps = c.value(.steps, [])
-        gif = c.value(.gif, ""); image = c.value(.image, "")
     }
 
     /** Display name in the app's language; [name] stays the English key. */
     var title: String { (I18n.german ? ExerciseRepo.shared.namesDe[id] : nil) ?? titleEn }
     var titleEn: String { name.split(separator: " ").map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined(separator: " ") }
-    var imageUrl: URL? { image.isEmpty ? nil : URL(string: Exercise.mediaBase + image) }
-    var gifUrl: URL? { gif.isEmpty ? nil : URL(string: Exercise.mediaBase + gif) }
     /** Body-weight exercises are logged by reps only. */
     var bodyweight: Bool { equipment == "body weight" }
     var muscles: [String] { [target] + secondary }
 
-    static let mediaBase = "https://cdn.jsdelivr.net/gh/hasaneyldrm/exercises-dataset@main/"
-    // Wording the media notice of exercises-dataset asks for on every use.
-    static let attribution = "© Gym visual — https://gymvisual.com/"
 }
 
 /** The bundled database, parsed once. */

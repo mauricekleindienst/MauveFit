@@ -174,6 +174,7 @@ private struct SetRow: View {
                 .foregroundStyle(value.warmup ? Ink.coral : Ink.muted).frame(width: 34, alignment: .leading)
             if !bodyweight {
                 NumberField(
+                    name: L("Gewicht", "Weight"),
                     text: Fmt.kg(value.weight),
                     done: value.done,
                     minus: { store.setSet(entry, set) { $0.weight = max(0, $0.weight - step) } },
@@ -182,6 +183,7 @@ private struct SetRow: View {
                 )
             }
             NumberField(
+                name: L("Wiederholungen", "Reps"),
                 text: "\(value.reps)",
                 done: value.done,
                 minus: { store.setSet(entry, set) { $0.reps = max(0, $0.reps - 1) } },
@@ -205,6 +207,8 @@ private struct SetRow: View {
 
 /** A value with minus and plus; tapping the number edits it with the keyboard. */
 private struct NumberField: View {
+    /** What the value is, for VoiceOver ("Gewicht", "Wiederholungen"). */
+    let name: String
     let text: String
     let done: Bool
     let minus: () -> Void
@@ -217,6 +221,7 @@ private struct NumberField: View {
     var body: some View {
         HStack(spacing: 0) {
             Button(action: minus) { Image(systemName: "minus").font(.system(size: 13, weight: .bold)).frame(width: 30, height: 44) }
+                .accessibilityLabel(L("\(name) verringern", "Decrease \(name.lowercased())"))
             Group {
                 if editing {
                     TextField("", text: $draft)
@@ -225,7 +230,11 @@ private struct NumberField: View {
                         .onSubmit(save)
                         .onChange(of: focused) { _, f in if !f { save() } }
                 } else {
-                    Text(text).lineLimit(1).minimumScaleFactor(0.7).onTapGesture {
+                    Text(text).lineLimit(1).minimumScaleFactor(0.7)
+                        .accessibilityLabel("\(name): \(text)")
+                        .accessibilityHint(L("Doppeltippen zum Eintippen", "Double-tap to type"))
+                        .accessibilityAddTraits(.isButton)
+                        .onTapGesture {
                         draft = text
                         editing = true
                         focused = true
@@ -237,6 +246,7 @@ private struct NumberField: View {
             .foregroundStyle(Ink.text)
             .frame(maxWidth: .infinity)
             Button(action: plus) { Image(systemName: "plus").font(.system(size: 13, weight: .bold)).frame(width: 30, height: 44) }
+                .accessibilityLabel(L("\(name) erhöhen", "Increase \(name.lowercased())"))
         }
         .buttonStyle(.plain)
         .foregroundStyle(Ink.muted)

@@ -1,0 +1,2430 @@
+[
+ {
+  "everkinetic": "0006",
+  "title": "Arnold Press",
+  "images": [],
+  "exercises": [
+   {
+    "id": "2137",
+    "name": "dumbbell arnold press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0007",
+  "title": "Front Barbell Raises",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0041",
+    "name": "barbell front raise",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0008",
+  "title": "Front Cable Raises",
+  "images": [
+   "0008-relaxation.png",
+   "0008-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0162",
+    "name": "cable front raise",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0012",
+  "title": "Dumbbell Shoulder Press",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0405",
+    "name": "dumbbell seated shoulder press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0013",
+  "title": "Upright Row: Smith Machine",
+  "images": [
+   "0013-relaxation.png",
+   "0013-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0775",
+    "name": "smith upright row",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0014",
+  "title": "Upright Barbell Rows",
+  "images": [
+   "0014-relaxation.png",
+   "0014-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0120",
+    "name": "barbell upright row",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0015",
+  "title": "Upright Cable Row",
+  "images": [
+   "0015-relaxation.png",
+   "0015-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0246",
+    "name": "cable upright row",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0016",
+  "title": "Upright Row: Dumbbell",
+  "images": [
+   "0016-relaxation.png",
+   "0016-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0437",
+    "name": "dumbbell upright row",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0018",
+  "title": "Lateral Dumbbell Raises",
+  "images": [
+   "0018-relaxation.png",
+   "0018-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0334",
+    "name": "dumbbell lateral raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0021",
+  "title": "Flat Bench Leg Raises",
+  "images": [
+   "0021-relaxation.png",
+   "0021-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0620",
+    "name": "lying leg raise flat bench",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0023",
+  "title": "Lying Rear Lateral Raise",
+  "images": [
+   "0023-relaxation.png",
+   "0023-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0348",
+    "name": "dumbbell lying rear lateral raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0025",
+  "title": "Seated Cable Rows",
+  "images": [
+   "0025-relaxation.png",
+   "0025-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0861",
+    "name": "cable seated row",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0026",
+  "title": "Reverse Grips Bent Over Barbell Rows",
+  "images": [
+   "0026-relaxation.png",
+   "0026-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0118",
+    "name": "barbell reverse grip bent over row",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0028",
+  "title": "Rear Deltoid Row Barbell",
+  "images": [
+   "0028-relaxation.png",
+   "0028-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0076",
+    "name": "barbell rear delt row",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0033",
+  "title": "Front Dumbbell Raise",
+  "images": [
+   "0033-relaxation.png",
+   "0033-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0310",
+    "name": "dumbbell front raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0035",
+  "title": "Seated Rear Lateral Cable Raise",
+  "images": [
+   "0035-relaxation.png",
+   "0035-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0215",
+    "name": "cable seated rear lateral raise",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0037",
+  "title": "Lying One Arm Rear Lateral Raise",
+  "images": [
+   "0037-relaxation.png",
+   "0037-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0345",
+    "name": "dumbbell lying one arm rear lateral raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0038",
+  "title": "One Arm Dumbbell Shoulder Press",
+  "images": [
+   "0038-relaxation.png",
+   "0038-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0361",
+    "name": "dumbbell one arm shoulder press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0039",
+  "title": "Upright Row: Dumbbell (One Arm)",
+  "images": [
+   "0039-relaxation.png",
+   "0039-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0363",
+    "name": "dumbbell one arm upright row",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0040",
+  "title": "Dumbbell Raise",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0376",
+    "name": "dumbbell raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0042",
+  "title": "Bench Press: Barbell",
+  "images": [
+   "0042-relaxation.png",
+   "0042-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0025",
+    "name": "barbell bench press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0043",
+  "title": "Bench Press: Barbell (Incline)",
+  "images": [
+   "0043-relaxation.png",
+   "0043-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0047",
+    "name": "barbell incline bench press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0045",
+  "title": "Bent Arm Pullover",
+  "images": [
+   "0045-relaxation.png",
+   "0045-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1316",
+    "name": "barbell bent arm pullover",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0049",
+  "title": "Bench Press: Barbell (Close Grip)",
+  "images": [
+   "0049-relaxation.png",
+   "0049-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0030",
+    "name": "barbell close-grip bench press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0051",
+  "title": "Bench Press: Barbell (Decline)",
+  "images": [
+   "0051-relaxation.png",
+   "0051-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0033",
+    "name": "barbell decline bench press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0052",
+  "title": "Bench Press: Dumbbell (Decline)",
+  "images": [
+   "0052-relaxation.png",
+   "0052-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0301",
+    "name": "dumbbell decline bench press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0053",
+  "title": "Decline Dumbbell Fly's",
+  "images": [
+   "0053-relaxation.png",
+   "0053-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0302",
+    "name": "dumbbell decline fly",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0054",
+  "title": "Chest Dips",
+  "images": [
+   "0054-relaxation.png",
+   "0054-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0251",
+    "name": "chest dip",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0055",
+  "title": "Bench Press: Dumbbell",
+  "images": [
+   "0055-relaxation.png",
+   "0055-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0289",
+    "name": "dumbbell bench press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0056",
+  "title": "Dumbbell Flys",
+  "images": [
+   "0056-relaxation.png",
+   "0056-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0308",
+    "name": "dumbbell fly",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0058",
+  "title": "Barbell Front Raise and Pullover",
+  "images": [
+   "0058-relaxation.png",
+   "0058-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0040",
+    "name": "barbell front raise and pullover",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0059",
+  "title": "Bench Press: Dumbbell (Incline, Hammer Grip)",
+  "images": [
+   "0059-relaxation.png",
+   "0059-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0321",
+    "name": "dumbbell incline hammer press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0060",
+  "title": "Incline Cable Fly's",
+  "images": [
+   "0060-relaxation.png",
+   "0060-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0171",
+    "name": "cable incline fly",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0061",
+  "title": "Bench Press: Dumbbell (Incline)",
+  "images": [
+   "0061-relaxation.png",
+   "0061-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0314",
+    "name": "dumbbell incline bench press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0062",
+  "title": "Incline Dumbbell Fly's",
+  "images": [
+   "0062-relaxation.png",
+   "0062-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0319",
+    "name": "dumbbell incline fly",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0064",
+  "title": "Wide Grip Decline Barbell Pullover",
+  "images": [
+   "0064-relaxation.png",
+   "0064-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0037",
+    "name": "barbell decline wide-grip pullover",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0069",
+  "title": "Push Up: Bosu Ball",
+  "images": [
+   "0069-relaxation.png",
+   "0069-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1307",
+    "name": "push up on bosu ball",
+    "equipment": "bosu ball"
+   },
+   {
+    "id": "0653",
+    "name": "push-up (bosu ball)",
+    "equipment": "bosu ball"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0070",
+  "title": "One Arm Barbell Floor Press",
+  "images": [
+   "0070-relaxation.png",
+   "0070-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0065",
+    "name": "barbell one arm floor press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0077",
+  "title": "Push Up: Body Weight",
+  "images": [
+   "0077-relaxation.png",
+   "0077-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0662",
+    "name": "push-up",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0078",
+  "title": "Bench Press: Smith Machine",
+  "images": [
+   "0078-relaxation.png",
+   "0078-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0748",
+    "name": "smith bench press",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0079",
+  "title": "Straight Arm Dumbbell Pullover",
+  "images": [
+   "0079-relaxation.png",
+   "0079-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0433",
+    "name": "dumbbell straight arm pullover",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0081",
+  "title": "Bench Press: Smith Machine (Incline)",
+  "images": [
+   "0081-relaxation.png",
+   "0081-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0757",
+    "name": "smith incline bench press",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0082",
+  "title": "Bench Press: Barbell (Wide Grip)",
+  "images": [
+   "0082-relaxation.png",
+   "0082-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0122",
+    "name": "barbell wide bench press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0083",
+  "title": "Bench Press: Barbell (Decline, Wide Grip)",
+  "images": [
+   "0083-relaxation.png",
+   "0083-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0036",
+    "name": "barbell decline wide-grip press",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0084",
+  "title": "Incline Chest Press",
+  "images": [],
+  "exercises": [
+   {
+    "id": "1299",
+    "name": "lever incline chest press",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0085",
+  "title": "Decline Chest Press",
+  "images": [
+   "0085-relaxation.png",
+   "0085-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1300",
+    "name": "lever decline chest press",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0086",
+  "title": "Body Row",
+  "images": [
+   "0086-relaxation.png",
+   "0086-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0499",
+    "name": "inverted row",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0087",
+  "title": "Pull Ups",
+  "images": [
+   "0087-relaxation.png",
+   "0087-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0652",
+    "name": "pull-up",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0089",
+  "title": "Chin Ups",
+  "images": [],
+  "exercises": [
+   {
+    "id": "1326",
+    "name": "chin-up",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0090",
+  "title": "Narrow Parallel Grip Chin-ups",
+  "images": [
+   "0090-relaxation.png",
+   "0090-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0253",
+    "name": "chin-ups (narrow parallel grip)",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0103",
+  "title": "Hyperextensions",
+  "images": [
+   "0103-relaxation.png",
+   "0103-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0489",
+    "name": "hyperextension",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0104",
+  "title": "Back Extension on Stability Ball",
+  "images": [
+   "0104-relaxation.png",
+   "0104-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1314",
+    "name": "back extension on exercise ball",
+    "equipment": "stability ball"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0114",
+  "title": "Lunges: Barbell",
+  "images": [
+   "0114-relaxation.png",
+   "0114-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0054",
+    "name": "barbell lunge",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0115",
+  "title": "Lunges: Dumbbell",
+  "images": [
+   "0115-relaxation.png",
+   "0115-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0336",
+    "name": "dumbbell lunge",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0117",
+  "title": "Lying Leg Curl Machine",
+  "images": [
+   "0117-relaxation.png",
+   "0117-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0586",
+    "name": "lever lying leg curl",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0119",
+  "title": "Seated Leg Curl",
+  "images": [
+   "0119-relaxation.png",
+   "0119-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0599",
+    "name": "lever seated leg curl",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0122",
+  "title": "Barbell Squat",
+  "images": [
+   "0122-relaxation.png",
+   "0122-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0043",
+    "name": "barbell full squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0123",
+  "title": "Hack Squat: Machine",
+  "images": [
+   "0123-relaxation.png",
+   "0123-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0743",
+    "name": "sled hack squat",
+    "equipment": "sled machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0125",
+  "title": "Hack Squat: Barbell",
+  "images": [
+   "0125-relaxation.png",
+   "0125-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0046",
+    "name": "barbell hack squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0126",
+  "title": "Smith Machine Hack Squat",
+  "images": [
+   "0126-relaxation.png",
+   "0126-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0755",
+    "name": "smith hack squat",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0127",
+  "title": "Leg Press",
+  "images": [
+   "0127-relaxation.png",
+   "0127-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0739",
+    "name": "sled 45° leg press",
+    "equipment": "sled machine"
+   },
+   {
+    "id": "1463",
+    "name": "sled 45° leg press (side pov)",
+    "equipment": "sled machine"
+   },
+   {
+    "id": "1464",
+    "name": "sled 45° leg press (back pov)",
+    "equipment": "sled machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0128",
+  "title": "Lunges: Barbell (Rear)",
+  "images": [
+   "0128-relaxation.png",
+   "0128-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0078",
+    "name": "barbell rear lunge",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0129",
+  "title": "Lunges: Dumbbell (Rear)",
+  "images": [
+   "0129-relaxation.png",
+   "0129-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0381",
+    "name": "dumbbell rear lunge",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0130",
+  "title": "Squats: Dumbbells",
+  "images": [
+   "0130-relaxation.png",
+   "0130-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0413",
+    "name": "dumbbell squat",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0134",
+  "title": "Step Ups: Barbell",
+  "images": [
+   "0134-relaxation.png",
+   "0134-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0114",
+    "name": "barbell step-up",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0135",
+  "title": "Hip Adduction",
+  "images": [
+   "0135-relaxation.png",
+   "0135-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0168",
+    "name": "cable hip adduction",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0137",
+  "title": "Step Ups: Dumbbell",
+  "images": [
+   "0137-relaxation.png",
+   "0137-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0431",
+    "name": "dumbbell step-up",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0138",
+  "title": "Front Squat with Barbell",
+  "images": [
+   "0138-relaxation.png",
+   "0138-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0042",
+    "name": "barbell front squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0139",
+  "title": "Front Squat to Bench with Barbells",
+  "images": [
+   "0139-relaxation.png",
+   "0139-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0024",
+    "name": "barbell bench front squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0140",
+  "title": "Iron Cross: Dumbbell",
+  "images": [
+   "0140-relaxation.png",
+   "0140-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0332",
+    "name": "dumbbell iron cross",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0142",
+  "title": "Leg Extensions",
+  "images": [
+   "0142-relaxation.png",
+   "0142-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0585",
+    "name": "lever leg extension",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0146",
+  "title": "Narrow Stance Squat with Barbell",
+  "images": [
+   "0146-relaxation.png",
+   "0146-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0063",
+    "name": "barbell narrow stance squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0147",
+  "title": "One Leg Squat with Barbell",
+  "images": [
+   "0147-relaxation.png",
+   "0147-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0068",
+    "name": "barbell one leg squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0148",
+  "title": "One Arm Snatch with Barbell",
+  "images": [
+   "0148-relaxation.png",
+   "0148-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0067",
+    "name": "barbell one arm snatch",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0151",
+  "title": "Overhead Squat with Barbell",
+  "images": [
+   "0151-relaxation.png",
+   "0151-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0069",
+    "name": "barbell overhead squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0158",
+  "title": "Weighted Sissy Squat with Weight Plate",
+  "images": [
+   "0158-relaxation.png",
+   "0158-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0851",
+    "name": "weighted sissy squat",
+    "equipment": "weighted"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0160",
+  "title": "Wide Stance Squat with Barbell",
+  "images": [
+   "0160-relaxation.png",
+   "0160-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0124",
+    "name": "barbell wide squat",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0163",
+  "title": "Incline Pushdown with Cable",
+  "images": [
+   "0163-relaxation.png",
+   "0163-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0172",
+    "name": "cable incline pushdown",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0164",
+  "title": "Triceps Extension: Cable (Incline)",
+  "images": [
+   "0164-relaxation.png",
+   "0164-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0173",
+    "name": "cable incline triceps extension",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0169",
+  "title": "Triceps Extension: Dumbbell (Decline)",
+  "images": [
+   "0169-relaxation.png",
+   "0169-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0306",
+    "name": "dumbbell decline triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0170",
+  "title": "Triceps Extension: EZ Bar Barbell (Decline)",
+  "images": [
+   "0170-relaxation.png",
+   "0170-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "2186",
+    "name": "ez barbell decline triceps extension",
+    "equipment": "ez barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0172",
+  "title": "Triceps Dips: Body Weight",
+  "images": [
+   "0172-relaxation.png",
+   "0172-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0814",
+    "name": "triceps dip",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0177",
+  "title": "Triceps Extension: Cable (Kneeling)",
+  "images": [
+   "0177-relaxation.png",
+   "0177-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0176",
+    "name": "cable kneeling triceps extension",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0181",
+  "title": "Triceps Extension: Dumbbell (Lying)",
+  "images": [
+   "0181-relaxation.png",
+   "0181-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0351",
+    "name": "dumbbell lying triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0182",
+  "title": "Triceps Extension: Dumbbell (Lying, Across Face)",
+  "images": [
+   "0182-relaxation.png",
+   "0182-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0337",
+    "name": "dumbbell lying extension (across face)",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0183",
+  "title": "Lying Triceps Press with Barbell",
+  "images": [
+   "0183-relaxation.png",
+   "0183-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0061",
+    "name": "barbell lying triceps extension",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0188",
+  "title": "Close Triceps Pushup",
+  "images": [
+   "0188-relaxation.png",
+   "0188-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0259",
+    "name": "close-grip push-up",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0189",
+  "title": "Reverse Grip Triceps Pushdown",
+  "images": [
+   "0189-relaxation.png",
+   "0189-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0207",
+    "name": "cable reverse-grip pushdown",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0193",
+  "title": "Triceps Extension: Barbell (Seated, Overhead)",
+  "images": [
+   "0193-relaxation.png",
+   "0193-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0092",
+    "name": "barbell seated overhead triceps extension",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0195",
+  "title": "Bench Press: Smith Machine (Close Grip)",
+  "images": [
+   "0195-relaxation.png",
+   "0195-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0751",
+    "name": "smith close-grip bench press",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0196",
+  "title": "Triceps Extension: Dumbbell (Bent-Over, One Arm)",
+  "images": [
+   "0196-relaxation.png",
+   "0196-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1740",
+    "name": "dumbbell standing bent over one arm triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0197",
+  "title": "Triceps Extension: Dumbbell (Bent-Over, Two Arm)",
+  "images": [
+   "0197-relaxation.png",
+   "0197-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1741",
+    "name": "dumbbell standing bent over two arm triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0198",
+  "title": "Triceps Extension: Dumbbell (Standing)",
+  "images": [
+   "0198-relaxation.png",
+   "0198-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0430",
+    "name": "dumbbell standing triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0200",
+  "title": "Triceps Extension: Dumbbell (Standing, One Arm)",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0423",
+    "name": "dumbbell standing one arm extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0201",
+  "title": "Triceps Extension: Barbell (Standing, Overhead)",
+  "images": [
+   "0201-relaxation.png",
+   "0201-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0109",
+    "name": "barbell standing overhead triceps extension",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0202",
+  "title": "Triceps Extension: Towel (Standing)",
+  "images": [
+   "0202-relaxation.png",
+   "0202-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0018",
+    "name": "assisted standing triceps extension (with towel)",
+    "equipment": "assisted"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0203",
+  "title": "Tate Press with Dumbbell",
+  "images": [
+   "0203-relaxation.png",
+   "0203-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0436",
+    "name": "dumbbell tate press",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0204",
+  "title": "Triceps Kickback with Dumbbell",
+  "images": [
+   "0204-relaxation.png",
+   "0204-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0333",
+    "name": "dumbbell kickback",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0205",
+  "title": "Triceps Pushdown: Cable",
+  "images": [
+   "0205-relaxation.png",
+   "0205-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0201",
+    "name": "cable pushdown",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0206",
+  "title": "Triceps Pushdown: Cable (Rope)",
+  "images": [
+   "0206-relaxation.png",
+   "0206-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0200",
+    "name": "cable pushdown (with rope attachment)",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0207",
+  "title": "Triceps Pushdown: Cable (V-Bar)",
+  "images": [
+   "0207-relaxation.png",
+   "0207-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0241",
+    "name": "cable triceps pushdown (v-bar)",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0208",
+  "title": "Weighted Ball Side Bend",
+  "images": [
+   "0208-relaxation.png",
+   "0208-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0850",
+    "name": "weighted side bend (on stability ball)",
+    "equipment": "weighted"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0209",
+  "title": "Triceps Extension: Dumbbell (Incline)",
+  "images": [
+   "0209-relaxation.png",
+   "0209-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0330",
+    "name": "dumbbell incline triceps extension",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0211",
+  "title": "Biceps Curl: Barbell",
+  "images": [
+   "0211-relaxation.png",
+   "0211-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0031",
+    "name": "barbell curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0216",
+  "title": "Hammer Curls with Rope and Cable",
+  "images": [
+   "0216-relaxation.png",
+   "0216-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0165",
+    "name": "cable hammer curl (with rope)",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0217",
+  "title": "Preacher Curl: Cable",
+  "images": [
+   "0217-relaxation.png",
+   "0217-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0195",
+    "name": "cable preacher curl",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0218",
+  "title": "Close Grip EZ Bar Curl with Barbell",
+  "images": [
+   "0218-relaxation.png",
+   "0218-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0446",
+    "name": "ez barbell close-grip curl",
+    "equipment": "ez barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0219",
+  "title": "Close Grip Standing Biceps Curls with Barbell",
+  "images": [
+   "0219-relaxation.png",
+   "0219-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0106",
+    "name": "barbell standing close grip curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0220",
+  "title": "Concentration Curls with Dumbbell",
+  "images": [
+   "0220-relaxation.png",
+   "0220-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0297",
+    "name": "dumbbell concentration curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0221",
+  "title": "Cross Body Hammer Curl with Dumbbell",
+  "images": [
+   "0221-relaxation.png",
+   "0221-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0298",
+    "name": "dumbbell cross body hammer curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0222",
+  "title": "Drag Curl with Barbell",
+  "images": [
+   "0222-relaxation.png",
+   "0222-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0038",
+    "name": "barbell drag curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0224",
+  "title": "Biceps Curl: Dumbbell",
+  "images": [
+   "0224-relaxation.png",
+   "0224-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0294",
+    "name": "dumbbell biceps curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0225",
+  "title": "Prone Incline Biceps Curl with Dumbbell",
+  "images": [
+   "0225-relaxation.png",
+   "0225-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0374",
+    "name": "dumbbell prone incline curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0226",
+  "title": "EZ Bar Curl with Barbell",
+  "images": [
+   "0226-relaxation.png",
+   "0226-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0447",
+    "name": "ez barbell curl",
+    "equipment": "ez barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0227",
+  "title": "Biceps Curl: Dumbbell (Hammer)",
+  "images": [
+   "0227-relaxation.png",
+   "0227-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0313",
+    "name": "dumbbell hammer curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0230",
+  "title": "Incline Biceps Curl with Dumbbell",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0315",
+    "name": "dumbbell incline biceps curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0231",
+  "title": "Incline Inner Biceps Curl with Dumbbell",
+  "images": [
+   "0231-relaxation.png",
+   "0231-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0322",
+    "name": "dumbbell incline inner biceps curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0232",
+  "title": "Lying Bicep Cable Curl",
+  "images": [
+   "0232-relaxation.png",
+   "0232-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1634",
+    "name": "cable lying bicep curl",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0233",
+  "title": "Lying Close Grip Biceps Curls with Cable",
+  "images": [
+   "0233-relaxation.png",
+   "0233-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0182",
+    "name": "cable lying close-grip curl",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0235",
+  "title": "Lying Supine Biceps Curl with Dumbbell",
+  "images": [
+   "0235-relaxation.png",
+   "0235-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1661",
+    "name": "dumbbell lying supine biceps curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0238",
+  "title": "Overhead Curl with Cable",
+  "images": [
+   "0238-relaxation.png",
+   "0238-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1636",
+    "name": "cable overhead curl",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0239",
+  "title": "Preacher Curl: Barbell",
+  "images": [
+   "0239-relaxation.png",
+   "0239-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0070",
+    "name": "barbell preacher curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0242",
+  "title": "Seated Close Grip Concentration Curls with Barbell",
+  "images": [
+   "0242-relaxation.png",
+   "0242-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0089",
+    "name": "barbell seated close-grip concentration curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0243",
+  "title": "Seated Bicep Curl with Dumbbell",
+  "images": [
+   "0243-relaxation.png",
+   "0243-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1677",
+    "name": "dumbbell seated bicep curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0244",
+  "title": "Seated Inner Biceps Curl with Dumbbell",
+  "images": [
+   "0244-relaxation.png",
+   "0244-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0393",
+    "name": "dumbbell seated inner biceps curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0247",
+  "title": "Standing One Arm Bicep Curl with Cable",
+  "images": [
+   "0247-relaxation.png",
+   "0247-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0190",
+    "name": "cable one arm curl",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0248",
+  "title": "Standing One Arm Curl Over Incline Bench with Dumbbell",
+  "images": [
+   "0248-relaxation.png",
+   "0248-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0422",
+    "name": "dumbbell standing one arm curl (over incline bench)",
+    "equipment": "dumbbell"
+   },
+   {
+    "id": "1680",
+    "name": "dumbbell standing one arm curl over incline bench",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0249",
+  "title": "Preacher Curl: Dumbbell (Two Arm)",
+  "images": [
+   "0249-relaxation.png",
+   "0249-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0372",
+    "name": "dumbbell preacher curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0250",
+  "title": "Wide Grip Standing Biceps Curl with Barbell",
+  "images": [
+   "0250-relaxation.png",
+   "0250-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1629",
+    "name": "barbell standing wide grip biceps curl",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0251",
+  "title": "Zottman Curl with Dumbbells",
+  "images": [
+   "0251-relaxation.png",
+   "0251-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0439",
+    "name": "dumbbell zottman curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0252",
+  "title": "Preacher Curl: Dumbbell (Zottman)",
+  "images": [
+   "0252-relaxation.png",
+   "0252-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "2294",
+    "name": "dumbbell zottman preacher curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0255",
+  "title": "Biceps Curl: Stability Ball with Dumbbell (seated)",
+  "images": [
+   "0255-relaxation.png",
+   "0255-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0390",
+    "name": "dumbbell seated biceps curl (on stability ball)",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0256",
+  "title": "Biceps Curl: Squat with Dumbbell",
+  "images": [
+   "0256-relaxation.png",
+   "0256-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1655",
+    "name": "dumbbell biceps curl squat",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0257",
+  "title": "Biceps Curl: Dumbbell (Reverse)",
+  "images": [
+   "0257-relaxation.png",
+   "0257-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1654",
+    "name": "dumbbell biceps curl reverse",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0258",
+  "title": "One Arm Bicep Concentration on Stability Ball with Dumbbell",
+  "images": [
+   "0258-relaxation.png",
+   "0258-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0353",
+    "name": "dumbbell one arm concentration curl (on stability ball)",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0261",
+  "title": "Quick Alternating Biceps Curls with Band",
+  "images": [
+   "0261-relaxation.png",
+   "0261-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0968",
+    "name": "band alternating biceps curl",
+    "equipment": "band"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0265",
+  "title": "Forward Lunge with Bicep Curl using Dumbbell",
+  "images": [
+   "0265-relaxation.png",
+   "0265-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1658",
+    "name": "dumbbell lunge with bicep curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0266",
+  "title": "Step Up: Dumbbell (Bicep Curl, Single Leg Balance)",
+  "images": [
+   "0266-relaxation.png",
+   "0266-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1684",
+    "name": "dumbbell step up single leg balance with bicep curl",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0268",
+  "title": "Stork Stance Bicep Curl with Dumbbells",
+  "images": [
+   "0268-relaxation.png",
+   "0268-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1653",
+    "name": "dumbbell bicep curl with stork stance",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0269",
+  "title": "Biceps Curl: V-Sit on Dome with Dumbbells",
+  "images": [
+   "0269-relaxation.png",
+   "0269-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1656",
+    "name": "dumbbell biceps curl v sit on bosu ball",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0270",
+  "title": "Ankle Circles",
+  "images": [
+   "0270-relaxation.png",
+   "0270-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1368",
+    "name": "ankle circles",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0271",
+  "title": "Balance Board",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0020",
+    "name": "balance board",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0272",
+  "title": "Seated Calf Raise with Barbell",
+  "images": [
+   "0272-relaxation.png",
+   "0272-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0088",
+    "name": "barbell seated calf raise",
+    "equipment": "barbell"
+   },
+   {
+    "id": "1371",
+    "name": "barbell seated calf raise",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0275",
+  "title": "Donkey Calf Raises",
+  "images": [
+   "0275-relaxation.png",
+   "0275-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0284",
+    "name": "donkey calf raise",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0276",
+  "title": "Seated One Leg Calf Raise with Dumbbell",
+  "images": [
+   "0276-relaxation.png",
+   "0276-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0400",
+    "name": "dumbbell seated one leg calf raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0278",
+  "title": "Rocking Standing Calf Raise with Barbell",
+  "images": [
+   "0278-relaxation.png",
+   "0278-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0111",
+    "name": "barbell standing rocking leg calf raise",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0279",
+  "title": "Seated Calf Raise using Machine",
+  "images": [
+   "0279-relaxation.png",
+   "0279-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0594",
+    "name": "lever seated calf raise",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0280",
+  "title": "Smith Machine Reverse Calf Raises",
+  "images": [
+   "0280-relaxation.png",
+   "0280-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0763",
+    "name": "smith reverse calf raises",
+    "equipment": "smith machine"
+   },
+   {
+    "id": "1394",
+    "name": "smith reverse calf raises",
+    "equipment": "smith machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0281",
+  "title": "Standing Barbell Calf Raise",
+  "images": [
+   "0281-relaxation.png",
+   "0281-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "1372",
+    "name": "barbell standing calf raise",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0282",
+  "title": "Standing Calf Raises using Machine",
+  "images": [
+   "0282-relaxation.png",
+   "0282-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0605",
+    "name": "lever standing calf raise",
+    "equipment": "leverage machine"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0283",
+  "title": "Standing Calf Raise with Dumbbell",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0417",
+    "name": "dumbbell standing calf raise",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0284",
+  "title": "Air Bike",
+  "images": [
+   "0284-relaxation.png",
+   "0284-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0003",
+    "name": "air bike",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0287",
+  "title": "Bent Knee Hip Raise",
+  "images": [
+   "0287-relaxation.png",
+   "0287-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0484",
+    "name": "hip raise (bent knee)",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0288",
+  "title": "Seated Ab Crunch with Cable",
+  "images": [
+   "0288-relaxation.png",
+   "0288-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0212",
+    "name": "cable seated crunch",
+    "equipment": "cable"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0289",
+  "title": "Cross Body Crunch",
+  "images": [
+   "0289-relaxation.png",
+   "0289-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0262",
+    "name": "cross body crunch",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0291",
+  "title": "Crunches",
+  "images": [
+   "0291-relaxation.png",
+   "0291-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0274",
+    "name": "crunch floor",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0292",
+  "title": "Decline Crunch",
+  "images": [
+   "0292-relaxation.png",
+   "0292-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0277",
+    "name": "decline crunch",
+    "equipment": "body weight"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0294",
+  "title": "Side Bend with Dumbbell",
+  "images": [
+   "0294-relaxation.png",
+   "0294-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0407",
+    "name": "dumbbell side bend",
+    "equipment": "dumbbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0295",
+  "title": "Stability Ball Abdominal Crunch",
+  "images": [
+   "0295-relaxation.png",
+   "0295-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0271",
+    "name": "crunch (on stability ball)",
+    "equipment": "stability ball"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0296",
+  "title": "Exercise Ball Pull In",
+  "images": [
+   "0296-relaxation.png",
+   "0296-tension.png"
+  ],
+  "exercises": [
+   {
+    "id": "0650",
+    "name": "pull-in (on stability ball)",
+    "equipment": "stability ball"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0298",
+  "title": "Bent Over Row with Barbell",
+  "images": [],
+  "exercises": [
+   {
+    "id": "0027",
+    "name": "barbell bent over row",
+    "equipment": "barbell"
+   }
+  ]
+ },
+ {
+  "everkinetic": "0300",
+  "title": "Cuban Dumbbell Press",
+  "images": [
+   "cuban-dumbbell-press-1.png",
+   "cuban-dumbbell-press-2.png",
+   "cuban-dumbbell-press-3.png"
+  ],
+  "exercises": [
+   {
+    "id": "0299",
+    "name": "dumbbell cuban press",
+    "equipment": "dumbbell"
+   }
+  ]
+ }
+]

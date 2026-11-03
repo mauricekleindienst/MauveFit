@@ -11,7 +11,7 @@ final class Store {
     @ObservationIgnored private let repo: ExerciseRepo
     @ObservationIgnored private var saveTask: Task<Void, Never>?
 
-    static func defaultFile() -> URL {
+    nonisolated static func defaultFile() -> URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("data.json")

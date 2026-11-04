@@ -1,10 +1,17 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /** Look, language, training defaults and the goal behind the food targets. */
 struct SettingsView: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var confirmReset = false
+    @State private var exporting: ExportFile?
+    @State private var importing = false
+    @State private var message: String?
+
+    /** Kept after the exporter closes, which clears [exporting] before its result arrives. */
+    @State private var exportedMessage = ""
 
     var body: some View {
         let s = store.data.settings
@@ -116,6 +123,31 @@ struct SettingsView: View {
                 .listRowBackground(Ink.surface)
 
                 Section {
+                    // The whole data file: restores on any iPhone or Android phone (#37).
+                    Button { exportedMessage = L("Backup gespeichert", "Backup saved"); exporting = ExportFile(data: store.export(), type: .json) } label: {
+                        Label(L("Backup speichern", "Save backup"), systemImage: "square.and.arrow.down")
+                    }
+                    .accessibilityIdentifier("backupExport")
+                    Button { importing = true } label: {
+                        Label(L("Backup wiederherstellen", "Restore backup"), systemImage: "arrow.counterclockwise")
+                    }
+                    .accessibilityIdentifier("backupImport")
+                    Button {
+                        exportedMessage = L("CSV gespeichert", "CSV saved")
+                        exporting = ExportFile(data: Data(CsvExport.sets(store.data).utf8), type: .commaSeparatedText)
+                    } label: {
+                        Label(L("Sätze als CSV exportieren", "Export sets as CSV"), systemImage: "tablecells")
+                    }
+                    .accessibilityIdentifier("csvExport")
+                } header: { header(L("Daten", "Data")) } footer: {
+                    Text(L("Das Backup enthält Trainings, Pläne, Ernährung und Einstellungen und lässt sich auch in der Android-App wiederherstellen. Wiederherstellen ersetzt alles auf diesem iPhone.",
+                           "The backup holds workouts, plans, nutrition and settings and also restores in the Android app. Restoring replaces everything on this iPhone."))
+                        .font(.fit(.bodySmall))
+                }
+                .font(.fit(.body))
+                .listRowBackground(Ink.surface)
+
+                Section {
                     Button(L("Alle Daten löschen", "Delete all data"), role: .destructive) { confirmReset = true }
                 } footer: {
                     Text(L("Löscht Trainings, Pläne, Gewicht, Ernährung und Einstellungen von diesem iPhone.",
@@ -123,6 +155,25 @@ struct SettingsView: View {
                         .font(.fit(.bodySmall))
                 }
                 .listRowBackground(Ink.surface)
+            }
+            .fileExporter(isPresented: Binding(get: { exporting != nil }, set: { if !$0 { exporting = nil } }),
+                          document: exporting, contentType: exporting?.type ?? .json,
+                          defaultFilename: Backup.fileName(exporting?.type == .commaSeparatedText ? "csv" : "json")) { result in
+                if case .success = result { message = exportedMessage }
+                else if case .failure = result { message = L("Speichern fehlgeschlagen", "Saving failed") }
+            }
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .data]) { result in
+                guard case .success(let url) = result else { return }
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+                let bytes = size <= Backup.maxBytes ? try? Data(contentsOf: url) : nil
+                message = bytes.map(store.importBackup) == true
+                    ? L("Backup wiederhergestellt", "Backup restored")
+                    : L("Das ist kein Mauve-Fit-Backup", "This is not a Mauve Fit backup")
+            }
+            .alert(message ?? "", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+                Button("OK", role: .cancel) {}
             }
             .alert(L("Alle Daten löschen?", "Delete all data?"), isPresented: $confirmReset) {
                 Button(L("Löschen", "Delete"), role: .destructive) {
@@ -147,4 +198,20 @@ struct SettingsView: View {
     private func header(_ text: String) -> some View {
         Text(text).font(.fit(.titleSmall)).foregroundStyle(Ink.muted).textCase(nil)
     }
+}
+
+/** A backup or CSV handed to the Files save dialog. */
+struct ExportFile: FileDocument {
+    static var readableContentTypes: [UTType] { [.json, .commaSeparatedText] }
+    let data: Data
+    let type: UTType
+
+    init(data: Data, type: UTType) { self.data = data; self.type = type }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+        type = configuration.contentType
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper { FileWrapper(regularFileWithContents: data) }
 }

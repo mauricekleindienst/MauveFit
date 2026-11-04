@@ -693,6 +693,61 @@ final class MauveFitTests: XCTestCase {
         XCTAssertNil(Coach.plates(100_000_000, bar: 20))
     }
 
+    /** Backup: round trip, refuses what is no backup, keeps a safety copy (#37). */
+    func testBackup() throws {
+        let file = dir.appendingPathComponent("data.json")
+        let store = Store(file: file)
+        store.logWeight(81.5)
+        let backup = store.export()
+        XCTAssertNil(Backup.decode(Data("{}".utf8)))
+        XCTAssertNil(Backup.decode(Data("[1, 2]".utf8)))
+        XCTAssertNil(Backup.decode(Data("not json".utf8)))
+        XCTAssertFalse(store.importBackup(Data("{\"foo\": 1}".utf8)))
+        XCTAssertEqual(store.data.bodyWeights.count, 1)
+
+        store.logWeight(90)
+        XCTAssertTrue(store.importBackup(backup))
+        XCTAssertEqual(store.data.bodyWeights.map(\.kg), [81.5])
+        XCTAssertEqual(Store(file: file).data.bodyWeights.map(\.kg), [81.5])
+        let copies = try FileManager.default.contentsOfDirectory(atPath: dir.path).filter { $0.hasPrefix("data.before-import-") }
+        XCTAssertEqual(copies.count, 1)
+        // An Android backup with only some fields restores, the rest takes defaults.
+        XCTAssertTrue(store.importBackup(Data("{\"routines\": [], \"settings\": {\"weightStep\": 2.5}}".utf8)))
+        XCTAssertTrue(store.data.routines.isEmpty)
+        XCTAssertEqual(Backup.fileName("json", date: Date(ms: 1_762_214_400_000)).prefix(14), "mauvefit-2025-")
+    }
+
+    /** CSV of every done set, with the separator and decimal mark of the language, as on Android (#37). */
+    func testCsvExport() {
+        var d = AppData()
+        var rated = SetEntry(weight: 62.5, reps: 5, done: true); rated.rpe = 8
+        var drop = SetEntry(weight: 11.25, reps: 8, done: true); drop.type = .Drop
+        var w = Workout(name: "Push, heavy", entries: [
+            ExerciseEntry(exerciseId: "0025", sets: [
+                SetEntry(weight: 20, reps: 10, done: true, warmup: true),
+                rated,
+                drop,
+                SetEntry(weight: 70, reps: 5, done: false),
+            ]),
+        ])
+        w.finishedAt = w.startedAt + 45 * 60_000
+        d.history = [w]
+        var lines = CsvExport.sets(d).split(separator: "\n").map(String.init)
+        XCTAssertTrue(lines[0].hasPrefix("\u{FEFF}date,time,workout,exercise,exercise_id,muscle,set,type,weight_kg,reps,rpe,e1rm_kg,workout_minutes"))
+        XCTAssertEqual(lines.count, 4)
+        XCTAssertTrue(lines[1].contains(",\"Push, heavy\",") && lines[1].contains(",,warmup,20,10,,,45"), lines[1])
+        XCTAssertTrue(lines[2].hasSuffix(",1,normal,62.5,5,8,72.9,45"), lines[2])
+        XCTAssertTrue(lines[3].contains(",2,drop,11.25,8,,"), lines[3])
+
+        I18n.apply("de")
+        defer { I18n.apply("en") }
+        lines = CsvExport.sets(d).split(separator: "\n").map(String.init)
+        XCTAssertTrue(lines[0].contains("date;time;workout"))
+        XCTAssertTrue(lines[2].hasSuffix(";1;normal;62,5;5;8;72,9;45"), lines[2])
+        XCTAssertEqual(CsvExport.cell("a\r\nb"), "\"a\r\nb\"")
+        XCTAssertEqual(CsvExport.cell("say \"hi\""), "\"say \"\"hi\"\"\"")
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

@@ -4,6 +4,7 @@ import SwiftUI
 /** The progress tab: totals, weekly volume, body weight, records and the workout history. */
 struct ProgressTab: View {
     @Environment(Store.self) private var store
+    @Environment(\.wide) private var wide
     @State private var weighing = false
 
     var body: some View {
@@ -95,7 +96,8 @@ struct ProgressTab: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: weeks.map(\.0)) { v in
+                // In half the width (two columns) every second week, or the labels run into each other.
+                AxisMarks(values: weeks.enumerated().filter { !wide || $0.offset % 2 == 1 }.map(\.element.0)) { v in
                     AxisValueLabel {
                         if let date = v.as(Date.self) {
                             Text(L("KW", "W") + "\(Stats.calendar.component(.weekOfYear, from: date))").font(.fit(.labelSmall)).foregroundStyle(Ink.faint)

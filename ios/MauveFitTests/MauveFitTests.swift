@@ -535,6 +535,52 @@ final class MauveFitTests: XCTestCase {
         }
     }
 
+    /** Supersets as on Android: labels, alternating without rest, rest after the round (#30). */
+    func testSupersets() {
+        XCTAssertEqual(Supersets.clean(["a", nil, "b", "b", "a", "a"]), [nil, nil, "b", "b", Supersets.clean(["a", nil, "b", "b", "a", "a"])[4], Supersets.clean(["a", nil, "b", "b", "a", "a"])[4]])
+        let groups: [String?] = ["g", "g", nil, "h", "h"]
+        XCTAssertEqual(Supersets.label(groups, 0), "A1")
+        XCTAssertEqual(Supersets.label(groups, 1), "A2")
+        XCTAssertNil(Supersets.label(groups, 2))
+        XCTAssertEqual(Supersets.label(groups, 4), "B2")
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.startWorkout(Routine(name: "SS", exercises: [
+            PlanExercise(exerciseId: "0025", sets: 2, reps: 8, restSec: 90, superset: "g"),
+            PlanExercise(exerciseId: "0027", sets: 2, reps: 8, restSec: 90, superset: "g"),
+        ]))
+        store.toggleDone(0, 0)
+        XCTAssertNil(store.data.active?.restEndsAt) // partner next, no rest
+        store.toggleDone(1, 0)
+        XCTAssertNotNil(store.data.active?.restEndsAt) // round over, rest
+        // Linking in the plan.
+        let plan = [PlanExercise(exerciseId: "a"), PlanExercise(exerciseId: "b"), PlanExercise(exerciseId: "c")]
+        let linked = Supersets.toggleWithNext(plan, 0)
+        XCTAssertTrue(Supersets.linkedWithNext(linked, 0))
+        XCTAssertFalse(Supersets.linkedWithNext(Supersets.toggleWithNext(linked, 0), 0))
+    }
+
+    func testWarmupsSwapAndNotes() throws {
+        let w = Coach.warmups(100, step: 2.5, bar: 20)
+        XCTAssertEqual(w.map(\.weight), [50, 70, 85])
+        XCTAssertTrue(w.allSatisfy(\.warmup))
+        XCTAssertTrue(Coach.warmups(20, step: 2.5, bar: 20).isEmpty)
+        XCTAssertEqual(Coach.restFor(ExerciseEntry(exerciseId: "x", restSec: 90), SetEntry(reps: 5, target: 8)), 120)
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        store.startWorkout(Routine(name: "A", exercises: [PlanExercise(exerciseId: "0025", sets: 3, reps: 8)]))
+        store.setSet(0, 0) { $0.weight = 100 }
+        store.addWarmups(0)
+        XCTAssertEqual(store.data.active?.entries[0].sets.filter(\.warmup).count, 3)
+        store.toggleDone(0, 0)
+        store.swapExercise(0, to: "0047")
+        let entries = try XCTUnwrap(store.data.active?.entries)
+        XCTAssertEqual(entries.map(\.exerciseId), ["0047", "0025"]) // the done warm-up stays with the old one
+        XCTAssertEqual(entries[0].sets.count, 3)
+        store.setExerciseNote("0025", "  Sitz 4  ")
+        XCTAssertEqual(store.data.exerciseNotes["0025"], "Sitz 4")
+        store.setExerciseNote("0025", "")
+        XCTAssertNil(store.data.exerciseNotes["0025"])
+    }
+
     func testNutritionTargets() {
         let t = Nutrition.targets(kg: 80, goal: .Muscle)
         XCTAssertEqual(t.kcal, 2890)

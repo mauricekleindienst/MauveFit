@@ -113,6 +113,12 @@ struct RoutineEditor: View {
     @State var routine: Routine
     @State private var picking = false
 
+    /** After a delete or a move a group may be left with one exercise, or split in two. */
+    private func cleanGroups() {
+        let groups = Supersets.clean(routine.exercises.map(\.superset))
+        for i in routine.exercises.indices { routine.exercises[i].superset = groups[i] }
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -123,21 +129,40 @@ struct RoutineEditor: View {
                 .listRowBackground(Ink.surface)
                 Section {
                     ForEach($routine.exercises) { $p in
+                        let i = routine.exercises.firstIndex { $0.id == p.id } ?? 0
+                        let groups = routine.exercises.map(\.superset)
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(spacing: 12) {
                                 ExerciseThumb(exercise: ExerciseRepo.shared[p.exerciseId], size: 44)
-                                Text(ExerciseRepo.shared[p.exerciseId]?.title ?? p.exerciseId).font(.fit(.titleMedium)).foregroundStyle(Ink.text)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(ExerciseRepo.shared[p.exerciseId]?.title ?? p.exerciseId).font(.fit(.titleMedium)).foregroundStyle(Ink.text)
+                                    if let label = Supersets.label(groups, i) {
+                                        Label(L("Supersatz \(label)", "Superset \(label)"), systemImage: "link").font(.fit(.labelSmall)).foregroundStyle(Ink.mauve)
+                                    }
+                                }
                             }
                             HStack(spacing: 8) {
                                 StepperBox(label: L("Sätze", "Sets"), value: "\(p.sets)", minus: { p.sets = max(1, p.sets - 1) }, plus: { p.sets = min(10, p.sets + 1) })
                                 StepperBox(label: L("Wdh.", "Reps"), value: "\(p.reps)", minus: { p.reps = max(1, p.reps - 1) }, plus: { p.reps = min(50, p.reps + 1) })
                                 StepperBox(label: L("Pause", "Rest"), value: Fmt.clock(p.restSec), minus: { p.restSec = max(0, p.restSec - 15) }, plus: { p.restSec = min(600, p.restSec + 15) })
                             }
+                            if i + 1 < routine.exercises.count {
+                                // Trained alternately with the next one; the rest comes after the round.
+                                let linked = Supersets.linkedWithNext(routine.exercises, i)
+                                Button { routine.exercises = Supersets.toggleWithNext(routine.exercises, i) } label: {
+                                    Label(linked ? L("Supersatz mit der nächsten Übung lösen", "Unlink from the next exercise")
+                                                 : L("Mit der nächsten Übung als Supersatz", "Superset with the next exercise"),
+                                          systemImage: linked ? "link.badge.plus" : "link")
+                                        .font(.fit(.label))
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundStyle(linked ? Ink.mauve : Ink.accent)
+                            }
                         }
                         .padding(.vertical, 4)
                     }
-                    .onDelete { routine.exercises.remove(atOffsets: $0) }
-                    .onMove { routine.exercises.move(fromOffsets: $0, toOffset: $1) }
+                    .onDelete { routine.exercises.remove(atOffsets: $0); cleanGroups() }
+                    .onMove { routine.exercises.move(fromOffsets: $0, toOffset: $1); cleanGroups() }
                     Button { picking = true } label: { Label(L("Übung hinzufügen", "Add exercise"), systemImage: "plus").font(.fit(.titleMedium)) }
                 } header: {
                     Text(Fmt.exercises(routine.exercises.count)).font(.fit(.titleSmall)).foregroundStyle(Ink.muted).textCase(nil)

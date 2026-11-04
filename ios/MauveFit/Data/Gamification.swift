@@ -291,10 +291,10 @@ enum Quests {
         }
 
         /**
-         * Quests the iOS app cannot be completed in yet: cardio (#31), RPE and supersets (#30). They
-         * stay out of the draw until those land; everything else draws exactly as on Android.
+         * Quests the iOS app cannot complete yet: cardio (#31). It stays out of the draw until that
+         * lands; everything else draws exactly as on Android.
          */
-        var supported: Bool { self != .Cardio && self != .Rpe && self != .Superset }
+        var supported: Bool { self != .Cardio }
     }
 
     static let weeklyXp = 60

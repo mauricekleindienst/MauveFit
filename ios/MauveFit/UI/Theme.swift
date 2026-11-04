@@ -424,3 +424,33 @@ extension View {
         }
     }
 }
+
+// MARK: - Every iPhone size (#53)
+
+private struct WideKey: EnvironmentKey { static let defaultValue = false }
+
+extension EnvironmentValues {
+    /**
+     * The window is wide enough for two columns of cards: the unfolded iPhone Duo (about 626 pt)
+     * or landscape. Every iPhone in portrait stays at one column.
+     */
+    var wide: Bool {
+        get { self[WideKey.self] }
+        set { self[WideKey.self] = newValue }
+    }
+}
+
+/** Cards in two columns on a wide window, one below the other everywhere else. */
+struct CardGrid<Content: View>: View {
+    @Environment(\.wide) private var wide
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if wide {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)],
+                      alignment: .leading, spacing: 12) { content }
+        } else {
+            VStack(spacing: 12) { content }
+        }
+    }
+}

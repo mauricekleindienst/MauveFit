@@ -51,8 +51,10 @@ struct WorkoutView: View {
         ScrollView {
             VStack(spacing: 12) {
                 header(w)
-                ForEach(Array(w.entries.enumerated()), id: \.element.id) { i, e in
-                    EntryCard(index: i, entry: e, onInfo: { detail = $0 })
+                CardGrid {
+                    ForEach(Array(w.entries.enumerated()), id: \.element.id) { i, e in
+                        EntryCard(index: i, entry: e, onInfo: { detail = $0 })
+                    }
                 }
                 Button { picking = true } label: { Label(L("Übung hinzufügen", "Add exercise"), systemImage: "plus") }
                     .buttonStyle(.ghost)

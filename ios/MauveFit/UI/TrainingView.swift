@@ -33,7 +33,7 @@ struct TrainingView: View {
                     if d.routines.isEmpty {
                         Card { Text(L("Noch keine Pläne. Lege oben rechts einen an.", "No plans yet. Add one at the top right.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
-                    ForEach(d.routines) { r in routineCard(r, running: d.active) }
+                    CardGrid { ForEach(d.routines) { r in routineCard(r, running: d.active) } }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)

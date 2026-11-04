@@ -89,6 +89,9 @@ enum AppTab: Hashable { case today, training, food, progress }
 struct RootView: View {
     @Environment(Store.self) private var store
     @Environment(Router.self) private var router
+    /** Window width: two columns from here on (the unfolded iPhone Duo is about 626 pt wide). */
+    @State private var width: CGFloat = 0
+    private static let twoColumns: CGFloat = 560
 
     var body: some View {
         @Bindable var router = router
@@ -114,9 +117,13 @@ struct RootView: View {
         .id(s.language)
         .tint(Ink.accent)
         .preferredColorScheme(scheme)
+        // Folding and unfolding the iPhone Duo changes the width while the app runs.
+        .background { GeometryReader { g in Color.clear.onAppear { width = g.size.width }.onChange(of: g.size.width) { _, w in width = w } } }
+        .environment(\.wide, width >= RootView.twoColumns)
         .fullScreenCover(isPresented: $router.showWorkout) {
             WorkoutView()
                 .environment(store).environment(router)
+                .environment(\.wide, width >= RootView.twoColumns)
                 .tint(Ink.accent)
                 .preferredColorScheme(scheme)
         }

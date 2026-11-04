@@ -17,10 +17,12 @@ struct TodayView: View {
                     }
                     if let w = d.active { activeCard(w) } else if let r = Stats.nextRoutine(d) { nextCard(r) }
                     weekTiles(d)
-                    weekCard(d)
-                    QuestCard()
-                    ChallengeCard()
-                    foodCard(d)
+                    CardGrid {
+                        weekCard(d)
+                        foodCard(d)
+                        QuestCard()
+                        ChallengeCard()
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 24)

@@ -18,17 +18,21 @@ struct ProgressTab: View {
                         StatTile(value: "\(streak)", label: Fmt.weeks(streak))
                         StatTile(value: Fmt.volume(d.history.reduce(0) { $0 + $1.volume }), label: L("insgesamt bewegt", "lifted in total"), color: Ink.accent)
                     }
-                    rankCard(d)
-                    volumeCard(d)
-                    weightCard(d)
-                    recordsCard(d)
+                    CardGrid {
+                        rankCard(d)
+                        volumeCard(d)
+                        weightCard(d)
+                        recordsCard(d)
+                    }
                     SectionTitle(text: L("Verlauf", "History"))
                     if d.history.isEmpty {
                         Card { Text(L("Noch keine Trainings. Starte eins im Tab Training.", "No workouts yet. Start one in the Training tab.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
-                    ForEach(d.history) { w in
-                        NavigationLink { WorkoutDetailView(workoutId: w.id) } label: { historyRow(w) }
-                            .buttonStyle(.plain)
+                    CardGrid {
+                        ForEach(d.history) { w in
+                            NavigationLink { WorkoutDetailView(workoutId: w.id) } label: { historyRow(w) }
+                                .buttonStyle(.plain)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

@@ -24,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 80
     defaults:
       run:
         working-directory: ios
@@ -160,6 +160,27 @@ jobs:
                   shutil.copy(f"build/attachments-{slug}/" + a["exportedFileName"], f"build/screenshots/device-{slug}-" + name)
           PY
             xcrun simctl shutdown "$udid" || true
+          done
+          # The iPhone Duo has no simulator yet: its two screens drawn in the app on the main simulator.
+          for duo in inner outer; do
+            TEST_RUNNER_DUO=$duo xcodebuild test \
+              -project MauveFit.xcodeproj -scheme MauveFit \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/test \
+              -only-testing:MauveFitUITests/DeviceScreens \
+              -resultBundlePath build/duo-$duo.xcresult | tee build-duo-$duo.log | grep -E "error:|Test Case|\*\* TEST" || true
+            grep -q "\*\* TEST SUCCEEDED \*\*" build-duo-$duo.log
+            mkdir -p build/attachments-duo-$duo
+            xcrun xcresulttool export attachments --path build/duo-$duo.xcresult --output-path build/attachments-duo-$duo
+            python3 - "duo-$duo" <<'PY'
+          import json, re, shutil, sys
+          slug = sys.argv[1]
+          for test in json.load(open(f"build/attachments-{slug}/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  name = name if name.endswith(".png") else name + ".png"
+                  shutil.copy(f"build/attachments-{slug}/" + a["exportedFileName"], f"build/screenshots/device-iphone-{slug}-" + name)
+          PY
           done
           ls build/screenshots | grep device- || true
 

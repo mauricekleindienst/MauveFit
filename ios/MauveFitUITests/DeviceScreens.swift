@@ -9,9 +9,12 @@ final class DeviceScreens: XCTestCase {
         continueAfterFailure = false
     }
 
+    /** "-demoDuo inner" / "-demoDuo outer" draw the iPhone Duo's screens (passed by the CI as DUO). */
+    private let duo = ProcessInfo.processInfo.environment["DUO"].map { ["-demoDuo", $0] } ?? []
+
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-demoData", "-AppleLanguages", "(de)", "-AppleLocale", "de_DE"] + extra
+        app.launchArguments = ["-demoData", "-AppleLanguages", "(de)", "-AppleLocale", "de_DE"] + duo + extra
         app.launch()
         return app
     }

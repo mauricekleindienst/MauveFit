@@ -19,6 +19,19 @@ enum Demo {
     static var enabled: Bool { has("-demoData") || empty }
     /** A throwaway store with nothing in it, like a fresh install, for the empty-state walk. */
     static var empty: Bool { has("-emptyData") }
+    /**
+     * The iPhone Duo's screens drawn at their size, scaled to fit: "inner" (626 x 890 pt) or
+     * "outer" (466 x 678 pt). No simulator has the Duo yet, so the screenshot test uses this.
+     */
+    static var duo: String? {
+        #if DEBUG
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-demoDuo"), i + 1 < args.count else { return nil }
+        return args[i + 1]
+        #else
+        return nil
+        #endif
+    }
     static var workout: Bool { has("-demoWorkout") || has("-demoSummary") }
     /** The workout the summary shows, set once the demo store has made it. */
     nonisolated(unsafe) private(set) static var summaryId: String?

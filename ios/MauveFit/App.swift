@@ -41,7 +41,7 @@ struct MauveFitApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            DuoFrame { RootView() }
                 .environment(store)
                 .environment(router)
                 .onChange(of: phase) { _, p in
@@ -72,6 +72,28 @@ enum AppIcon {
         let wanted = name(for: accent)
         guard UIApplication.shared.alternateIconName != wanted else { return }
         UIApplication.shared.setAlternateIconName(wanted) { _ in }
+    }
+}
+
+/** Debug only: the app at the iPhone Duo's screen size, scaled to fit (see Demo.duo). */
+struct DuoFrame<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if let duo = Demo.duo {
+            let size = duo == "outer" ? CGSize(width: 466, height: 678) : CGSize(width: 626, height: 890)
+            GeometryReader { g in
+                let scale = min(g.size.width / size.width, g.size.height / size.height)
+                content
+                    .frame(width: size.width, height: size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
+                    .scaleEffect(scale)
+                    .frame(width: g.size.width, height: g.size.height)
+            }
+            .background(Color(white: 0.3).ignoresSafeArea())
+        } else {
+            content
+        }
     }
 }
 

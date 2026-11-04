@@ -30,6 +30,23 @@ struct TrainingView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("library")
                     }
+                    // Gym helpers that need no workout (#36).
+                    NavigationLink { ToolsView() } label: {
+                        Card(padding: 16) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "wrench.and.screwdriver.fill").font(.system(size: 18, weight: .semibold)).foregroundStyle(Ink.accent)
+                                    .frame(width: 40, height: 40).background(Circle().fill(Ink.accent.opacity(0.16)))
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(L("Werkzeuge", "Tools")).font(.fit(.titleMedium)).foregroundStyle(Ink.text)
+                                    Text(L("Intervall-Timer, 1RM, Scheiben, Aufwärmen", "Interval timer, 1RM, plates, warm-up")).font(.fit(.bodySmall)).foregroundStyle(Ink.muted).lineLimit(1)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Ink.faint)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("tools")
                     HStack {
                         SectionTitle(text: L("Deine Pläne", "Your plans"))
                         Button { showPacks = true } label: { Label(L("Vorlagen", "Templates"), systemImage: "square.stack.3d.up").font(.fit(.label)) }

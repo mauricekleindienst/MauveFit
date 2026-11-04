@@ -58,6 +58,13 @@ final class ScreenshotTests: XCTestCase {
         tab(app, 1)
         snap(app, "02-training")
 
+        let tools = element(app, "tools")
+        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        tools.tap()
+        XCTAssertTrue(element(app, "toolsScreen").waitForExistence(timeout: 10))
+        snap(app, "25-werkzeuge")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
         let library = element(app, "library")
         XCTAssertTrue(library.waitForExistence(timeout: 10))
         library.tap()

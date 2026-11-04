@@ -279,6 +279,10 @@ struct AppData: Codable, Hashable {
     /** Food diary and water per day (ISO date to ml). */
     var food: [FoodEntry] = []
     var water: [String: Int] = [:]
+    /** Cardio sessions, logged by hand or taken over from Apple Health, newest first. */
+    var cardio: [CardioSession] = []
+    /** Start times of imported sessions deleted in the app, so an import skips them. */
+    var cardioDismissed: [Int64] = []
     /** Personal setup notes per exercise id (seat height, grip...), shown in the workout. */
     var exerciseNotes: [String: String] = [:]
     /** ISO weeks ("2026-W44") whose weekly challenge was completed; its size is the count shown. */
@@ -310,6 +314,7 @@ struct AppData: Codable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case routines, history, active, favorites, settings, profile, bodyWeights, food, water
+        case cardio, cardioDismissed
         case exerciseNotes
         case challengesDone, freezes, frozenWeeks, streakSettled, streakRun, questsClaimed, questXp, questsDone
         case questCoins, coinsSpent, owned, title, rerollDay, rerollCount, boostUntil, questStreak, questStreakDay, questStreakBest
@@ -323,6 +328,7 @@ struct AppData: Codable, Hashable {
         active = c.opt(.active); favorites = c.value(.favorites, [])
         settings = c.value(.settings, Settings()); profile = c.value(.profile, Profile())
         bodyWeights = c.value(.bodyWeights, []); food = c.value(.food, []); water = c.value(.water, [:])
+        cardio = c.value(.cardio, []); cardioDismissed = c.value(.cardioDismissed, [])
         exerciseNotes = c.value(.exerciseNotes, [:])
         challengesDone = c.value(.challengesDone, []); freezes = c.value(.freezes, 0); frozenWeeks = c.value(.frozenWeeks, [])
         streakSettled = c.value(.streakSettled, ""); streakRun = c.value(.streakRun, 0)

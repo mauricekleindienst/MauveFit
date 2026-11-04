@@ -574,6 +574,34 @@ final class MauveFitTests: XCTestCase {
         }
     }
 
+    /** Cardio as on Android: duplicates on import, dismissed imports, week minutes, effort (#31). */
+    func testCardio() {
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        let t = nowMs() - 3_600_000
+        store.addCardio(CardioSession(at: t, kind: .run, minutes: 30))
+        // The same run from the watch a few seconds later, and an evening ride: only the ride is new.
+        let fromWatch = [CardioSession(at: t + 20_000, kind: .run, minutes: 31, source: "health"),
+                         CardioSession(at: t + 10 * 3_600_000, kind: .bike, minutes: 40, source: "health")]
+        XCTAssertEqual(store.importCardio(fromWatch), 1)
+        XCTAssertEqual(store.importCardio(fromWatch), 0)
+        // An imported session deleted in the app stays gone.
+        let ride = store.data.cardio.first { $0.kind == .bike }!
+        store.deleteCardio(ride.id)
+        XCTAssertEqual(store.importCardio(fromWatch), 0)
+        XCTAssertEqual(Cardio.weekMinutes(store.data.cardio).reduce(0, +), Stats.weekStart(Date()) <= Stats.day(t) ? 30 : 0)
+        XCTAssertEqual(Cardio.Effort.of(8), .hard)
+        XCTAssertEqual(Cardio.Effort.of(4), .easy)
+        XCTAssertTrue(Cardio.isHard(CardioSession(avgHr: 160)))
+        XCTAssertEqual(Cardio.fmtMinutes(80), "1:20 h")
+        // Android's backup keys read back.
+        let json = #"{"cardio":[{"id":"c1","at":1760000000000,"kind":"swim","minutes":40,"distanceKm":1.5,"source":"health"}],"cardioDismissed":[5]}"#
+        let d = try! JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+        XCTAssertEqual(d.cardio.first?.kind, .swim)
+        XCTAssertEqual(d.cardioDismissed, [5])
+        XCTAssertTrue(Quests.Daily.Cardio.supported)
+        XCTAssertTrue(Quests.Daily.allCases.allSatisfy(\.supported))
+    }
+
     /** Supersets as on Android: labels, alternating without rest, rest after the round (#30). */
     func testSupersets() {
         // A lone member loses its group; an id that comes back further down starts a new group.
@@ -644,6 +672,25 @@ final class MauveFitTests: XCTestCase {
         let second = Set(copies.suffix(pack.routines.count).flatMap { $0.exercises.compactMap(\.superset) })
         XCTAssertFalse(first.isEmpty)
         XCTAssertTrue(first.isDisjoint(with: second))
+    }
+
+    /** Tools as on Android: interval maths, 1RM table and plates (#36). */
+    func testTools() {
+        let p = Intervals.Plan(workSec: 20, restSec: 10, rounds: 8)
+        XCTAssertEqual(p.totalMs, 230_000)
+        XCTAssertEqual(Intervals.at(p, 0).phase, .work)
+        XCTAssertEqual(Intervals.secondsLeft(Intervals.at(p, 1)), 20)
+        XCTAssertEqual(Intervals.at(p, 25_000).phase, .rest)
+        XCTAssertEqual(Intervals.at(p, 31_000).round, 2)
+        XCTAssertEqual(Intervals.at(p, 230_000).phase, .done)
+        XCTAssertEqual(Intervals.emom(10).totalMs, 600_000)
+        XCTAssertEqual(Strength.repsAt(100), 1)
+        XCTAssertEqual(Strength.repsAt(75), 10)
+        XCTAssertEqual(Strength.table(100, step: 2.5).first, Strength.Row(percent: 95, weight: 95, reps: 2))
+        XCTAssertEqual(Coach.plates(102, bar: 20), [25, 15, 1.25])
+        XCTAssertEqual(Coach.plates(20, bar: 20), [])
+        XCTAssertNil(Coach.plates(15, bar: 20))
+        XCTAssertNil(Coach.plates(100_000_000, bar: 20))
     }
 
     func testNutritionTargets() {

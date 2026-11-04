@@ -53,7 +53,7 @@ struct WorkoutView: View {
                 header(w)
                 CardGrid {
                     ForEach(Array(w.entries.enumerated()), id: \.element.id) { i, e in
-                        EntryCard(index: i, entry: e, onInfo: { detail = $0 })
+                        EntryCard(index: i, entry: e, superset: supersetInfo(w, i), onInfo: { detail = $0 })
                     }
                 }
                 Button { picking = true } label: { Label(L("Übung hinzufügen", "Add exercise"), systemImage: "plus") }
@@ -92,12 +92,25 @@ struct WorkoutView: View {
     }
 }
 
+/** Where an exercise sits in its superset: "A1" and the names of the exercises it alternates with. */
+private struct SupersetInfo { let label: String; let partners: [String] }
+
+private func supersetInfo(_ w: Workout, _ index: Int) -> SupersetInfo? {
+    let groups = w.entries.map(\.superset)
+    guard let run = Supersets.members(groups, index), let label = Supersets.label(groups, index) else { return nil }
+    return SupersetInfo(label: label, partners: run.filter { $0 != index }.map { ExerciseRepo.shared[w.entries[$0].exerciseId]?.title ?? w.entries[$0].exerciseId })
+}
+
 /** One exercise of the running workout with its set rows. */
 private struct EntryCard: View {
     @Environment(Store.self) private var store
     let index: Int
     let entry: ExerciseEntry
+    let superset: SupersetInfo?
     let onInfo: (Exercise) -> Void
+    @State private var swapping = false
+    @State private var editingNote = false
+    @State private var noteDraft = ""
 
     var body: some View {
         let ex = ExerciseRepo.shared[entry.exerciseId]
@@ -106,7 +119,15 @@ private struct EntryCard: View {
         let bodyweight = ex?.bodyweight == true && !entry.sets.contains { $0.weight > 0 }
         let done = entry.sets.filter { $0.done && !$0.warmup }.count
         let total = entry.sets.filter { !$0.warmup }.count
+        let note = store.data.exerciseNotes[entry.exerciseId]
         Card(padding: 16) {
+            if let superset {
+                Label(L("Supersatz \(superset.label) · im Wechsel mit \(superset.partners.joined(separator: ", "))",
+                        "Superset \(superset.label) · alternate with \(superset.partners.joined(separator: ", "))"), systemImage: "link")
+                    .font(.fit(.labelSmall)).foregroundStyle(Ink.mauve).lineLimit(1)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Capsule().fill(Ink.mauve.opacity(0.15)))
+            }
             HStack(spacing: 12) {
                 Button { if let ex { onInfo(ex) } } label: { ExerciseThumb(exercise: ex, size: 56) }
                     .buttonStyle(.plain)
@@ -120,6 +141,13 @@ private struct EntryCard: View {
                 Spacer(minLength: 0)
                 Menu {
                     if let ex { Button { onInfo(ex) } label: { Label(L("Anleitung", "How to"), systemImage: "info.circle") } }
+                    if !entry.sets.contains(where: \.warmup) && (entry.sets.first?.weight ?? 0) > 0 {
+                        Button { store.addWarmups(index) } label: { Label(L("Aufwärmsätze hinzufügen", "Add warm-up sets"), systemImage: "flame") }
+                    }
+                    Button { swapping = true } label: { Label(L("Übung tauschen", "Swap exercise"), systemImage: "arrow.left.arrow.right") }
+                    Button { noteDraft = note ?? ""; editingNote = true } label: {
+                        Label(note == nil ? L("Notiz hinzufügen", "Add note") : L("Notiz bearbeiten", "Edit note"), systemImage: "note.text")
+                    }
                     Menu(L("Pause: \(Fmt.clock(entry.restSec))", "Rest: \(Fmt.clock(entry.restSec))")) {
                         ForEach([0, 30, 45, 60, 90, 120, 150, 180, 240], id: \.self) { s in
                             Button(s == 0 ? L("Keine", "None") : Fmt.clock(s)) { store.setRest(index, seconds: s) }
@@ -131,6 +159,11 @@ private struct EntryCard: View {
                         .frame(width: 40, height: 40).background(Circle().fill(Ink.raised))
                 }
                 .accessibilityLabel(L("Mehr", "More"))
+            }
+            if let note {
+                // The personal setup note (seat height, grip...), right where it is needed.
+                Label(note, systemImage: "note.text").font(.fit(.bodySmall)).foregroundStyle(Ink.muted)
+                    .onTapGesture { noteDraft = note; editingNote = true }
             }
             HStack(spacing: 8) {
                 Text(L("Satz", "Set")).lineLimit(1).minimumScaleFactor(0.6).frame(width: 34, alignment: .leading)
@@ -148,9 +181,6 @@ private struct EntryCard: View {
                     // Four controls in a row: larger text would push the numbers out of their fields.
                     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .contextMenu {
-                        Button { store.setSet(index, si) { $0.warmup.toggle() } } label: {
-                            Label(s.warmup ? L("Arbeitssatz", "Working set") : L("Aufwärmsatz", "Warm-up set"), systemImage: "flame")
-                        }
                         Button(role: .destructive) { store.removeSet(index, si) } label: { Label(L("Satz löschen", "Delete set"), systemImage: "trash") }
                     }
             }
@@ -159,6 +189,71 @@ private struct EntryCard: View {
                     .background(Capsule().fill(Ink.raised))
             }
             .buttonStyle(.plain).foregroundStyle(Ink.text).padding(.top, 2)
+        }
+        .sheet(isPresented: $swapping) { ExercisePicker { store.swapExercise(index, to: $0) } }
+        .alert(L("Notiz zur Übung", "Exercise note"), isPresented: $editingNote) {
+            TextField(L("Sitzhöhe, Griff, Einstellung …", "Seat height, grip, setting …"), text: $noteDraft)
+            Button(L("Speichern", "Save")) { store.setExerciseNote(entry.exerciseId, noteDraft) }
+            Button(L("Abbrechen", "Cancel"), role: .cancel) {}
+        } message: {
+            Text(L("Erscheint bei dieser Übung in jedem Training.", "Shows with this exercise in every workout."))
+        }
+    }
+}
+
+/** What each RPE means in reps left in reserve. */
+func rpeHint(_ rpe: Int) -> String {
+    switch rpe {
+    case 6: L("4 oder mehr Wiederholungen übrig", "4 or more reps left")
+    case 7: L("3 Wiederholungen übrig", "3 reps left")
+    case 8: L("2 Wiederholungen übrig", "2 reps left")
+    case 9: L("1 Wiederholung übrig", "1 rep left")
+    case 10: L("Nichts mehr übrig", "Nothing left")
+    default: L("Wie schwer war der Satz?", "How hard was the set?")
+    }
+}
+
+/** The set number with its type and RPE marks; a tap opens the menu to change them, as on Android. */
+private struct SetLabel: View {
+    @Environment(Store.self) private var store
+    let entry: Int
+    let set: Int
+    let value: SetEntry
+    let label: String
+
+    var body: some View {
+        let mark = value.warmup ? nil : value.type == .Drop ? "D" : value.type == .Failure ? L("V", "F") : nil
+        let marks = [mark, value.rpe > 0 ? "@\(value.rpe)" : nil].compactMap { $0 }
+        Menu {
+            Section {
+                option(L("Normaler Satz", "Normal set"), warmup: false, type: .Normal)
+                option(L("Aufwärmsatz", "Warm-up set"), warmup: true, type: .Normal)
+                option(L("Dropsatz", "Drop set"), warmup: false, type: .Drop)
+                option(L("Bis zum Versagen", "To failure"), warmup: false, type: .Failure)
+            }
+            Section(L("Anstrengung (RPE)", "Effort (RPE)")) {
+                ForEach([0, 6, 7, 8, 9, 10], id: \.self) { r in
+                    Button { store.setSet(entry, set) { $0.rpe = r } } label: {
+                        if value.rpe == r { Label(r == 0 ? "–" : "\(r) · " + rpeHint(r), systemImage: "checkmark") }
+                        else { Text(r == 0 ? L("– keine Angabe", "– not rated") : "\(r) · " + rpeHint(r)) }
+                    }
+                }
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(label).font(.fit(.number))
+                    .foregroundStyle(value.warmup ? Ink.coral : value.done ? Ink.accent : Ink.muted)
+                if !marks.isEmpty { Text(marks.joined(separator: " ")).font(.fit(.labelSmall)).foregroundStyle(Ink.coral).lineLimit(1) }
+            }
+            .frame(width: 34, alignment: .leading)
+        }
+        .accessibilityLabel(L("Satz \(label), Art und Anstrengung", "Set \(label), type and effort"))
+    }
+
+    private func option(_ text: String, warmup: Bool, type: SetType) -> some View {
+        let on = value.warmup == warmup && (warmup || value.type == type)
+        return Button { store.setSet(entry, set) { $0.warmup = warmup; $0.type = type } } label: {
+            if on { Label(text, systemImage: "checkmark") } else { Text(text) }
         }
     }
 }
@@ -175,8 +270,7 @@ private struct SetRow: View {
     var body: some View {
         let step = store.data.settings.weightStep
         HStack(spacing: 8) {
-            Text(label).font(.fit(.number))
-                .foregroundStyle(value.warmup ? Ink.coral : Ink.muted).frame(width: 34, alignment: .leading)
+            SetLabel(entry: entry, set: set, value: value, label: label)
             if !bodyweight {
                 NumberField(
                     name: L("Gewicht", "Weight"),

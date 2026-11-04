@@ -279,6 +279,8 @@ struct AppData: Codable, Hashable {
     /** Food diary and water per day (ISO date to ml). */
     var food: [FoodEntry] = []
     var water: [String: Int] = [:]
+    /** Personal setup notes per exercise id (seat height, grip...), shown in the workout. */
+    var exerciseNotes: [String: String] = [:]
     /** ISO weeks ("2026-W44") whose weekly challenge was completed; its size is the count shown. */
     var challengesDone: Set<String> = []
     /** Streak freezes in stock (0 to 2) and the missed weeks they covered, as ISO week keys. */
@@ -308,6 +310,7 @@ struct AppData: Codable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case routines, history, active, favorites, settings, profile, bodyWeights, food, water
+        case exerciseNotes
         case challengesDone, freezes, frozenWeeks, streakSettled, streakRun, questsClaimed, questXp, questsDone
         case questCoins, coinsSpent, owned, title, rerollDay, rerollCount, boostUntil, questStreak, questStreakDay, questStreakBest
     }
@@ -320,6 +323,7 @@ struct AppData: Codable, Hashable {
         active = c.opt(.active); favorites = c.value(.favorites, [])
         settings = c.value(.settings, Settings()); profile = c.value(.profile, Profile())
         bodyWeights = c.value(.bodyWeights, []); food = c.value(.food, []); water = c.value(.water, [:])
+        exerciseNotes = c.value(.exerciseNotes, [:])
         challengesDone = c.value(.challengesDone, []); freezes = c.value(.freezes, 0); frozenWeeks = c.value(.frozenWeeks, [])
         streakSettled = c.value(.streakSettled, ""); streakRun = c.value(.streakRun, 0)
         questsClaimed = c.value(.questsClaimed, []); questXp = c.value(.questXp, 0); questsDone = c.value(.questsDone, 0)

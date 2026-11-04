@@ -92,7 +92,7 @@ final class Store {
     func startWorkout(_ routine: Routine?) {
         update { d in
             guard d.active == nil else { return }
-            let entries = (routine?.exercises ?? []).map { p in
+            var entries = (routine?.exercises ?? []).map { p in
                 let weight = Coach.startWeight(d, repo, p.exerciseId, reps: p.reps)
                 let reps = Coach.startReps(d, p.exerciseId, planned: p.reps)
                 return ExerciseEntry(
@@ -101,6 +101,8 @@ final class Store {
                     superset: p.superset
                 )
             }
+            let groups = Supersets.clean(entries.map(\.superset))
+            for i in entries.indices { entries[i].superset = groups[i] }
             var w = Workout(name: routine?.name ?? L("Freies Training", "Free workout"), routineId: routine?.id, entries: entries)
             w.lastActivityAt = nowMs()
             d.active = w
@@ -147,11 +149,21 @@ final class Store {
                 stopRest = true
             }
             if w.entries[entry].sets[set].done {
-                let rest = w.entries[entry].restSec
-                if rest > 0 {
-                    w.restEndsAt = nowMs() + Int64(rest) * 1000
-                    w.restTotalSec = rest
-                    startRest = rest
+                let ticked = w.entries[entry].sets[set]
+                // In a superset the partner comes next without rest; the rest follows the round.
+                let next = ticked.warmup ? nil : Supersets.afterSet(w.entries, entry)
+                let complete = w.entries.allSatisfy { $0.sets.allSatisfy(\.done) }
+                if (next != nil && next?.rest == false) || complete {
+                    w.restEndsAt = nil
+                    stopRest = true
+                } else {
+                    // Short after warm-ups, longer after a set that fell short.
+                    let rest = Coach.restFor(w.entries[entry], ticked)
+                    if rest > 0 {
+                        w.restEndsAt = nowMs() + Int64(rest) * 1000
+                        w.restTotalSec = rest
+                        startRest = rest
+                    }
                 }
             }
         }
@@ -163,8 +175,54 @@ final class Store {
         updateActive { w in
             guard w.entries.indices.contains(entry) else { return }
             var s = w.entries[entry].sets.last ?? SetEntry(reps: 10)
-            s.done = false; s.warmup = false
+            s.done = false; s.warmup = false; s.type = .Normal; s.rpe = 0
             w.entries[entry].sets.append(s)
+        }
+    }
+
+    /** Puts ramp-up sets in front of the first working set (once); from the bar on barbell lifts only. */
+    func addWarmups(_ entry: Int) {
+        let s = data.settings
+        updateActive { w in
+            guard w.entries.indices.contains(entry), !w.entries[entry].sets.contains(where: \.warmup) else { return }
+            let work = w.entries[entry].sets.first?.weight ?? 0
+            let floor = Coach.usesBarbell(repo[w.entries[entry].exerciseId]) ? s.barWeight : s.weightStep
+            w.entries[entry].sets.insert(contentsOf: Coach.warmups(work, step: s.weightStep, bar: floor), at: 0)
+        }
+    }
+
+    /**
+     * Replaces the exercise at [index] for the sets still open, keeping the planned reps. Sets
+     * already done stay logged under the old exercise, right after the new one (after the whole
+     * superset, so the group stays together).
+     */
+    func swapExercise(_ index: Int, to exerciseId: String) {
+        let d = data
+        updateActive { w in
+            guard w.entries.indices.contains(index) else { return }
+            let old = w.entries[index]
+            let runEnd = Supersets.members(w.entries.map(\.superset), index)?.upperBound ?? index
+            var doneOld: ExerciseEntry?
+            let done = old.sets.filter(\.done)
+            if !done.isEmpty { doneOld = old; doneOld?.sets = done; doneOld?.superset = nil; doneOld?.uid = newId() }
+            let reps = old.sets.first { !$0.warmup }.map { $0.target > 0 ? $0.target : $0.reps } ?? 10
+            let weight = Coach.startWeight(d, repo, exerciseId, reps: reps)
+            let open = max(1, old.sets.filter { !$0.done && !$0.warmup }.count)
+            var fresh = old
+            fresh.exerciseId = exerciseId
+            fresh.sets = Array(repeating: SetEntry(weight: weight, reps: reps, target: reps), count: open)
+            fresh.load = 1
+            fresh.fullTop = 0
+            w.entries[index] = fresh
+            if let doneOld { w.entries.insert(doneOld, at: runEnd + 1) }
+        }
+    }
+
+    /** The personal setup note of an exercise; an empty one is removed. */
+    func setExerciseNote(_ exerciseId: String, _ note: String) {
+        update { d in
+            let t = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            if t.isEmpty { d.exerciseNotes.removeValue(forKey: exerciseId) } else { d.exerciseNotes[exerciseId] = t }
         }
     }
 

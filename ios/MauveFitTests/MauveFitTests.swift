@@ -512,6 +512,7 @@ final class MauveFitTests: XCTestCase {
         // The snapshot survives the trip through JSON, as the widget reads it.
         let back = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(s))
         XCTAssertEqual(back, s)
+    }
 
     /** Every accent but copper has an alternate home screen icon in the built app (#19). */
     func testAccentIcons() throws {

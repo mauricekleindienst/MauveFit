@@ -80,7 +80,10 @@ final class Store {
         // Written beside and swapped in, so a crash mid-write never leaves a truncated file.
         if let bytes = try? enc.encode(data) { try? bytes.write(to: file, options: .atomic) }
         // The home screen widget shows the real data only, never a test's or the sample data.
-        if file == Store.defaultFile() { WidgetSync.publish(data) }
+        if file == Store.defaultFile() {
+            WidgetSync.publish(data)
+            scheduleHealthSync()
+        }
     }
 
     // MARK: - Workout flow
@@ -236,9 +239,6 @@ final class Store {
             }
         }
         RestAlarm.cancel()
-        if data.settings.healthWrite, let w = data.history.first, w.id == saved {
-            Task { await Health.shared.save(w) }
-        }
         return saved
     }
 
@@ -302,11 +302,26 @@ final class Store {
             d.bodyWeights.removeAll { Stats.day($0.at) == today }
             d.bodyWeights.insert(BodyWeight(at: nowMs(), kg: kg), at: 0)
         }
-        if data.settings.healthWrite { Task { await Health.shared.saveWeight(kg) } }
     }
 
     /** The body weight the targets use: the app's own log first, else Apple Health's. */
     var bodyWeight: Double? { Stats.latestWeight(data) ?? healthKg }
+
+    @ObservationIgnored private var healthTask: Task<Void, Never>?
+
+    /**
+     * Writes new, changed and deleted workouts and weights to Apple Health a few seconds after a
+     * save: finishing a workout and rating it come close together (as on Android).
+     */
+    func scheduleHealthSync(delay: Duration = .seconds(3)) {
+        guard data.settings.healthWrite, file == Store.defaultFile() else { return }
+        healthTask?.cancel()
+        healthTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled, let self else { return }
+            await Health.shared.sync(self.data)
+        }
+    }
 
     /** Reads the latest body mass from Apple Health when syncing is on. */
     func refreshHealthWeight() {
@@ -321,10 +336,14 @@ final class Store {
     func setHealth(_ on: Bool) async {
         if on {
             guard await Health.shared.requestAccess() else { return }
+            // Everything of the last 90 days is written anew.
+            Health.shared.forget()
             updateSettings { $0.healthWrite = true }
             refreshHealthWeight()
+            scheduleHealthSync(delay: .zero)
         } else {
             updateSettings { $0.healthWrite = false }
+            Health.shared.forget()
             healthKg = nil
         }
     }

@@ -73,9 +73,18 @@ struct SettingsView: View {
                         Label(L("Mit Apple Health synchronisieren", "Sync with Apple Health"), systemImage: "heart.fill")
                     }
                     .accessibilityIdentifier("healthToggle")
+                    if s.healthWrite {
+                        // When it last wrote, or why it could not, as on Android.
+                        let h = Health.shared.state
+                        Text(h.error.map { L("Schreiben fehlgeschlagen: \($0)", "Writing failed: \($0)") }
+                             ?? (h.at > 0 ? L("Zuletzt geschrieben: \(Fmt.date(h.at, style: .long)), \(Date(ms: h.at).formatted(date: .omitted, time: .shortened))",
+                                              "Last written: \(Fmt.date(h.at, style: .long)), \(Date(ms: h.at).formatted(date: .omitted, time: .shortened))")
+                                 : L("Neue Trainings und Gewichte werden automatisch geschrieben.", "New workouts and weights are written automatically.")))
+                            .font(.fit(.bodySmall)).foregroundStyle(h.error == nil ? Ink.muted : Ink.red)
+                    }
                 } header: { header("Apple Health") } footer: {
-                    Text(L("Schreibt fertige Trainings als Krafttraining und dein Körpergewicht in Apple Health und liest dein Gewicht für die Ernährungsziele. Die Daten bleiben auf deinem iPhone.",
-                           "Writes finished workouts as strength training and your body weight to Apple Health, and reads your weight for the nutrition targets. The data stays on your iPhone."))
+                    Text(L("Schreibt deine Trainings und dein Körpergewicht der letzten 90 Tage in Apple Health, hält Änderungen und Löschungen nach und liest dein Gewicht für die Ernährungsziele. Die Daten bleiben auf deinem iPhone.",
+                           "Writes your workouts and body weight of the last 90 days to Apple Health, keeps edits and deletions in step, and reads your weight for the nutrition targets. The data stays on your iPhone."))
                         .font(.fit(.bodySmall))
                 }
                 .font(.fit(.body))

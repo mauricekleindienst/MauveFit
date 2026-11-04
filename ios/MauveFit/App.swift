@@ -50,6 +50,7 @@ struct MauveFitApp: App {
                     } else if !Demo.enabled {
                         store.closeIdleWorkout()
                         store.refreshHealthWeight()
+                        store.scheduleHealthSync(delay: .zero)
                         store.settleStreak()
                     }
                 }

@@ -119,6 +119,9 @@ enum Demo {
             FoodEntry(date: iso, name: L("Proteinshake", "Protein shake"), kcal: 180, protein: 30, carbs: 6, fat: 3),
         ]
         d.water = [iso: 1750]
+        var run = CardioSession(at: cal.date(byAdding: .day, value: -1, to: today)!.ms + 7 * 3_600_000, kind: .run, minutes: 32, distanceKm: 5.4, rpe: 5)
+        run.note = ""
+        d.cardio = [run, CardioSession(at: cal.date(byAdding: .day, value: -3, to: today)!.ms + 18 * 3_600_000, kind: .bike, minutes: 45, distanceKm: 17.2, avgHr: 132, source: "health")]
         d.favorites = ["0025", "0043", "0652"]
     }
 }

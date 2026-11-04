@@ -291,10 +291,10 @@ enum Quests {
         }
 
         /**
-         * Quests the iOS app cannot be completed in yet: cardio (#31), RPE and supersets (#30). They
-         * stay out of the draw until those land; everything else draws exactly as on Android.
+         * Quests the iOS app cannot be completed in yet: RPE and supersets (#30). They stay out of
+         * the draw until that lands; everything else draws exactly as on Android.
          */
-        var supported: Bool { self != .Cardio && self != .Rpe && self != .Superset }
+        var supported: Bool { self != .Rpe && self != .Superset }
     }
 
     static let weeklyXp = 60
@@ -316,14 +316,14 @@ enum Quests {
         let workouts: Int
         let usesFood: Bool
         let usesWater: Bool
-        let usesCardio = false
+        let usesCardio: Bool
         let weighs: Bool
         let usesRpe: Bool
         let hasSupersets: Bool
         let typicalSets: Double?
         let typicalWater: Int?
         let typicalProtein: Double?
-        let typicalCardio: Int? = nil
+        let typicalCardio: Int?
 
         init(_ d: AppData, _ day: Date) {
             past = d.history.filter { Stats.day($0.startedAt) < day }
@@ -342,6 +342,10 @@ enum Quests {
             var foodDays: [String: Int] = [:]
             for f in d.food where f.date >= from14 && f.date < today { foodDays[f.date, default: 0] += f.protein }
             let waterDays = d.water.filter { $0.key >= from14 && $0.key < today && $0.value > 0 }
+            let recent = d.cardio.filter { let c = Stats.day($0.at); return c < day && c >= Stats.addDays(day, -30) }
+            usesCardio = !recent.isEmpty
+            let minutes = recent.map(\.minutes).sorted()
+            typicalCardio = minutes.isEmpty ? nil : minutes[minutes.count / 2]
             usesFood = !foodDays.isEmpty
             usesWater = !waterDays.isEmpty
             let month = Stats.addDays(day, -30)
@@ -454,7 +458,8 @@ enum Quests {
             return of(L("Eine neue Übung ausprobieren", "Try a new exercise"), min(1, new), 1)
         case .Cardio:
             let t = c.typicalCardio.map { min(45, max(15, $0 / 5 * 5)) } ?? 20
-            return of(c.usesCardio ? L("\(t) Minuten Cardio", "\(t) minutes of cardio") : L("\(t) Minuten locker bewegen", "\(t) minutes of easy movement"), 0, t)
+            return of(c.usesCardio ? L("\(t) Minuten Cardio", "\(t) minutes of cardio") : L("\(t) Minuten locker bewegen", "\(t) minutes of easy movement"),
+                      d.cardio.filter { Stats.day($0.at) == day }.reduce(0) { $0 + $1.minutes }, t)
         case .Weigh:
             return of(L("Körpergewicht eintragen", "Log your body weight"), min(1, d.bodyWeights.filter { Stats.day($0.at) == day }.count), 1)
         case .Warmup:
@@ -585,7 +590,7 @@ enum Achievements {
         let prs = Records.timeline(h)
         let records = Set(prs.map(\.exerciseId)).count
         let level = Quests.level(Quests.xp(d)).level
-        let cardioMin = 0
+        let cardioMin = d.cardio.reduce(0) { $0 + $1.minutes }
         let maxCollection = Shop.collections(d).filter { $0.tier >= 5 }.count
         let weekend = h.filter { Stats.isoWeekday(Stats.day($0.startedAt)) >= 6 }.count
         func p(_ v: Double, _ goal: Double) -> Double { min(1, max(0, v / goal)) }

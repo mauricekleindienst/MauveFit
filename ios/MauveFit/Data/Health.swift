@@ -12,6 +12,19 @@ enum HealthMapping {
         return DateInterval(start: Date(ms: w.startedAt), end: Date(ms: end))
     }
 
+    /** The cardio kind of a Health workout type; nil for strength and other non-cardio kinds. */
+    static func cardioKind(_ t: HKWorkoutActivityType) -> CardioKind? {
+        switch t {
+        case .running: .run
+        case .cycling, .handCycling: .bike
+        case .rowing, .paddleSports: .row
+        case .walking, .hiking: .walk
+        case .swimming: .swim
+        case .elliptical, .stairs, .stairClimbing, .crossCountrySkiing, .jumpRope, .highIntensityIntervalTraining, .mixedCardio, .cardioDance, .stepTraining: .other
+        default: nil
+        }
+    }
+
     /** Body weights outside 20 to 400 kg are typos, never written to Health. */
     static func validKg(_ kg: Double) -> Bool { kg.isFinite && kg >= 20 && kg <= 400 }
 
@@ -121,7 +134,7 @@ final class Health {
     func requestAccess() async -> Bool {
         guard available else { return false }
         do {
-            try await store.requestAuthorization(toShare: [HKObjectType.workoutType(), bodyMass], read: [bodyMass])
+            try await store.requestAuthorization(toShare: [HKObjectType.workoutType(), bodyMass], read: [bodyMass, HKObjectType.workoutType(), HKQuantityType(.heartRate)])
             return true
         } catch {
             return false
@@ -189,6 +202,34 @@ final class Health {
         } catch {
             builder.discardWorkout()
             throw error
+        }
+    }
+
+    /**
+     * Cardio sessions of the last [days] days from Apple Health (the watch, other apps), never the
+     * strength workouts this app wrote itself; nil without access.
+     */
+    func recentCardio(days: Int = 14) async -> [CardioSession]? {
+        guard available else { return nil }
+        let since = Date().addingTimeInterval(-Double(days) * 86_400)
+        let query = HKSampleQueryDescriptor(
+            predicates: [.workout(HKQuery.predicateForSamples(withStart: since, end: nil))],
+            sortDescriptors: [SortDescriptor(\.startDate, order: .reverse)],
+            limit: 200
+        )
+        guard let workouts = try? await query.result(for: store) else { return nil }
+        return workouts.compactMap { w -> CardioSession? in
+            guard w.metadata?[HealthMapping.idKey] == nil, let kind = HealthMapping.cardioKind(w.workoutActivityType) else { return nil }
+            let km = w.statistics(for: HKQuantityType(.distanceWalkingRunning))?.sumQuantity()
+                ?? w.statistics(for: HKQuantityType(.distanceCycling))?.sumQuantity()
+                ?? w.statistics(for: HKQuantityType(.distanceSwimming))?.sumQuantity()
+            let hr = w.statistics(for: HKQuantityType(.heartRate))?.averageQuantity()
+            return CardioSession(
+                at: w.startDate.ms, kind: kind, minutes: max(1, Int((w.duration / 60).rounded())),
+                distanceKm: km.map { $0.doubleValue(for: .meterUnit(with: .kilo)) }.flatMap { $0 >= 0.1 ? ($0 * 10).rounded() / 10 : nil },
+                avgHr: hr.map { Int($0.doubleValue(for: HKUnit.count().unitDivided(by: .minute())).rounded()) },
+                source: "health"
+            )
         }
     }
 

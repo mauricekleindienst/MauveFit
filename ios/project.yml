@@ -20,6 +20,8 @@ targets:
       - path: MauveFit
         excludes:
           - PrivacyInfo.xcprivacy
+      # Shared with the widget extension: the snapshot it reads and its views.
+      - path: Shared
       # Privacy manifest: no tracking, no data collected, no required-reason APIs.
       - path: MauveFit/PrivacyInfo.xcprivacy
         buildPhase: resources
@@ -43,6 +45,8 @@ targets:
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        # The widget reads the app's snapshot from this shared container (#12).
+        com.apple.security.application-groups: [group.dev.mauve.fit]
     info:
       path: MauveFit/Info.plist
       properties:
@@ -51,11 +55,17 @@ targets:
         # The page colour of the theme, so the start fades straight into the app.
         UILaunchScreen:
           UIColorName: LaunchBackground
+        # Links from the home screen widget: mauvefit://start-next, mauvefit://workout.
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.mauve.fit
+            CFBundleURLSchemes: [mauvefit]
         # Only HTTPS from the system: no export compliance questions per TestFlight build.
         ITSAppUsesNonExemptEncryption: false
         # English defaults; de.lproj/InfoPlist.strings has the German texts.
         NSHealthShareUsageDescription: Mauve Fit reads your latest body weight from Apple Health to set your daily calorie and protein targets.
         NSHealthUpdateUsageDescription: Mauve Fit saves your finished workouts as strength training and the body weights you log to Apple Health.
+    dependencies:
+      - target: MauveFitWidget
     postCompileScripts:
       - name: Copy exercise data
         basedOnDependencyAnalysis: false
@@ -75,6 +85,32 @@ targets:
           for f in exercises.json exercises_de.json exercise_names_de.json; do
             cp "$src/$f" "$dst/$f"
           done
+  # Home screen widget (#12): reads the snapshot the app writes into the App Group.
+  MauveFitWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MauveFitWidget
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.mauve.fit.widget
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Mauve Fit
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
+    entitlements:
+      path: MauveFitWidget/MauveFitWidget.entitlements
+      properties:
+        com.apple.security.application-groups: [group.dev.mauve.fit]
+    info:
+      path: MauveFitWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Mauve Fit
+        CFBundleLocalizations: [de, en]
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
   MauveFitTests:
     type: bundle.unit-test
     platform: iOS

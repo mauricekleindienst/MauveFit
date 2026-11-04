@@ -339,6 +339,45 @@ final class MauveFitTests: XCTestCase {
         XCTAssertFalse(HealthMapping.validKg(.nan))
     }
 
+    /** As Android's HealthExport: new and changed entries are written, deleted ones removed, old ones left alone. */
+    func testHealthPlan() {
+        let now: Int64 = 1_780_000_000_000
+        func w(_ id: String, daysAgo: Int64, note: String = "") -> Workout {
+            var x = Workout(name: "Push", entries: [entry("0025", [(60, 8)])])
+            x.id = id
+            x.startedAt = now - daysAgo * 86_400_000
+            x.finishedAt = x.startedAt + 3_600_000
+            x.note = note
+            return x
+        }
+        var d = AppData()
+        d.history = [w("a", daysAgo: 1), w("b", daysAgo: 30), w("old", daysAgo: 200)]
+        d.bodyWeights = [BodyWeight(at: now - 86_400_000, kg: 80), BodyWeight(at: now - 2 * 86_400_000, kg: 5)]
+        var running = Workout(name: "Live")
+        running.startedAt = now
+        d.active = running
+
+        // First run: everything inside 90 days, no typo weight, nothing running.
+        let first = HealthPlan.plan(d, synced: [:], now: now)
+        XCTAssertEqual(Set(first.workouts.map(\.id)), ["a", "b"])
+        XCTAssertEqual(first.weights.map(\.kg), [80])
+        XCTAssertTrue(first.delete.isEmpty)
+        // Nothing changed: nothing to do.
+        XCTAssertTrue(HealthPlan.plan(d, synced: first.after, now: now).empty)
+        // A note edited: that workout is removed and written anew; one deleted in the app goes.
+        d.history[0].note = "felt strong"
+        d.history.remove(at: 1)
+        let next = HealthPlan.plan(d, synced: first.after, now: now)
+        XCTAssertEqual(next.workouts.map(\.id), ["a"])
+        XCTAssertEqual(next.delete, [HealthPlan.workoutId(w("a", daysAgo: 1)), HealthPlan.workoutId(w("b", daysAgo: 30))])
+        XCTAssertTrue(next.weights.isEmpty)
+        // An id that fell out of the window is forgotten, not deleted from Health.
+        var synced = next.after
+        synced["workout-\(now - 100 * 86_400_000)-gone"] = "x"
+        XCTAssertTrue(HealthPlan.plan(d, synced: synced, now: now).delete.isEmpty)
+        XCTAssertEqual(HealthMapping.metadata(d.history[0])[HealthMapping.idKey] as? String, HealthPlan.workoutId(d.history[0]))
+    }
+
     /** The setting keeps Android's key, and test runs never switch Health on. */
     func testHealthSetting() async throws {
         let json = #"{"settings":{"healthWrite":true}}"#

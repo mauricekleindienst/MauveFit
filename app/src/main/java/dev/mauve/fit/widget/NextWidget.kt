@@ -121,8 +121,8 @@ class NextWidget : GlanceAppWidget() {
                     Text(if (st.resting) st.last ?: st.exercise else st.next, style = style(TextColor, 13.sp, FontWeight.Medium), maxLines = 1)
                 }
                 Spacer(GlanceModifier.width(8.dp))
-                if (st.resting) Clock(st.restEndsAt!!, down = true, color = Copper, size = 20f)
-                else Text("${st.done}/${st.total}", style = style(Copper, 16.sp, FontWeight.Bold), maxLines = 1)
+                if (st.resting) Clock(st.restEndsAt!!, down = true, color = AccentInk, size = 20f)
+                else Text("${st.done}/${st.total}", style = style(AccentInk, 16.sp, FontWeight.Bold), maxLines = 1)
             }
             return
         }
@@ -146,22 +146,22 @@ class NextWidget : GlanceAppWidget() {
             }
             Spacer(GlanceModifier.height(4.dp))
             if (st.resting) {
-                st.last?.let { Text(it, style = style(Copper, 13.sp, FontWeight.Medium), maxLines = 1) }
+                st.last?.let { Text(it, style = style(AccentInk, 13.sp, FontWeight.Medium), maxLines = 1) }
                 Text(L("Als Nächstes: ${st.exercise} · ${st.next}", "Up next: ${st.exercise} · ${st.next}"), style = style(Muted, 13.sp), maxLines = 2)
             } else {
-                Text(st.next, style = style(Copper, 14.sp, FontWeight.Medium), maxLines = 1)
+                Text(st.next, style = style(AccentInk, 14.sp, FontWeight.Medium), maxLines = 1)
                 st.last?.let { Text(L("Zuletzt: $it", "Last: $it"), style = style(Muted, 12.sp), maxLines = 1) }
             }
             Spacer(GlanceModifier.defaultWeight())
             Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(16.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text(L("Sätze", "Sets"), GlanceModifier.defaultWeight(), style = style(Muted, 13.sp))
-                    Text("${st.done}/${st.total}", style = style(Copper, 15.sp, FontWeight.Bold))
+                    Text("${st.done}/${st.total}", style = style(AccentInk, 15.sp, FontWeight.Bold))
                 }
                 Spacer(GlanceModifier.height(6.dp))
                 LinearProgressIndicator(
                     if (st.total == 0) 0f else (st.done / st.total.toFloat()).coerceIn(0f, 1f), GlanceModifier.fillMaxWidth(),
-                    color = ColorProvider(Copper), backgroundColor = ColorProvider(Raised),
+                    color = ColorProvider(AccentInk), backgroundColor = ColorProvider(Raised),
                 )
             }
         }
@@ -182,7 +182,7 @@ class NextWidget : GlanceAppWidget() {
                 )
             }
             Spacer(GlanceModifier.width(8.dp))
-            Text("$week/$goal", style = style(Copper, 16.sp, FontWeight.Bold), maxLines = 1)
+            Text("$week/$goal", style = style(AccentInk, 16.sp, FontWeight.Bold), maxLines = 1)
         }
     }
 
@@ -229,7 +229,7 @@ class NextWidget : GlanceAppWidget() {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(challenge.title, GlanceModifier.defaultWeight(), style = style(TextColor, 13.sp, FontWeight.Medium), maxLines = 1)
                 Spacer(GlanceModifier.width(8.dp))
-                Text(challenge.label, style = style(if (challenge.done) Copper else Mauve, 13.sp, FontWeight.Bold), maxLines = 1)
+                Text(challenge.label, style = style(if (challenge.done) AccentInk else Mauve, 13.sp, FontWeight.Bold), maxLines = 1)
             }
             Spacer(GlanceModifier.height(6.dp))
             LinearProgressIndicator(
@@ -252,13 +252,13 @@ class NextWidget : GlanceAppWidget() {
         Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(16.dp).padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(L("Diese Woche", "This week"), GlanceModifier.defaultWeight(), style = style(Muted, 13.sp))
-                Text("$week/$goal", style = style(Copper, 15.sp, FontWeight.Bold))
+                Text("$week/$goal", style = style(AccentInk, 15.sp, FontWeight.Bold))
             }
             Spacer(GlanceModifier.height(6.dp))
             if (strip == null) {
                 LinearProgressIndicator(
                     (week / goal.toFloat()).coerceIn(0f, 1f), GlanceModifier.fillMaxWidth(),
-                    color = ColorProvider(Copper), backgroundColor = ColorProvider(Raised),
+                    color = ColorProvider(AccentInk), backgroundColor = ColorProvider(Raised),
                 )
             } else {
                 val today = LocalDate.now()
@@ -279,7 +279,7 @@ class NextWidget : GlanceAppWidget() {
                                 maxLines = 1,
                             )
                             Spacer(GlanceModifier.height(4.dp))
-                            Box(GlanceModifier.size(18.dp).background(if (day in strip) Copper else Raised).cornerRadius(9.dp)) {}
+                            Box(GlanceModifier.size(18.dp).background(if (day in strip) AccentInk else Raised).cornerRadius(9.dp)) {}
                         }
                     }
                 }

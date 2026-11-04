@@ -78,7 +78,7 @@ class NutritionWidget : GlanceAppWidget() {
                 Column(GlanceModifier.defaultWeight().fillMaxHeight()) {
                     Eyebrow(L("Ernährung heute", "Nutrition today"))
                     Spacer(GlanceModifier.defaultWeight())
-                    Meter(L("Kalorien", "Calories"), t.kcal, t.targets?.kcal, "kcal", Copper)
+                    Meter(L("Kalorien", "Calories"), t.kcal, t.targets?.kcal, "kcal", AccentInk)
                     Spacer(GlanceModifier.height(8.dp))
                     Meter("Protein", t.protein, t.targets?.protein, "g", Mauve)
                 }
@@ -97,7 +97,7 @@ class NutritionWidget : GlanceAppWidget() {
             Column(GlanceModifier.fillMaxSize().background(Bg).cornerRadius(24.dp).padding(12.dp).clickable(open)) {
                 Eyebrow(L("Heute", "Today"))
                 Spacer(GlanceModifier.height(4.dp))
-                Meter(L("Kalorien", "Calories"), t.kcal, t.targets?.kcal, "kcal", Copper, compact = true)
+                Meter(L("Kalorien", "Calories"), t.kcal, t.targets?.kcal, "kcal", AccentInk, compact = true)
                 Spacer(GlanceModifier.height(4.dp))
                 Meter("Protein", t.protein, t.targets?.protein, "g", Mauve, compact = true)
                 Spacer(GlanceModifier.defaultWeight())

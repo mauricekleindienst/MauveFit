@@ -60,7 +60,19 @@ internal val Surface = Color(0xFF1A1D21)
 internal val Raised = Color(0xFF23272C)
 internal val TextColor = Color(0xFFEDEFF2)
 internal val Muted = Color(0xFFA6ACB4)
-internal val Copper = Color(0xFFDB9062)
+/**
+ * The accent picked in the settings, in its dark-theme tone (the widgets are always dark). The
+ * wallpaper accent takes the wallpaper's primary tone on Android 12+, as in the app.
+ */
+internal val AccentInk: Color
+    get() {
+        val accent = dev.mauve.fit.ui.Accent.of(App.store.data.value.settings.accent)
+        val ctx = Widgets.context
+        if (accent == dev.mauve.fit.ui.Accent.Wallpaper && ctx != null && android.os.Build.VERSION.SDK_INT >= 31) {
+            return androidx.compose.material3.dynamicDarkColorScheme(ctx).primary
+        }
+        return accent.onInk
+    }
 internal val Mauve = Color(0xFFC5A9E6)
 
 internal fun style(color: Color, size: TextUnit, weight: FontWeight = FontWeight.Normal) =
@@ -68,14 +80,14 @@ internal fun style(color: Color, size: TextUnit, weight: FontWeight = FontWeight
 
 /** Small copper caption above a widget's main line. */
 @Composable
-internal fun Eyebrow(text: String, modifier: GlanceModifier = GlanceModifier, color: Color = Copper) =
+internal fun Eyebrow(text: String, modifier: GlanceModifier = GlanceModifier, color: Color = AccentInk) =
     Text(text, modifier, style = style(color, 12.sp, FontWeight.Medium), maxLines = 1)
 
 /** A rounded button in the accent colour. */
 @Composable
 internal fun Pill(label: String, action: Action, modifier: GlanceModifier = GlanceModifier) {
     Box(
-        modifier.background(Copper).cornerRadius(50.dp).padding(horizontal = 14.dp, vertical = 7.dp).clickable(action),
+        modifier.background(AccentInk).cornerRadius(50.dp).padding(horizontal = 14.dp, vertical = 7.dp).clickable(action),
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = style(Bg, 13.sp, FontWeight.Bold), maxLines = 1)
@@ -121,15 +133,20 @@ object Widgets {
     }
 
     @OptIn(FlowPreview::class)
+    /** For the wallpaper accent, which needs a context to read the wallpaper's colours. */
+    @Volatile internal var context: Context? = null
+        private set
+
     fun follow(context: Context) {
         val app = context.applicationContext
+        this.context = app
         combine(App.store.data, Recovery.today) { d, r ->
             val today = todayKey()
             val food = d.food.filter { it.date == today }
             listOf(
                 // Next workout: the running one down to its sets, the plans, the week.
                 d.active?.name, d.active?.entries, d.active?.restEndsAt, d.active?.lastSet, d.routines, d.history.size, d.history.firstOrNull()?.id,
-                d.settings.weeklyGoal, d.settings.blockStart, d.settings.blockWeeks, d.settings.language,
+                d.settings.weeklyGoal, d.settings.blockStart, d.settings.blockWeeks, d.settings.language, d.settings.accent,
                 // Weekly challenge and streak.
                 d.challengesDone, d.freezes, d.frozenWeeks, d.profile.level, d.profile.setup,
                 // Nutrition today.

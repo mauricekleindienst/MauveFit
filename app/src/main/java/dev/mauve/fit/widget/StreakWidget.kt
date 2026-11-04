@@ -83,12 +83,12 @@ class StreakWidget : GlanceAppWidget() {
                 Column(GlanceModifier.fillMaxWidth().background(Surface).cornerRadius(14.dp).padding(horizontal = 10.dp, vertical = 8.dp)) {
                     Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text(L("Erholung", "Readiness"), GlanceModifier.defaultWeight(), style = style(Muted, 12.sp), maxLines = 1)
-                        Text("$readiness", style = style(Copper, 14.sp, FontWeight.Bold), maxLines = 1)
+                        Text("$readiness", style = style(AccentInk, 14.sp, FontWeight.Bold), maxLines = 1)
                     }
                     Spacer(GlanceModifier.height(4.dp))
                     LinearProgressIndicator(
                         readiness / 100f, GlanceModifier.fillMaxWidth(),
-                        color = ColorProvider(Copper), backgroundColor = ColorProvider(Raised),
+                        color = ColorProvider(AccentInk), backgroundColor = ColorProvider(Raised),
                     )
                 }
             } else {
@@ -124,7 +124,7 @@ private fun Weeks(d: AppData) {
                 }
                 val color = when {
                     frozen -> Mauve
-                    n >= goal -> Copper
+                    n >= goal -> AccentInk
                     i == 0 -> TextColor
                     else -> Muted
                 }

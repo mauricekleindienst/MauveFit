@@ -3,7 +3,7 @@ import SwiftUI
 @main
 struct MauveFitApp: App {
     @State private var store: Store
-    @State private var router = Router(showWorkout: Demo.workout)
+    @State private var router = Router(showWorkout: Demo.workout && !Demo.widgets)
     @Environment(\.scenePhase) private var phase
 
     init() {
@@ -142,6 +142,19 @@ struct RootView: View {
         // Folding and unfolding the iPhone Duo changes the width while the app runs.
         .background { GeometryReader { g in Color.clear.onAppear { width = g.size.width }.onChange(of: g.size.width) { _, w in width = w } } }
         .environment(\.wide, width >= RootView.twoColumns)
+        // Links from the home screen widget.
+        .onOpenURL { url in
+            switch url.host {
+            case "start-next":
+                if store.data.active == nil, let r = Stats.nextRoutine(store.data) { store.startWorkout(r) }
+                router.showWorkout = store.data.active != nil
+            case "workout":
+                router.showWorkout = store.data.active != nil
+            default:
+                break
+            }
+        }
+        .overlay { if Demo.widgets { WidgetGallery() } }
         .fullScreenCover(isPresented: $router.showWorkout) {
             WorkoutView()
                 .environment(store).environment(router)

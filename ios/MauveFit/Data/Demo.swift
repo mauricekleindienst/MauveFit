@@ -32,6 +32,8 @@ enum Demo {
         return nil
         #endif
     }
+    /** Shows the widget layouts in the app, for the screenshot test (WidgetKit cannot be captured there). */
+    static var widgets: Bool { has("-demoWidgets") }
     static var workout: Bool { has("-demoWorkout") || has("-demoSummary") }
     /** The workout the summary shows, set once the demo store has made it. */
     nonisolated(unsafe) private(set) static var summaryId: String?

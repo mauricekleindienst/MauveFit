@@ -8,3 +8,5 @@ fastlane/report.xml
 fastlane/README.md
 # Written by XcodeGen from project.yml.
 MauveFit/MauveFit.entitlements
+MauveFitWidget/Info.plist
+MauveFitWidget/MauveFitWidget.entitlements

@@ -55,7 +55,10 @@ final class Store {
         block(&d)
         guard d != data else { return }
         if d.settings.language != data.settings.language { I18n.apply(d.settings.language) }
-        if d.settings.accent != data.settings.accent { Ink.accentChoice = Accent.of(d.settings.accent) }
+        if d.settings.accent != data.settings.accent {
+            Ink.accentChoice = Accent.of(d.settings.accent)
+            AppIcon.follow(Ink.accentChoice)
+        }
         data = d
         scheduleSave()
     }

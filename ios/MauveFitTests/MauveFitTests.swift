@@ -512,6 +512,16 @@ final class MauveFitTests: XCTestCase {
         // The snapshot survives the trip through JSON, as the widget reads it.
         let back = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(s))
         XCTAssertEqual(back, s)
+
+    /** Every accent but copper has an alternate home screen icon in the built app (#19). */
+    func testAccentIcons() throws {
+        XCTAssertNil(AppIcon.name(for: .copper))
+        let icons = try XCTUnwrap(Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any])
+        let alternates = try XCTUnwrap(icons["CFBundleAlternateIcons"] as? [String: Any])
+        for accent in Accent.allCases where accent != .copper {
+            let name = try XCTUnwrap(AppIcon.name(for: accent))
+            XCTAssertNotNil(alternates[name], name)
+        }
     }
 
     func testNutritionTargets() {

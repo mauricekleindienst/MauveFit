@@ -36,6 +36,9 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # The Android launcher icon, rendered at 1024 px (App Store Connect refuses builds without one).
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # One alternate icon per accent (#19): the mark in the accent colour, switched with the accent.
+        ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES: AppIcon-sand AppIcon-sage AppIcon-blue AppIcon-mauve AppIcon-lime AppIcon-gold AppIcon-ruby AppIcon-emerald AppIcon-ocean AppIcon-rose
+        ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS: YES
     # Apple Health: workouts and body weight, only when switched on in Settings.
     entitlements:
       path: MauveFit/MauveFit.entitlements

@@ -65,6 +65,7 @@ object Foreground {
 
 fun createChannels(context: Context) {
     val nm = context.getSystemService(NotificationManager::class.java)
+    IntervalService.createChannel(context)
     nm.deleteNotificationChannel(CH_WORKOUT_OLD)
     // Default importance so it sits with the other notifications and shows its buttons; it stays
     // silent, the rest alert below is the one that makes noise.

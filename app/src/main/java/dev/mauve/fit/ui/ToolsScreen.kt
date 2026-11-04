@@ -1,7 +1,5 @@
 package dev.mauve.fit.ui
 
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.os.SystemClock
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -43,6 +41,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -67,6 +67,7 @@ import dev.mauve.fit.data.L
 import dev.mauve.fit.data.Stats
 import dev.mauve.fit.data.Strength
 import dev.mauve.fit.system.Haptics
+import dev.mauve.fit.system.IntervalRun
 import kotlinx.coroutines.delay
 
 /** Gym helpers that need no workout: interval timer, 1RM, plates and warm-up sets. */
@@ -85,7 +86,7 @@ fun ToolsScreen(data: AppData, nav: NavController) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ScreenTitle(L("Timer und Rechner fürs Training", "Timer and calculators for training"), L("Werkzeuge", "Tools"))
-            IntervalCard(s.sound)
+            IntervalCard()
             OneRmCard(s.weightStep)
             PlateCard(s.barWeight)
             WarmupCard(s.weightStep, s.barWeight)
@@ -137,26 +138,28 @@ private enum class IntervalMode(private val de: String, private val en: String) 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun IntervalCard(sound: Boolean) {
+private fun IntervalCard() {
     var mode by rememberSaveable { mutableStateOf(IntervalMode.Emom) }
     var emomRounds by rememberSaveable { mutableIntStateOf(10) }
     var work by rememberSaveable { mutableIntStateOf(40) }
     var rest by rememberSaveable { mutableIntStateOf(20) }
     var rounds by rememberSaveable { mutableIntStateOf(8) }
-    // Clock anchors: elapsed = banked + (now - startedAt) while running, so the countdown is
-    // computed from real time and never drifts, however late a frame comes. 0 = not running.
-    var startedAt by rememberSaveable { mutableLongStateOf(0L) }
-    var banked by rememberSaveable { mutableLongStateOf(0L) }
+    // The run lives in IntervalRun and its cues in IntervalService, so the timer keeps beeping
+    // with the app in the background or the screen off; this card only shows it.
+    val context = LocalContext.current
+    val run by IntervalRun.state.collectAsState()
     var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
 
-    val plan = when (mode) {
+    val chosen = when (mode) {
         IntervalMode.Emom -> Intervals.emom(emomRounds)
         IntervalMode.Tabata -> Intervals.tabata
         IntervalMode.Custom -> Intervals.Plan(work, rest, rounds)
     }
-    val running = startedAt != 0L
-    val elapsed = banked + if (running) (now - startedAt).coerceAtLeast(0) else 0
-    val idle = !running && banked == 0L
+    LaunchedEffect(chosen) { IntervalRun.setPlan(chosen) }
+    val plan = if (run.idle) chosen else run.plan
+    val running = run.running
+    val elapsed = run.elapsed(now)
+    val idle = run.idle
     val tick = Intervals.at(plan, elapsed)
     val secLeft = Intervals.secondsLeft(tick)
 
@@ -165,10 +168,7 @@ private fun IntervalCard(sound: Boolean) {
             now = SystemClock.elapsedRealtime()
             delay(100)
         }
-    }
-    // The last phase ran out: stop on the finished state.
-    LaunchedEffect(tick.phase, running) {
-        if (running && tick.phase == Intervals.Phase.Done) { banked = plan.totalMs; startedAt = 0L }
+        now = SystemClock.elapsedRealtime()
     }
 
     // The screen stays on while the timer runs; the phone is usually lying on the floor.
@@ -176,26 +176,6 @@ private fun IntervalCard(sound: Boolean) {
     DisposableEffect(running) {
         view.keepScreenOn = running
         onDispose { view.keepScreenOn = false }
-    }
-
-    val tone = remember { runCatching { ToneGenerator(AudioManager.STREAM_MUSIC, 80) }.getOrNull() }
-    DisposableEffect(Unit) { onDispose { tone?.release() } }
-    fun beep(kind: Int, ms: Int) { if (sound) runCatching { tone?.startTone(kind, ms) } }
-
-    // Cues on every phase change: three pulses when work starts, one firm hit for rest.
-    val cue = tick.phase to tick.round
-    var lastCue by remember { mutableStateOf(cue) }
-    LaunchedEffect(cue) {
-        if (cue != lastCue && (running || tick.phase == Intervals.Phase.Done)) when (tick.phase) {
-            Intervals.Phase.Work -> { Haptics.restOver(); beep(ToneGenerator.TONE_PROP_BEEP2, 300) }
-            Intervals.Phase.Rest -> { Haptics.heavy(); beep(ToneGenerator.TONE_PROP_BEEP, 250) }
-            Intervals.Phase.Done -> { Haptics.success(); beep(ToneGenerator.TONE_PROP_ACK, 500) }
-        }
-        lastCue = cue
-    }
-    // A light tick on the last three seconds of a phase.
-    LaunchedEffect(secLeft) {
-        if (running && tick.phase != Intervals.Phase.Done && secLeft in 1..3 && tick.phaseMs > 5_000) Haptics.tick()
     }
 
     Card(Modifier.fillMaxWidth()) {
@@ -248,17 +228,15 @@ private fun IntervalCard(sound: Boolean) {
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (running) PrimaryButton(L("Pause", "Pause"), Modifier.weight(1f), Icons.Rounded.Pause) {
-                banked = elapsed; startedAt = 0L
+                IntervalRun.pause()
             } else {
                 val done = tick.phase == Intervals.Phase.Done
                 PrimaryButton(if (idle || done) L("Starten", "Start") else L("Weiter", "Resume"), Modifier.weight(1f), Icons.Rounded.PlayArrow) {
-                    if (done) banked = 0L
-                    now = SystemClock.elapsedRealtime()
-                    startedAt = now
+                    IntervalRun.start(context)
                 }
             }
             RoundButton(Icons.Rounded.Replay, L("Zurücksetzen", "Reset"), size = 56.dp, enabled = !idle) {
-                banked = 0L; startedAt = 0L
+                IntervalRun.reset(); IntervalRun.setPlan(chosen)
             }
         }
     }

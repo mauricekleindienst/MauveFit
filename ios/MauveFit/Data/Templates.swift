@@ -48,4 +48,188 @@ enum Templates {
             ]),
         ]
     }
+
+    /**
+     * Whole template packs, the same as on Android (data/Templates.kt); adding one copies its plans
+     * next to the user's own, with fresh ids so two copies never share a superset group.
+     */
+    struct Pack: Identifiable {
+        let key: String
+        let name: String
+        let blurb: String
+        let routines: [Routine]
+        var id: String { key }
+    }
+
+    /** Same as [plan], but trained as a superset with the neighbours that share [group]. */
+    private static func pair(_ id: String, _ group: String, sets: Int = 3, reps: Int = 12, rest: Int = 75) -> PlanExercise {
+        PlanExercise(exerciseId: id, sets: sets, reps: reps, restSec: rest, superset: group)
+    }
+
+    static var packs: [Pack] {
+        [
+        Pack(key: "upper-lower", name: L("Oberkörper / Unterkörper", "Upper / Lower"), blurb: L("4× pro Woche · Studio", "4× a week · Gym"), routines: [
+                Routine(
+                    name: L("Oberkörper A", "Upper A"), note: L("Brust · Rücken · Schultern · Arme", "Chest · Back · Shoulders · Arms"),
+                    exercises: [
+                        plan("0025", 4, 6, 150),  // barbell bench press
+                        plan("0027", 4, 8, 120),  // barbell bent over row
+                        plan("0405", 3, 10, 90),  // dumbbell seated shoulder press
+                        plan("0198", 3, 10, 90),  // cable pulldown
+                        pair("0031", "arms"),     // barbell curl
+                        pair("0201", "arms"),     // cable pushdown
+                    ]
+                ),
+                Routine(
+                    name: L("Unterkörper A", "Lower A"), note: L("Quadrizeps · Beinbeuger · Waden", "Quads · Hamstrings · Calves"),
+                    exercises: [
+                        plan("0043", 4, 6, 180),  // barbell full squat
+                        plan("0085", 3, 8, 120),  // barbell romanian deadlift
+                        plan("0585", 3, 12, 60),  // lever leg extension
+                        plan("0586", 3, 12, 60),  // lever lying leg curl
+                        plan("0605", 4, 15, 60),  // lever standing calf raise
+                    ]
+                ),
+                Routine(
+                    name: L("Oberkörper B", "Upper B"), note: L("Schräg · Klimmzüge · Arme", "Incline · Pull-ups · Arms"),
+                    exercises: [
+                        plan("0314", 4, 8, 120),  // dumbbell incline bench press
+                        plan("0652", 4, 8, 120),  // pull-up
+                        plan("0861", 3, 12, 90),  // cable seated row
+                        pair("0334", "shoulders", reps: 15, rest: 60), // dumbbell lateral raise
+                        pair("0203", "shoulders", reps: 15, rest: 60), // cable rear delt row (rope)
+                        pair("0313", "arms"),     // dumbbell hammer curl
+                        pair("0194", "arms"),     // cable overhead triceps extension (rope)
+                    ]
+                ),
+                Routine(
+                    name: L("Unterkörper B", "Lower B"), note: L("Kreuzheben · Beinpresse · Bauch", "Deadlift · Leg press · Core"),
+                    exercises: [
+                        plan("0032", 3, 5, 180),  // barbell deadlift
+                        plan("0739", 3, 10, 120), // sled 45° leg press
+                        plan("0336", 3, 10, 90),  // dumbbell lunge
+                        plan("0599", 3, 12, 60),  // lever seated leg curl
+                        pair("0594", "finish", reps: 15, rest: 60), // lever seated calf raise
+                        pair("0175", "finish", reps: 15, rest: 60), // cable kneeling crunch
+                    ]
+                ),
+            ]),
+        Pack(key: "ppl", name: "Push / Pull / " + L("Beine", "Legs"), blurb: L("3 oder 6× pro Woche · Studio", "3 or 6× a week · Gym"), routines: [
+                Routine(
+                    name: "Push", note: L("Brust · Schultern · Trizeps", "Chest · Shoulders · Triceps"),
+                    exercises: [
+                        plan("0025", 4, 8, 150),  // barbell bench press
+                        plan("0314", 3, 10, 120), // dumbbell incline bench press
+                        plan("0405", 3, 10, 120), // dumbbell seated shoulder press
+                        pair("0334", "finish", reps: 15, rest: 60), // dumbbell lateral raise
+                        pair("0201", "finish", rest: 60),            // cable pushdown
+                    ]
+                ),
+                Routine(
+                    name: "Pull", note: L("Rücken · Bizeps", "Back · Biceps"),
+                    exercises: [
+                        plan("0652", 4, 8, 150),  // pull-up
+                        plan("0027", 4, 8, 120),  // barbell bent over row
+                        plan("0861", 3, 12, 90),  // cable seated row
+                        pair("0203", "finish", reps: 15, rest: 60), // cable rear delt row (rope)
+                        pair("0313", "finish", rest: 60),            // dumbbell hammer curl
+                    ]
+                ),
+                Routine(
+                    name: L("Beine", "Legs"), note: L("Quadrizeps · Beinbeuger · Waden", "Quads · Hamstrings · Calves"),
+                    exercises: [
+                        plan("0043", 4, 8, 180),  // barbell full squat
+                        plan("0085", 3, 10, 120), // barbell romanian deadlift
+                        plan("0739", 3, 12, 120), // sled 45° leg press
+                        pair("0586", "legs", rest: 60), // lever lying leg curl
+                        pair("0585", "legs", rest: 60), // lever leg extension
+                        plan("0605", 4, 15, 60),  // lever standing calf raise
+                    ]
+                ),
+            ]),
+        Pack(key: "home", name: L("Zuhause ohne Geräte", "Home, no equipment"), blurb: L("Nur Körpergewicht · 2 Einheiten", "Body weight only · 2 sessions"), routines: [
+                Routine(
+                    name: L("Zuhause A", "Home A"), note: L("Ohne Geräte · Ganzkörper", "No equipment · Full body"),
+                    exercises: [
+                        pair("0662", "a", reps: 12, rest: 60), // push-up
+                        pair("2368", "a", reps: 10, rest: 60), // split squats
+                        plan("3166", 3, 12, 60),  // bodyweight standing row
+                        plan("3013", 3, 15, 45),  // low glute bridge on floor
+                        plan("3662", 3, 8, 60),   // pike-to-cobra push-up
+                        plan("0276", 3, 12, 45),  // dead bug
+                    ]
+                ),
+                Routine(
+                    name: L("Zuhause B", "Home B"), note: L("Ohne Geräte · Ganzkörper", "No equipment · Full body"),
+                    exercises: [
+                        pair("0815", "b", reps: 12, rest: 60), // triceps dips floor
+                        pair("3769", "b", reps: 12, rest: 60), // curtsey squat
+                        plan("3168", 3, 12, 60),  // bodyweight squatting row
+                        plan("0489", 3, 12, 60),  // hyperextension
+                        plan("1373", 3, 20, 45),  // bodyweight standing calf raise
+                        plan("0872", 3, 12, 45),  // reverse crunch
+                        plan("1160", 3, 10, 60),  // burpee
+                    ]
+                ),
+            ]),
+        Pack(key: "strength", name: L("Kraft-Basis A/B", "Strength base A/B"), blurb: L("3× pro Woche · Langhantel · im Wechsel", "3× a week · Barbell · alternating"), routines: [
+                Routine(
+                    name: L("Kraft A", "Strength A"), note: L("Kniebeuge · Bankdrücken · Kreuzheben", "Squat · Bench · Deadlift"),
+                    exercises: [
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0025", 3, 5, 180),  // barbell bench press
+                        plan("0032", 1, 5, 180),  // barbell deadlift
+                        plan("1326", 3, 8, 120),  // chin-up
+                    ]
+                ),
+                Routine(
+                    name: L("Kraft B", "Strength B"), note: L("Kniebeuge · Schulterdrücken · Rudern", "Squat · Press · Row"),
+                    exercises: [
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0091", 3, 5, 180),  // barbell seated overhead press
+                        plan("0027", 3, 5, 150),  // barbell bent over row
+                        plan("0472", 3, 10, 60),  // hanging leg raise
+                    ]
+                ),
+            ]),
+        Pack(key: "four-lifts", name: L("Vier Grundübungen", "Four main lifts"), blurb: L("4× pro Woche · ein Hauptlift pro Tag", "4× a week · one main lift a day"), routines: [
+                Routine(
+                    name: L("Schulterdrücken", "Press day"), note: L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises: [
+                        plan("0091", 3, 5, 180),  // barbell seated overhead press
+                        plan("0251", 4, 10, 90),  // chest dip
+                        plan("1326", 4, 10, 90),  // chin-up
+                        plan("0334", 3, 15, 60),  // dumbbell lateral raise
+                    ]
+                ),
+                Routine(
+                    name: L("Kreuzheben", "Deadlift day"), note: L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises: [
+                        plan("0032", 3, 5, 180),  // barbell deadlift
+                        plan("0044", 3, 10, 120), // barbell good morning
+                        plan("0472", 3, 12, 60),  // hanging leg raise
+                        plan("0586", 3, 12, 60),  // lever lying leg curl
+                    ]
+                ),
+                Routine(
+                    name: L("Bankdrücken", "Bench day"), note: L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises: [
+                        plan("0025", 3, 5, 180),  // barbell bench press
+                        plan("0314", 4, 10, 90),  // dumbbell incline bench press
+                        plan("0861", 4, 10, 90),  // cable seated row
+                        plan("0201", 3, 12, 60),  // cable pushdown
+                    ]
+                ),
+                Routine(
+                    name: L("Kniebeuge", "Squat day"), note: L("Hauptlift plus Ergänzung", "Main lift plus assistance"),
+                    exercises: [
+                        plan("0043", 3, 5, 180),  // barbell full squat
+                        plan("0085", 3, 8, 120),  // barbell romanian deadlift
+                        plan("0336", 3, 10, 90),  // dumbbell lunge
+                        plan("0585", 3, 12, 60),  // lever leg extension
+                    ]
+                ),
+            ]),
+        ]
+    }
 }

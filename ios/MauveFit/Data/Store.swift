@@ -319,6 +319,25 @@ final class Store {
         }
     }
 
+    /** Adds the plans of a template pack next to the user's own, with fresh ids and fresh superset groups. */
+    func addTemplate(_ pack: Templates.Pack) {
+        update { d in
+            for r in pack.routines {
+                var copy = r
+                copy.id = newId()
+                var groups: [String: String] = [:]
+                for i in copy.exercises.indices {
+                    copy.exercises[i].uid = newId()
+                    if let g = copy.exercises[i].superset {
+                        if groups[g] == nil { groups[g] = newId() }
+                        copy.exercises[i].superset = groups[g]
+                    }
+                }
+                d.routines.append(copy)
+            }
+        }
+    }
+
     func deleteRoutine(_ id: String) { update { $0.routines.removeAll { $0.id == id } } }
 
     func moveRoutines(from: IndexSet, to: Int) { update { $0.routines.move(fromOffsets: from, toOffset: to) } }

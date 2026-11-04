@@ -5,6 +5,7 @@ struct TrainingView: View {
     @Environment(Store.self) private var store
     @Environment(Router.self) private var router
     @State private var editing: Routine?
+    @State private var showPacks = false
 
     var body: some View {
         let d = store.data
@@ -29,7 +30,12 @@ struct TrainingView: View {
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("library")
                     }
-                    SectionTitle(text: L("Deine Pläne", "Your plans"))
+                    HStack {
+                        SectionTitle(text: L("Deine Pläne", "Your plans"))
+                        Button { showPacks = true } label: { Label(L("Vorlagen", "Templates"), systemImage: "square.stack.3d.up").font(.fit(.label)) }
+                            .foregroundStyle(Ink.accent).padding(.top, 10)
+                            .accessibilityIdentifier("templates")
+                    }
                     if d.routines.isEmpty {
                         Card { Text(L("Noch keine Pläne. Lege oben rechts einen an.", "No plans yet. Add one at the top right.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
@@ -40,6 +46,7 @@ struct TrainingView: View {
             }
             .tabRoot()
             .sheet(item: $editing) { r in RoutineEditor(routine: r) }
+            .sheet(isPresented: $showPacks) { TemplatePacksView() }
         }
     }
 
@@ -370,6 +377,50 @@ struct ExerciseDetailView: View {
                 Button { store.toggleFavorite(exercise.id) } label: { Image(systemName: fav ? "star.fill" : "star") }
                     .accessibilityLabel(fav ? L("Kein Favorit mehr", "Remove favourite") : L("Als Favorit", "Add favourite"))
             }
+        }
+    }
+}
+
+/** Whole template packs to add next to the user's plans, as on Android (#43). */
+struct TemplatePacksView: View {
+    @Environment(Store.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var added: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 12) {
+                    Text(L("Die Pläne kommen zu deinen dazu, du kannst sie danach frei bearbeiten.", "The plans are added to yours; edit them freely afterwards."))
+                        .font(.fit(.bodyMedium)).foregroundStyle(Ink.muted).frame(maxWidth: .infinity, alignment: .leading)
+                    CardGrid {
+                        ForEach(Templates.packs) { pack in
+                            Card {
+                                Text(pack.name).font(.fit(.headlineSmall)).foregroundStyle(Ink.text)
+                                Text(pack.blurb).font(.fit(.bodyMedium)).foregroundStyle(Ink.muted)
+                                ForEach(pack.routines) { r in
+                                    Text("\(r.name) · \(Fmt.exercises(r.exercises.count))").font(.fit(.bodySmall)).foregroundStyle(Ink.faint)
+                                }
+                                Button {
+                                    store.addTemplate(pack)
+                                    added = pack.key
+                                } label: {
+                                    Label(added == pack.key ? L("Hinzugefügt", "Added") : L("Hinzufügen", "Add"), systemImage: added == pack.key ? "checkmark" : "plus")
+                                }
+                                .buttonStyle(.primary)
+                                .sensoryFeedback(.success, trigger: added)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 24)
+            }
+            .screen()
+            .accessibilityIdentifier("templatesScreen")
+            .navigationTitle(L("Vorlagen", "Templates"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button(L("Fertig", "Done")) { dismiss() }.fontWeight(.semibold) } }
         }
     }
 }

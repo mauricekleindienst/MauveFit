@@ -4,6 +4,7 @@ import SwiftUI
 /** The progress tab: totals, weekly volume, body weight, records and the workout history. */
 struct ProgressTab: View {
     @Environment(Store.self) private var store
+    @Environment(\.wide) private var wide
     @State private var weighing = false
 
     var body: some View {
@@ -23,15 +24,22 @@ struct ProgressTab: View {
                         volumeCard(d)
                         weightCard(d)
                         recordsCard(d)
+                        CardioCard()
                     }
                     SectionTitle(text: L("Verlauf", "History"))
-                    if d.history.isEmpty {
+                    if d.history.isEmpty && d.cardio.isEmpty {
                         Card { Text(L("Noch keine Trainings. Starte eins im Tab Training.", "No workouts yet. Start one in the Training tab.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
+                    // Strength workouts and cardio in one timeline, newest first.
                     CardGrid {
-                        ForEach(d.history) { w in
-                            NavigationLink { WorkoutDetailView(workoutId: w.id) } label: { historyRow(w) }
-                                .buttonStyle(.plain)
+                        ForEach(timeline(d), id: \.id) { item in
+                            switch item {
+                            case .workout(let w):
+                                NavigationLink { WorkoutDetailView(workoutId: w.id) } label: { historyRow(w) }
+                                    .buttonStyle(.plain)
+                            case .cardio(let c):
+                                CardioRow(session: c)
+                            }
                         }
                     }
                 }
@@ -88,7 +96,8 @@ struct ProgressTab: View {
                 }
             }
             .chartXAxis {
-                AxisMarks(values: weeks.map(\.0)) { v in
+                // In half the width (two columns) every second week, or the labels run into each other.
+                AxisMarks(values: weeks.enumerated().filter { !wide || $0.offset % 2 == 1 }.map(\.element.0)) { v in
                     AxisValueLabel {
                         if let date = v.as(Date.self) {
                             Text(L("KW", "W") + "\(Stats.calendar.component(.weekOfYear, from: date))").font(.fit(.labelSmall)).foregroundStyle(Ink.faint)
@@ -170,6 +179,16 @@ struct ProgressTab: View {
                 }
             }
         }
+    }
+
+    private enum Entry {
+        case workout(Workout), cardio(CardioSession)
+        var id: String { switch self { case .workout(let w): "w" + w.id; case .cardio(let c): "c" + c.id } }
+        var at: Int64 { switch self { case .workout(let w): w.startedAt; case .cardio(let c): c.at } }
+    }
+
+    private func timeline(_ d: AppData) -> [Entry] {
+        (d.history.map(Entry.workout) + d.cardio.map(Entry.cardio)).sorted { $0.at > $1.at }
     }
 
     private func historyRow(_ w: Workout) -> some View {

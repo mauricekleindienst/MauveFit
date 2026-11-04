@@ -408,6 +408,30 @@ final class Store {
 
     func updateSettings(_ block: (inout Settings) -> Void) { update { block(&$0.settings) } }
 
+    // MARK: - Cardio
+
+    func addCardio(_ s: CardioSession) {
+        update { d in d.cardio = (d.cardio + [s]).sorted { $0.at > $1.at } }
+    }
+
+    func deleteCardio(_ id: String) {
+        update { d in
+            guard let gone = d.cardio.first(where: { $0.id == id }) else { return }
+            // An imported session deleted here must not come back with the next import.
+            if gone.source == "health" { d.cardioDismissed = Array(Set(d.cardioDismissed + [gone.at]).sorted().suffix(200)) }
+            d.cardio.removeAll { $0.id == id }
+        }
+    }
+
+    /** Adds sessions from Apple Health that are not known yet; returns how many were new. */
+    @discardableResult
+    func importCardio(_ sessions: [CardioSession]) -> Int {
+        let fresh = Cardio.newSessions(data.cardio, sessions.filter { s in !data.cardioDismissed.contains { abs($0 - s.at) < 60_000 } })
+        guard !fresh.isEmpty else { return 0 }
+        update { d in d.cardio = (d.cardio + fresh).sorted { $0.at > $1.at } }
+        return fresh.count
+    }
+
     // MARK: - Quests, coins and the shop
 
     /** Banks the XP of quests just finished; true when something new was claimed. */

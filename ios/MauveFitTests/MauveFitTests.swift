@@ -537,7 +537,12 @@ final class MauveFitTests: XCTestCase {
 
     /** Supersets as on Android: labels, alternating without rest, rest after the round (#30). */
     func testSupersets() {
-        XCTAssertEqual(Supersets.clean(["a", nil, "b", "b", "a", "a"]), [nil, nil, "b", "b", Supersets.clean(["a", nil, "b", "b", "a", "a"])[4], Supersets.clean(["a", nil, "b", "b", "a", "a"])[4]])
+        // A lone member loses its group; an id that comes back further down starts a new group.
+        let cleaned = Supersets.clean(["a", nil, "b", "b", "a", "a"])
+        XCTAssertEqual(Array(cleaned.prefix(4)), [nil, nil, "b", "b"])
+        XCTAssertNotNil(cleaned[4])
+        XCTAssertNotEqual(cleaned[4], "a")
+        XCTAssertEqual(cleaned[4], cleaned[5])
         let groups: [String?] = ["g", "g", nil, "h", "h"]
         XCTAssertEqual(Supersets.label(groups, 0), "A1")
         XCTAssertEqual(Supersets.label(groups, 1), "A2")

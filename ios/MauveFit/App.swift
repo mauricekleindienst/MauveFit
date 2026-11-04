@@ -14,6 +14,8 @@ struct MauveFitApp: App {
             store.refreshHealthWeight()
         }
         store.settleStreak()
+        // A restored backup may carry another accent than the icon shows.
+        AppIcon.follow(Ink.accentChoice)
         Ink.accentChoice = Accent.of(store.data.settings.accent)
         _store = State(initialValue: store)
         // On iOS 26 the tab bar and toolbars are Liquid Glass by themselves; any appearance set
@@ -52,6 +54,24 @@ struct MauveFitApp: App {
                     }
                 }
         }
+    }
+}
+
+/**
+ * The home screen icon in the accent colour (#19): copper is the main icon, every other accent
+ * has an alternate icon of the same mark. iOS confirms each change with its own alert.
+ */
+@MainActor
+enum AppIcon {
+    static func name(for accent: Accent) -> String? { accent == .copper ? nil : "AppIcon-\(accent.rawValue)" }
+
+    static func follow(_ accent: Accent) {
+        // Test and screenshot runs keep the icon, so no alert covers them.
+        guard !Demo.enabled, ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+              UIApplication.shared.supportsAlternateIcons else { return }
+        let wanted = name(for: accent)
+        guard UIApplication.shared.alternateIconName != wanted else { return }
+        UIApplication.shared.setAlternateIconName(wanted) { _ in }
     }
 }
 

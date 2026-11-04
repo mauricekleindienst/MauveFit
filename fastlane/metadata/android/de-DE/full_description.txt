@@ -1,0 +1,27 @@
+Mauve Fit ist ein Trainingstagebuch für Krafttraining, das alles auf deinem Handy behält. Kein Konto, keine Werbung, kein Tracking. Das Training funktioniert komplett offline.
+
+PLÄNE UND COACH
+Starte mit fertigen Plänen oder bau dir eigene. Der Coach schlägt den nächsten Plan nach deiner Erholung vor, baut auf Wunsch ein Schnelltraining und plant Trainingsblöcke über mehrere Wochen, die sich jede Woche anpassen.
+
+TRAINING LOGGEN
+Gewicht und Wiederholungen Satz für Satz, Aufwärmsätze, Supersätze und RPE. Übungen unterwegs tauschen oder ergänzen und sehen, was du letztes Mal geschafft hast. Sätze lassen sich auch per Sprache eintragen. Der Pausentimer läuft in der Benachrichtigung weiter und meldet sich, wenn die Pause vorbei ist.
+
+STEIGERUNG UND REKORDE
+Mauve Fit trägt deine nächsten Gewichte ein: Hat jeder Satz sein Ziel erreicht, kommt eine Gewichtsstufe dazu. Dein bester Satz jeder Übung wird mit dem geschätzten Maximalgewicht (1RM) gespeichert, und nach jedem Training zeigt eine Zusammenfassung Dauer, Sätze, Volumen und neue Rekorde.
+
+1324 ÜBUNGEN
+Jede Übung mit Muskelkarte, viele mit Zeichnungen von Start- und Endposition, dazu Geräte und Schritt-für-Schritt-Anleitung. Durchsuchbar nach Name, Muskel oder Gerät.
+
+ERNÄHRUNG
+Kalorien, Protein, Kohlenhydrate und Fett gegen Tagesziele aus Körpergewicht und Ziel. Lebensmittel per Barcode oder Suche über Open Food Facts, Rezepte mit Einkaufsliste und dein Wasser im Blick.
+
+FORTSCHRITT UND MOTIVATION
+Diagramme für Volumen, Kraft und Körpergewicht, Fortschrittsfotos, Wochenziel mit Serie und Freezes, Wochen-Challenge, tägliche Quests mit XP, Level und Münzen für Akzentfarben und Titel im Shop.
+
+WERKZEUGE
+Intervall-Timer für EMOM, Tabata und eigene Intervalle, der auch bei ausgeschaltetem Bildschirm piept, dazu 1RM-Rechner, Scheibenrechner und Aufwärmhilfe.
+
+GALAXY WATCH, WIDGETS UND HEALTH CONNECT
+Die Uhr-App zeigt Satz und Pause am Handgelenk. Widgets für das nächste Training und die Ernährung des Tages. Mit Health Connect landen Trainings und Gewicht dort, und Schlaf und Puls fließen in die Erholung ein. Alles freiwillig.
+
+Deine Daten bleiben auf dem Gerät. Sicherung und CSV-Export jederzeit. Auf Deutsch und Englisch, hell und dunkel, mit Akzentfarbe nach Wahl, auch im App-Icon.

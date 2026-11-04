@@ -1,0 +1,27 @@
+Mauve Fit is a strength training log that keeps everything on your phone. No account, no ads, no tracking. Training works fully offline.
+
+PLANS AND COACH
+Start with ready-made plans or build your own. The coach suggests the next plan from your recovery, builds a quick workout on request and plans training blocks over several weeks that adjust every week.
+
+WORKOUT LOGGING
+Weight and reps set by set, warm-up sets, supersets and RPE. Swap or add exercises on the fly and see what you lifted last time. You can also log sets by voice. The rest timer keeps running in the notification and tells you when the rest is over.
+
+PROGRESSION AND RECORDS
+Mauve Fit fills in your next weights: when every set reached its target, it adds one weight step. Your best set of every exercise is kept with its estimated one-rep max, and after each workout a summary shows duration, sets, volume and new records.
+
+1324 EXERCISES
+Every exercise with a muscle map, many with drawings of the start and end position, plus equipment and step-by-step instructions. Searchable by name, muscle or equipment.
+
+NUTRITION
+Calories, protein, carbs and fat against daily targets from your body weight and goal. Foods by barcode or search via Open Food Facts, recipes with a shopping list, and your water at a glance.
+
+PROGRESS AND MOTIVATION
+Charts for volume, strength and body weight, progress photos, a weekly goal with a streak and freezes, a weekly challenge, daily quests with XP, levels and coins for accent colours and titles in the shop.
+
+TOOLS
+Interval timer for EMOM, Tabata and your own intervals that keeps beeping with the screen off, plus a 1RM calculator, plate calculator and warm-up helper.
+
+GALAXY WATCH, WIDGETS AND HEALTH CONNECT
+The watch app shows your set and rest on the wrist. Widgets for the next workout and today's nutrition. With Health Connect, workouts and weight go there, and sleep and heart rate feed into recovery. All optional.
+
+Your data stays on the device. Backup and CSV export at any time. In German and English, light and dark, with the accent colour of your choice, in the app icon too.

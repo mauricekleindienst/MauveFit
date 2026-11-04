@@ -490,6 +490,33 @@ final class Store {
         update { $0.freezes = s.freezes; $0.frozenWeeks = s.frozen; $0.streakSettled = s.settled; $0.streakRun = s.run }
     }
 
+    // MARK: - Backup
+
+    /** The whole data file, to save in Files and restore on any iPhone or Android phone. */
+    func export() -> Data { Backup.encode(data) }
+
+    /**
+     * Replaces everything with a backup; false if it is not a Mauve Fit backup. The current state
+     * is kept next to the data first (the last three), in case the wrong file was picked.
+     */
+    func importBackup(_ bytes: Data) -> Bool {
+        guard let restored = Backup.decode(bytes) else { return false }
+        flush()
+        let fm = FileManager.default
+        let dir = file.deletingLastPathComponent()
+        if fm.fileExists(atPath: file.path) {
+            try? fm.copyItem(at: file, to: dir.appendingPathComponent("data.before-import-\(nowMs()).json"))
+        }
+        let copies = ((try? fm.contentsOfDirectory(atPath: dir.path)) ?? []).filter { $0.hasPrefix("data.before-import-") }.sorted(by: >)
+        for old in copies.dropFirst(3) { try? fm.removeItem(at: dir.appendingPathComponent(old)) }
+        RestAlarm.cancel()
+        update { $0 = restored }
+        flush()
+        // Writing is off in the backup: turned on later it must write everything again.
+        if !restored.settings.healthWrite && file == Store.defaultFile() { Health.shared.forget() }
+        return true
+    }
+
     /** Deletes everything and starts over with the starter plans, saved right away. */
     func reset() {
         RestAlarm.cancel()

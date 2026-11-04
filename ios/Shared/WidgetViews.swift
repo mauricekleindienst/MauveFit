@@ -131,7 +131,7 @@ struct NextWidgetView: View {
     private var running: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .top) {
-                eyebrow(s.restEndsAt != nil ? s.restLabel : s.eyebrow)
+                eyebrow(s.restEndsAt != nil ? (size == .small ? s.restShort : s.restLabel) : s.eyebrow)
                 Spacer(minLength: 4)
                 if size != .small, let button = s.button { pill(button, s.buttonLink) }
             }
@@ -150,6 +150,8 @@ struct NextWidgetView: View {
                 Text("\(s.setsDone)/\(s.setsTotal)").font(.subheadline.weight(.bold)).foregroundStyle(accent)
             }
             bar(Double(s.setsDone) / Double(max(1, s.setsTotal)), accent)
+            // The large widget has room for the week as well.
+            if size == .large { weekBar(strip: true).padding(.top, 14) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }

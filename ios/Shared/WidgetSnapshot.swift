@@ -30,6 +30,8 @@ struct WidgetSnapshot: Codable, Equatable {
     var startedAt: Date?
     var restEndsAt: Date?
     var restLabel = ""
+    /** "Pause" for the small widget, where the long label does not fit. */
+    var restShort = "Pause"
     var setsDone = 0
     var setsTotal = 0
 

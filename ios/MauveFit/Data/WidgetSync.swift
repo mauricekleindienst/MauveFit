@@ -25,6 +25,7 @@ enum WidgetSync {
             s.startedAt = Date(ms: w.startedAt)
             if let end = w.restEndsAt, end > nowMs() { s.restEndsAt = Date(ms: end) }
             s.restLabel = L("Pause · nächster Satz in", "Rest · next set in")
+            s.restShort = L("Pause", "Rest")
             let working = w.entries.flatMap(\.sets).filter { !$0.warmup }
             s.setsTotal = working.count
             s.setsDone = working.filter(\.done).count

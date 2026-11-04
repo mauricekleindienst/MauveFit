@@ -261,6 +261,15 @@
         </activity-alias>
 
         <service
+            android:name=".system.IntervalService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Interval timer that beeps and vibrates on every work and rest change while the screen is off" />
+        </service>
+
+        <service
             android:name=".system.WorkoutService"
             android:exported="false"
             android:foregroundServiceType="specialUse">

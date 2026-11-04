@@ -653,6 +653,27 @@ final class MauveFitTests: XCTestCase {
         XCTAssertNil(store.data.exerciseNotes["0025"])
     }
 
+    /** Template packs: every exercise exists, and adding one copies its plans with fresh groups (#43). */
+    func testTemplatePacks() {
+        XCTAssertEqual(Templates.packs.map(\.key), ["upper-lower", "ppl", "home", "strength", "four-lifts"])
+        for pack in Templates.packs {
+            for r in pack.routines { for p in r.exercises { XCTAssertNotNil(ExerciseRepo.shared[p.exerciseId], "\(pack.key) \(p.exerciseId)") } }
+        }
+        let store = Store(file: dir.appendingPathComponent("data.json"))
+        let before = store.data.routines.count
+        let pack = Templates.packs[0]
+        store.addTemplate(pack)
+        store.addTemplate(pack)
+        XCTAssertEqual(store.data.routines.count, before + 2 * pack.routines.count)
+        let copies = store.data.routines.suffix(2 * pack.routines.count)
+        XCTAssertEqual(Set(copies.map(\.id)).count, copies.count)
+        // Two copies never share a superset group.
+        let first = Set(copies.prefix(pack.routines.count).flatMap { $0.exercises.compactMap(\.superset) })
+        let second = Set(copies.suffix(pack.routines.count).flatMap { $0.exercises.compactMap(\.superset) })
+        XCTAssertFalse(first.isEmpty)
+        XCTAssertTrue(first.isDisjoint(with: second))
+    }
+
     /** Tools as on Android: interval maths, 1RM table and plates (#36). */
     func testTools() {
         let p = Intervals.Plan(workSec: 20, restSec: 10, rounds: 8)

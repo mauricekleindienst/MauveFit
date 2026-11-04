@@ -20,13 +20,15 @@ struct FoodView: View {
                         GlassIconButton(icon: "plus", label: L("Essen eintragen", "Log food")) { adding = true }
                     }
                     dayPicker(date)
-                    macros(entries, t)
-                    water(d.water[day] ?? 0, goal: t.waterMl, day: day)
+                    CardGrid {
+                        macros(entries, t)
+                        water(d.water[day] ?? 0, goal: t.waterMl, day: day)
+                    }
                     SectionTitle(text: L("Tagebuch", "Diary"))
                     if entries.isEmpty {
                         Card { Text(L("Noch nichts eingetragen. Oben rechts kommt etwas dazu.", "Nothing logged yet. Add something at the top right.")).font(.fit(.body)).foregroundStyle(Ink.muted) }
                     }
-                    ForEach(entries) { e in
+                    CardGrid { ForEach(entries) { e in
                         Card(padding: 16) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -41,7 +43,7 @@ struct FoodView: View {
                         .contextMenu {
                             Button(role: .destructive) { store.deleteFood(e.id) } label: { Label(L("Löschen", "Delete"), systemImage: "trash") }
                         }
-                    }
+                    } }
                     Text(kg.map { L("Ziele aus deinem Gewicht (\(Fmt.kg($0)) kg) und Ziel (\(d.profile.goal.label)).", "Targets from your weight (\(Fmt.kg($0)) kg) and goal (\(d.profile.goal.label)).") }
                          ?? L("Ziele für \(Fmt.kg(Nutrition.defaultKg)) kg, bis du dein Gewicht unter Fortschritt einträgst.", "Targets for \(Fmt.kg(Nutrition.defaultKg)) kg until you log your weight under Progress."))
                         .font(.fit(.bodySmall)).foregroundStyle(Ink.faint).frame(maxWidth: .infinity, alignment: .leading)

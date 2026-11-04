@@ -41,7 +41,7 @@ struct MauveFitApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            DuoFrame { RootView() }
                 .environment(store)
                 .environment(router)
                 .onChange(of: phase) { _, p in
@@ -75,6 +75,28 @@ enum AppIcon {
     }
 }
 
+/** Debug only: the app at the iPhone Duo's screen size, scaled to fit (see Demo.duo). */
+struct DuoFrame<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if let duo = Demo.duo {
+            let size = duo == "outer" ? CGSize(width: 466, height: 678) : CGSize(width: 626, height: 890)
+            GeometryReader { g in
+                let scale = min(g.size.width / size.width, g.size.height / size.height)
+                content
+                    .frame(width: size.width, height: size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 36, style: .continuous))
+                    .scaleEffect(scale)
+                    .frame(width: g.size.width, height: g.size.height)
+            }
+            .background(Color(white: 0.3).ignoresSafeArea())
+        } else {
+            content
+        }
+    }
+}
+
 /** UI state shared across tabs: the selected tab and whether the workout screen is open. */
 @Observable
 final class Router {
@@ -89,6 +111,9 @@ enum AppTab: Hashable { case today, training, food, progress }
 struct RootView: View {
     @Environment(Store.self) private var store
     @Environment(Router.self) private var router
+    /** Window width: two columns from here on (the unfolded iPhone Duo is about 626 pt wide). */
+    @State private var width: CGFloat = 0
+    private static let twoColumns: CGFloat = 560
 
     var body: some View {
         @Bindable var router = router
@@ -114,6 +139,9 @@ struct RootView: View {
         .id(s.language)
         .tint(Ink.accent)
         .preferredColorScheme(scheme)
+        // Folding and unfolding the iPhone Duo changes the width while the app runs.
+        .background { GeometryReader { g in Color.clear.onAppear { width = g.size.width }.onChange(of: g.size.width) { _, w in width = w } } }
+        .environment(\.wide, width >= RootView.twoColumns)
         // Links from the home screen widget.
         .onOpenURL { url in
             switch url.host {
@@ -130,6 +158,7 @@ struct RootView: View {
         .fullScreenCover(isPresented: $router.showWorkout) {
             WorkoutView()
                 .environment(store).environment(router)
+                .environment(\.wide, width >= RootView.twoColumns)
                 .tint(Ink.accent)
                 .preferredColorScheme(scheme)
         }

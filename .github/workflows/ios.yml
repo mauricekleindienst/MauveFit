@@ -24,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 80
     defaults:
       run:
         working-directory: ios
@@ -88,6 +88,7 @@ jobs:
             -derivedDataPath build/test \
             -only-testing:MauveFitUITests \
             -skip-testing:MauveFitUITests/StoreScreenshots \
+            -skip-testing:MauveFitUITests/DeviceScreens \
             -resultBundlePath build/screens.xcresult \
             -testLanguage de -testRegion DE | tee build-screens.log | grep -E "error:|Test Case|Executed|\*\* TEST" || true
           grep -q "\*\* TEST SUCCEEDED \*\*" build-screens.log
@@ -126,6 +127,62 @@ jobs:
           done
           ls -l build/screenshots
           test "$(ls build/screenshots/*.png | wc -l)" -ge 32
+
+      - name: Screenshots on other iPhones
+        # A short screen (iPhone SE or 16e) and the foldable iPhone Duo, where this Xcode has them (#53).
+        run: |
+          set -o pipefail
+          xcrun simctl list devicetypes | grep -i iphone || true
+          runtime=$(xcrun simctl list runtimes -j | python3 -c 'import json,sys; r=[x for x in json.load(sys.stdin)["runtimes"] if x["platform"]=="iOS" and x["isAvailable"]]; print(sorted(r, key=lambda x: [int(v) for v in x["version"].split(".")])[-1]["identifier"])')
+          for want in "iPhone Duo" "iPhone SE (3rd generation)" "iPhone 16e"; do
+            type=$(xcrun simctl list devicetypes -j | python3 -c 'import json,sys; n=sys.argv[1]; print(next((d["identifier"] for d in json.load(sys.stdin)["devicetypes"] if d["name"]==n), ""))' "$want")
+            if [ -z "$type" ]; then echo "No $want in this Xcode"; continue; fi
+            udid=$(xcrun simctl create "Shot $want" "$type" "$runtime" 2>/dev/null) || { echo "Cannot create $want on $runtime"; continue; }
+            xcrun simctl boot "$udid"; xcrun simctl bootstatus "$udid" -b
+            xcrun simctl ui "$udid" appearance dark
+            slug=$(echo "$want" | tr 'A-Z ' 'a-z-' | tr -cd 'a-z0-9-')
+            xcodebuild test \
+              -project MauveFit.xcodeproj -scheme MauveFit \
+              -destination "id=$udid" \
+              -derivedDataPath build/test \
+              -only-testing:MauveFitUITests/DeviceScreens \
+              -resultBundlePath build/device-$slug.xcresult | tee build-device-$slug.log | grep -E "error:|Test Case|\*\* TEST" || true
+            grep -q "\*\* TEST SUCCEEDED \*\*" build-device-$slug.log
+            mkdir -p build/attachments-$slug
+            xcrun xcresulttool export attachments --path build/device-$slug.xcresult --output-path build/attachments-$slug
+            python3 - "$slug" <<'PY'
+          import json, re, shutil, sys
+          slug = sys.argv[1]
+          for test in json.load(open(f"build/attachments-{slug}/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  name = name if name.endswith(".png") else name + ".png"
+                  shutil.copy(f"build/attachments-{slug}/" + a["exportedFileName"], f"build/screenshots/device-{slug}-" + name)
+          PY
+            xcrun simctl shutdown "$udid" || true
+          done
+          # The iPhone Duo has no simulator yet: its two screens drawn in the app on the main simulator.
+          for duo in inner outer; do
+            TEST_RUNNER_DUO=$duo xcodebuild test \
+              -project MauveFit.xcodeproj -scheme MauveFit \
+              -destination "id=${{ steps.sim.outputs.udid }}" \
+              -derivedDataPath build/test \
+              -only-testing:MauveFitUITests/DeviceScreens \
+              -resultBundlePath build/duo-$duo.xcresult | tee build-duo-$duo.log | grep -E "error:|Test Case|\*\* TEST" || true
+            grep -q "\*\* TEST SUCCEEDED \*\*" build-duo-$duo.log
+            mkdir -p build/attachments-duo-$duo
+            xcrun xcresulttool export attachments --path build/duo-$duo.xcresult --output-path build/attachments-duo-$duo
+            python3 - "duo-$duo" <<'PY'
+          import json, re, shutil, sys
+          slug = sys.argv[1]
+          for test in json.load(open(f"build/attachments-{slug}/manifest.json")):
+              for a in test.get("attachments", []):
+                  name = re.sub(r"_\d+_[0-9A-F-]{36}", "", a.get("suggestedHumanReadableName", a["exportedFileName"]))
+                  name = name if name.endswith(".png") else name + ".png"
+                  shutil.copy(f"build/attachments-{slug}/" + a["exportedFileName"], f"build/screenshots/device-iphone-{slug}-" + name)
+          PY
+          done
+          ls build/screenshots | grep device- || true
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4

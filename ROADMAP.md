@@ -1,6 +1,6 @@
 # Mauve Fit: Roadmap
 
-Stand: Version 1.23.2 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
+Stand: Version 1.23.3 (November 2026). Sortiert nach Nutzen für das Training, nicht nach Aufwand.
 
 ## Erledigt in 1.6
 
@@ -97,6 +97,12 @@ Stand: Version 1.23.2 (November 2026). Sortiert nach Nutzen für das Training, n
 ## Erledigt in 1.19.2
 
 - Kontrast im hellen Modus gemessen: Kupfer, Sand, Salbei, Lime und Koralle lagen unter 4,5:1 (Lime 3,4:1) und sind jetzt so weit abgedunkelt, dass sie WCAG AA auf allen Flächen erfüllen
+
+## Erledigt in 1.23.3
+
+- Intervall-Timer läuft im Hintergrund weiter: Piepen und Vibration auch bei ausgeschaltetem Bildschirm, Benachrichtigung mit Countdown der Phase und Pause-Knopf (#1)
+- Widgets in der Akzentfarbe aus den Einstellungen, auch mit dem Farbton des Hintergrundbilds (#55)
+- Vorbereitung für Google Play: eigene Play-Variante ohne Updater, Datenschutzerklärung für Android, Store-Eintrag (#9)
 
 ## Erledigt in 1.23.2
 

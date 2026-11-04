@@ -512,6 +512,16 @@ final class MauveFitTests: XCTestCase {
         // The snapshot survives the trip through JSON, as the widget reads it.
         let back = try JSONDecoder().decode(WidgetSnapshot.self, from: JSONEncoder().encode(s))
         XCTAssertEqual(back, s)
+        // The widget follows the accent (#55): another accent is another snapshot, so it redraws.
+        let before = WidgetSync.snapshot(d)
+        XCTAssertEqual(before.accentDark, Ink.accentChoice.tones.ink)
+        let old = Ink.accentChoice
+        Ink.accentChoice = .sage
+        defer { Ink.accentChoice = old }
+        let after = WidgetSync.snapshot(d)
+        XCTAssertEqual(after.accentDark, 0x9DC3A3)
+        XCTAssertEqual(after.accentLight, 0x497151)
+        XCTAssertNotEqual(after, before)
     }
 
     /** Every accent but copper has an alternate home screen icon in the built app (#19). */

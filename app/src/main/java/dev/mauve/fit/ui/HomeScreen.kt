@@ -86,7 +86,7 @@ fun HomeScreen(data: AppData, nav: NavController) {
     // A quiet look at GitHub for a newer release, at most twice a day.
     val update by Updater.state.collectAsState()
     val ctx = androidx.compose.ui.platform.LocalContext.current
-    LaunchedEffect(Unit) { Updater.autoCheck(ctx) }
+    LaunchedEffect(Unit) { if (dev.mauve.fit.BuildConfig.SELF_UPDATE) Updater.autoCheck(ctx) }
     val tip = remember(data.history, data.settings, data.routines, data.cardio, weekKey) { Coach.homeTip(data, App.repo) }
     val challenge = remember(data.history, data.settings, data.profile, weekKey) { Motivation.challenge(data, App.repo) }
     val streak = Stats.weekStreak(history, goal, data.frozenWeeks)

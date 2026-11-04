@@ -4,7 +4,6 @@
     <!-- Animations are bundled; the network is only a fallback for a missing file. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Installs updates downloaded from the app's GitHub releases. -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Ongoing workout notification with the rest countdown, alerts and reminders. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

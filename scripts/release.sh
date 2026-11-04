@@ -22,11 +22,11 @@ fi
 
 gradle=./gradlew
 [ -f gradlew.bat ] && [ "${OS:-}" = "Windows_NT" ] && gradle=./gradlew.bat
-"$gradle" :app:testDebugUnitTest :app:assembleRelease :wear:assembleRelease -q
+"$gradle" :app:testGithubDebugUnitTest :app:assembleGithubRelease :wear:assembleRelease -q
 
 out=build/release
 rm -rf "$out" && mkdir -p "$out"
-cp app/build/outputs/apk/release/app-release.apk "$out/MauveFit-$version.apk"
+cp app/build/outputs/apk/github/release/app-github-release.apk "$out/MauveFit-$version.apk"
 cp wear/build/outputs/apk/release/wear-release.apk "$out/MauveFit-Watch-$version.apk"
 
 # Notes: the roadmap section of this version, without its heading.

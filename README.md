@@ -88,7 +88,7 @@ Requirements: Android Studio (its bundled JDK 17+), Android SDK 37.
 git clone https://github.com/mauricekleindienst/MauveFit.git
 cd MauveFit
 ./gradlew :app:assembleRelease :wear:assembleRelease
-./gradlew :app:testDebugUnitTest
+./gradlew :app:testGithubDebugUnitTest
 ```
 
 APKs land in `app/build/outputs/apk/release/` and `wear/build/outputs/apk/release/`. Release builds are minified with R8.

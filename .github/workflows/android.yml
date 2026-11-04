@@ -23,8 +23,24 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      # Unit tests of the phone app, then debug builds of phone and watch app.
-      - run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug :wear:assembleDebug
+      # Unit tests of the phone app, debug builds of phone and watch app, and the Google Play
+      # bundle (signed only where the upload key secrets are set).
+      - name: Upload key
+        env:
+          KEYSTORE_B64: ${{ secrets.MAUVE_UPLOAD_KEYSTORE_B64 }}
+        if: env.KEYSTORE_B64 != ''
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "MAUVE_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      - run: ./gradlew --no-daemon :app:testGithubDebugUnitTest :app:assembleGithubDebug :wear:assembleDebug :app:bundlePlayRelease
+        env:
+          MAUVE_UPLOAD_STORE_PASSWORD: ${{ secrets.MAUVE_UPLOAD_STORE_PASSWORD }}
+          MAUVE_UPLOAD_KEY_PASSWORD: ${{ secrets.MAUVE_UPLOAD_KEY_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mauvefit-play-aab
+          path: app/build/outputs/bundle/playRelease/*.aab
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -422,7 +422,8 @@ fun SettingsScreen(data: AppData, nav: NavController) {
         }
 
         item {
-            Section(L("App-Update", "App update"), Icons.Rounded.SystemUpdate) { UpdateSection() }
+            // Play installs updates itself; only the GitHub build checks its releases.
+            if (dev.mauve.fit.BuildConfig.SELF_UPDATE) Section(L("App-Update", "App update"), Icons.Rounded.SystemUpdate) { UpdateSection() }
             Section(L("Über", "About"), Icons.Rounded.Info) {
                 val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
                 Text("Mauve Fit ${version.orEmpty()}", style = MaterialTheme.typography.titleMedium)
